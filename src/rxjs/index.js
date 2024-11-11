@@ -378,13 +378,23 @@ export const processEquityCompensationExercise = (state, transaction) => {
 export const dashboardStats = async (issuerId) => {
     const { issuer, stockClasses, stockPlans, stakeholders, transactions } = await getAllStateMachineObjectsById(issuerId);
 
-    console.log("Starting pipeline with:", {
-        issuer,
-        stockClassesCount: stockClasses.length,
-        stockPlansCount: stockPlans.length,
-        stakeholdersCount: stakeholders.length,
-        transactionsCount: transactions.length,
-    });
+    // If there are no transactions, map the initial state to the required format
+    if (transactions.length === 0) {
+        const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
+        return {
+            numOfStakeholders: initialState.numOfStakeholders,
+            totalOutstandingShares: initialState.issuer.sharesIssued,
+            totalRaised: initialState.totalRaised,
+            totalStockPlanAuthorizedShares: Object.entries(initialState.stockPlans)
+                .filter(([id, _]) => id !== "no-stock-plan")
+                .reduce((acc, [_, plan]) => acc + parseInt(plan.sharesReserved), 0),
+            sharesIssuedByCurrentRelationship: initialState.sharesIssuedByCurrentRelationship,
+            totalIssuerAuthorizedShares: initialState.issuer.sharesAuthorized,
+            latestSharePrice: Number(initialState.latestSharePrice),
+            ownership: {},
+            valuation: null,
+        };
+    }
 
     const finalState = await lastValueFrom(
         from(transactions).pipe(
@@ -447,6 +457,30 @@ export const dashboardStats = async (issuerId) => {
 
 export const captableStats = async (issuerId) => {
     const { issuer, stockClasses, stockPlans, stakeholders, transactions } = await getAllStateMachineObjectsById(issuerId);
+
+    // If there are no transactions, map the initial state to the required format
+    if (transactions.length === 0) {
+        const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
+        return {
+            isCapTableEmpty: true,
+            summary: {
+                isEmpty: true,
+                common: initialState.summary.common,
+                preferred: initialState.summary.preferred,
+                founderPreferred: initialState.summary.founderPreferred,
+                warrantsAndNonPlanAwards: initialState.summary.warrantsAndNonPlanAwards,
+                stockPlans: initialState.summary.stockPlans,
+                totals: initialState.summary.totals,
+            },
+            convertibles: {
+                isEmpty: true,
+                convertiblesSummary: initialState.convertibles?.convertiblesSummary || {},
+                totals: {
+                    outstandingAmount: 0,
+                },
+            },
+        };
+    }
 
     const finalState = await lastValueFrom(
         from(transactions).pipe(
@@ -546,8 +580,8 @@ export const captableStats = async (issuerId) => {
                         fullyDilutedPercentage: (row.fullyDilutedShares / totals.totalFullyDilutedShares).toFixed(4),
                         ...(row.votingPower !== undefined
                             ? {
-                                  votingPercentage: (row.votingPower / totals.totalVotingPower).toFixed(4),
-                              }
+                                votingPercentage: (row.votingPower / totals.totalVotingPower).toFixed(4),
+                            }
                             : {}),
                     }));
 
@@ -588,12 +622,12 @@ export const captableStats = async (issuerId) => {
                         preferred: updatedPreferredSummary,
                         founderPreferred: state.summary.founderPreferred
                             ? {
-                                  ...state.summary.founderPreferred,
-                                  fullyDilutedPercentage: (
-                                      state.summary.founderPreferred.fullyDilutedShares / totals.totalFullyDilutedShares
-                                  ).toFixed(4),
-                                  votingPercentage: (state.summary.founderPreferred.votingPower / totals.totalVotingPower).toFixed(4),
-                              }
+                                ...state.summary.founderPreferred,
+                                fullyDilutedPercentage: (
+                                    state.summary.founderPreferred.fullyDilutedShares / totals.totalFullyDilutedShares
+                                ).toFixed(4),
+                                votingPercentage: (state.summary.founderPreferred.votingPower / totals.totalVotingPower).toFixed(4),
+                            }
                             : null,
                         warrantsAndNonPlanAwards: updatedWarrantsAndNonPlanAwardsSummary,
                         stockPlans: updatedStockPlansSummary,
