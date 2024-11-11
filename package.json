@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "t": "npx tsx src/test.mjs",
+    "test-captables": "npx tsx testCaptables.js",
     "prod": "npx tsx src/app.js",
     "dev": "npx tsx watch src/app.js",
     "lint": "eslint \"src/**/*.{js,ts,mjs,mts}\"",
