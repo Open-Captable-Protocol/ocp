@@ -28,8 +28,8 @@ const createInitialState = (issuer, stockClasses, stockPlans, stakeholders) => {
         stockClasses: stockClasses.reduce(
             (acc, sc) => ({
                 ...acc,
-                [sc._id]: {
-                    id: sc._id,
+                [sc.id]: {
+                    id: sc.id,
                     sharesAuthorized: parseInt(sc.initial_shares_authorized),
                     sharesIssued: 0,
                 },
@@ -107,7 +107,7 @@ const processTransaction = (state, transaction, stakeholders, stockClasses, stoc
         targetStockClassId = warrantConvertsToStockClass;
     }
 
-    const originalStockClass = stockClasses.find((sc) => sc._id === targetStockClassId);
+    const originalStockClass = stockClasses.find((sc) => sc.id === targetStockClassId);
     // if transaction is one of the following, we need a stock class ID
     if (
         !targetStockClassId &&
@@ -196,6 +196,7 @@ const processStockIssuance = (state, transaction, stakeholder, originalStockClas
 
     // Access state stock class directly from state
     const stateStockClass = state.stockClasses[stock_class_id];
+    console.log("stateStockClass", stateStockClass);
 
     // Validate using state data
     if (stateStockClass.sharesIssued + numShares > stateStockClass.sharesAuthorized) {
@@ -580,8 +581,8 @@ export const captableStats = async (issuerId) => {
                         fullyDilutedPercentage: (row.fullyDilutedShares / totals.totalFullyDilutedShares).toFixed(4),
                         ...(row.votingPower !== undefined
                             ? {
-                                votingPercentage: (row.votingPower / totals.totalVotingPower).toFixed(4),
-                            }
+                                  votingPercentage: (row.votingPower / totals.totalVotingPower).toFixed(4),
+                              }
                             : {}),
                     }));
 
@@ -622,12 +623,12 @@ export const captableStats = async (issuerId) => {
                         preferred: updatedPreferredSummary,
                         founderPreferred: state.summary.founderPreferred
                             ? {
-                                ...state.summary.founderPreferred,
-                                fullyDilutedPercentage: (
-                                    state.summary.founderPreferred.fullyDilutedShares / totals.totalFullyDilutedShares
-                                ).toFixed(4),
-                                votingPercentage: (state.summary.founderPreferred.votingPower / totals.totalVotingPower).toFixed(4),
-                            }
+                                  ...state.summary.founderPreferred,
+                                  fullyDilutedPercentage: (
+                                      state.summary.founderPreferred.fullyDilutedShares / totals.totalFullyDilutedShares
+                                  ).toFixed(4),
+                                  votingPercentage: (state.summary.founderPreferred.votingPower / totals.totalVotingPower).toFixed(4),
+                              }
                             : null,
                         warrantsAndNonPlanAwards: updatedWarrantsAndNonPlanAwardsSummary,
                         stockPlans: updatedStockPlansSummary,
@@ -641,6 +642,38 @@ export const captableStats = async (issuerId) => {
                         },
                     },
                 };
+            })
+        )
+    );
+
+    console.log("finalState", finalState);
+    return finalState;
+};
+
+export const verifyCapTable = async (captable) => {
+    // Format manifest and get items for each object / transaction
+    const { issuer, stockClasses, stockPlans, stakeholders, transactions } = captable;
+    console.log({ captable });
+
+    // If there are no transactions, map the initial state to the required format
+    if (transactions.length === 0) {
+        return true;
+    }
+
+    const finalState = await lastValueFrom(
+        from(transactions).pipe(
+            scan(
+                (state, transaction) => processTransaction(state, transaction, stakeholders, stockClasses, stockPlans),
+                createInitialState(issuer, stockClasses, stockPlans, stakeholders)
+            ),
+            last(),
+            // tap((state) => {
+            // }),
+            map((state) => {
+                if (state.errors.size > 0) {
+                    return { valid: false, errors: Array.from(state.errors) };
+                }
+                return { valid: true };
             })
         )
     );
