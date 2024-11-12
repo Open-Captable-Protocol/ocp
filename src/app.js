@@ -2,6 +2,7 @@ import express, { json, urlencoded } from "express";
 import { setupEnv } from "./utils/env.js";
 import { connectDB } from "./db/config/mongoose.ts";
 import { startListener } from "./utils/websocket.ts";
+import { setTag } from "@sentry/node";
 import * as Sentry from "@sentry/node";
 
 // Routes
@@ -25,6 +26,7 @@ import { getContractInstance } from "./chain-operations/getContractInstances.js"
 
 setupEnv();
 Sentry.init({
+    integrations: [Sentry.captureConsoleIntegration({ levels: ["error"] })],
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV,
     sendDefaultPii: false,
@@ -59,6 +61,7 @@ const contractMiddleware = async (req, res, next) => {
         contractCache[req.body.issuerId] = { contract, provider, libraries };
     }
 
+    setTag("issuerId", req.body.issuerId);
     req.contract = contractCache[req.body.issuerId].contract;
     req.provider = contractCache[req.body.issuerId].provider;
     next();
