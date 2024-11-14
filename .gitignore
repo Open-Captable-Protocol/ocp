@@ -9,7 +9,6 @@
 !.yarn/versions
 .pnp.*
 
-testCaptables.js
 
 # dependencies
 node_modules
@@ -25,22 +24,11 @@ yarn-error.log*
 # local env files
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.testnet
-
-# vercel
-.vercel
-
-**/*.generated.*
-**/*.graphql.d.ts
-**/*.graphqls.d.ts
+.env.dev
+.env.prod
 
 !.vscode
 
-# WebStorm
-.idea/**/*
 
 # TypeScript
 tsconfig.tsbuildinfo
@@ -48,5 +36,4 @@ tsconfig.tsbuildinfo
 
 # Private keys
 *.pem
-.env.*
-!chain/out
+chain/out
