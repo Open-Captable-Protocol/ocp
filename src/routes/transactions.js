@@ -53,10 +53,7 @@ import {
 import { createStockPlanPoolAdjustment } from "../db/operations/create.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { getJoiErrorMessage } from "../chain-operations/utils.js";
-import { SERIES_TYPE } from "../fairmint/enums.js";
-import { reflectSeries } from "../fairmint/reflectSeries.js";
 import get from "lodash/get";
-import { reflectGrant } from "../fairmint/reflectGrant.js";
 import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
 import { upsertFairmintDataBySecurityId } from "../db/operations/update";
 import { convertAndCreateEquityCompensationExerciseOnchain } from "../controllers/transactions/exerciseController";
@@ -422,7 +419,7 @@ transactions.post("/adjust/stock-class/authorized-shares", async (req, res) => {
 });
 
 transactions.post("/adjust/stock-plan-pool", async (req, res) => {
-    const { contract } = req;
+    // const { contract } = req;
     const { data, issuerId } = req.body;
 
     try {
