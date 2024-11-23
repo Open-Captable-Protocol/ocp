@@ -14,6 +14,7 @@ import { StockPlanFacet } from "@diamond/facets/StockPlanFacet.sol";
 import "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { WarrantFacet } from "@diamond/facets/WarrantFacet.sol";
+import { StakeholderNFTFacet } from "@diamond/facets/StakeholderNFTFacet.sol";
 
 contract DiamondTestBase is Test {
     uint256 public issuerInitialSharesAuthorized = 1000000;
@@ -30,6 +31,7 @@ contract DiamondTestBase is Test {
     StockPlanFacet public stockPlanFacet;
     DiamondCapTable public diamond;
     WarrantFacet public warrantFacet;
+    StakeholderNFTFacet public stakeholderNFTFacet;
 
     event StockIssued(bytes16 indexed stakeholderId, bytes16 indexed stockClassId, uint256 quantity, uint256 sharePrice);
     event StakeholderCreated(bytes16 indexed id);
@@ -46,6 +48,7 @@ contract DiamondTestBase is Test {
         // Deploy facets
         diamondCutFacet = new DiamondCutFacet();
         issuerFacet = new IssuerFacet();
+        diamond = new DiamondCapTable(contractOwner, address(diamondCutFacet));
         stakeholderFacet = new StakeholderFacet();
         stockClassFacet = new StockClassFacet();
         stockFacet = new StockFacet();
@@ -53,19 +56,19 @@ contract DiamondTestBase is Test {
         equityCompensationFacet = new EquityCompensationFacet();
         stockPlanFacet = new StockPlanFacet();
         warrantFacet = new WarrantFacet();
-
-        // Deploy Diamond
-        diamond = new DiamondCapTable(contractOwner, address(diamondCutFacet));
+        stakeholderNFTFacet = new StakeholderNFTFacet();
 
         // Add facets
-        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](8);
+        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](9);
 
         bytes4[] memory issuerSelectors = new bytes4[](2);
         issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
         issuerSelectors[1] = IssuerFacet.adjustAuthorizedShares.selector;
 
-        bytes4[] memory stakeholderSelectors = new bytes4[](1);
+        bytes4[] memory stakeholderSelectors = new bytes4[](3);
         stakeholderSelectors[0] = StakeholderFacet.createStakeholder.selector;
+        stakeholderSelectors[1] = StakeholderFacet.getStakeholderPositions.selector;
+        stakeholderSelectors[2] = StakeholderFacet.linkStakeholderAddress.selector;
 
         bytes4[] memory stockClassSelectors = new bytes4[](2);
         stockClassSelectors[0] = StockClassFacet.createStockClass.selector;
@@ -90,6 +93,10 @@ contract DiamondTestBase is Test {
         bytes4[] memory warrantSelectors = new bytes4[](2);
         warrantSelectors[0] = WarrantFacet.issueWarrant.selector;
         warrantSelectors[1] = WarrantFacet.getWarrantPosition.selector;
+
+        bytes4[] memory nftSelectors = new bytes4[](2);
+        nftSelectors[0] = StakeholderNFTFacet.mint.selector;
+        nftSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
 
         // issuer facet
         cut[0] = IDiamondCut.FacetCut({
@@ -146,6 +153,13 @@ contract DiamondTestBase is Test {
             functionSelectors: warrantSelectors
         });
 
+        // NFT facet
+        cut[8] = IDiamondCut.FacetCut({
+            facetAddress: address(stakeholderNFTFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: nftSelectors
+        });
+
         DiamondCutFacet(address(diamond)).diamondCut(cut, address(0), "");
 
         // Initialize issuer
@@ -155,9 +169,19 @@ contract DiamondTestBase is Test {
     // Common helper functions
     function createStakeholder() public returns (bytes16) {
         bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
+
+        // Debug log before creation
+        console.log("Before creation - index:", StorageLib.get().stakeholderIndex[stakeholderId]);
+
         vm.expectEmit(true, false, false, false, address(diamond));
         emit StakeholderCreated(stakeholderId);
-        StakeholderFacet(payable(address(diamond))).createStakeholder(stakeholderId);
+
+        // Call through the diamond proxy instead of using delegatecall
+        StakeholderFacet(address(diamond)).createStakeholder(stakeholderId);
+
+        // Debug log after creation
+        console.log("After creation - index:", StorageLib.get().stakeholderIndex[stakeholderId]);
+
         return stakeholderId;
     }
 
@@ -187,5 +211,10 @@ contract DiamondTestBase is Test {
         StockPlanFacet(payable(address(diamond))).createStockPlan(stockPlanId, stockClassIds, sharesReserved);
 
         return stockPlanId;
+    }
+
+    // Add this helper function alongside the other helpers
+    function linkStakeholderAddress(bytes16 _stakeholderId, address _wallet) public {
+        StakeholderFacet(payable(address(diamond))).linkStakeholderAddress(_stakeholderId, _wallet);
     }
 }

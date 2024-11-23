@@ -15,6 +15,7 @@ struct Storage {
     ConvertibleActivePositions convertibleActivePositions;
     EquityCompensationActivePositions equityCompensationActivePositions;
     WarrantActivePositions warrantActivePositions;
+    mapping(address => bytes16) addressToStakeholderId;
 }
 
 library StorageLib {

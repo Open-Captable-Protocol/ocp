@@ -11,7 +11,7 @@ struct Issuer {
 struct StockClass {
     bytes16 id;
     string class_type; // ["COMMON", "PREFERRED"]
-    uint256 price_per_share; // Per-share price this stock class was issued for
+    uint256 price_per_share; // Per-share price this stock class was issued for // remove this.
     uint256 shares_issued;
     uint256 shares_authorized;
 }
@@ -77,4 +77,11 @@ struct WarrantActivePositions {
     mapping(bytes16 => bytes16[]) stakeholderToSecurities;
     mapping(bytes16 => WarrantActivePosition) securities;
     mapping(bytes16 => bytes16) securityToStakeholder;
+}
+
+struct StakeholderPositions {
+    StockActivePosition[] stocks;
+    WarrantActivePosition[] warrants;
+    ConvertibleActivePosition[] convertibles;
+    EquityCompensationActivePosition[] equityCompensations;
 }
