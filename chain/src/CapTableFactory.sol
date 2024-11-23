@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { UpgradeableBeacon } from "openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
-import { BeaconProxy } from "openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-import { Ownable } from "openzeppelin/contracts/access/Ownable.sol";
+import { UpgradeableBeacon } from "openzeppelin-contracts/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import { BeaconProxy } from "openzeppelin-contracts/contracts/proxy/beacon/BeaconProxy.sol";
+import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import { ICapTableFactory } from "./interfaces/ICapTableFactory.sol";
 import { ICapTable } from "./interfaces/ICapTable.sol";
 

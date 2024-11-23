@@ -2,16 +2,14 @@ import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import { withChainErrorHandler } from "./helper.js";
 
 /// @dev: controller handles conversion from OCF type to Onchain types and creates the stakeholder.
-export const convertAndReflectStakeholderOnchain = withChainErrorHandler(async (contract, stakeholder) => {
+export const convertAndReflectStakeholderOnchain = withChainErrorHandler(async (contract, stakeholderId) => {
     // First: convert OCF Types to Onchain Types
-    const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder.id);
-
-    console.log("Stakeholder", stakeholder);
+    const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholderId);
 
     console.log("Stakeholder id for seeding ", stakeholderIdBytes16);
 
     // Second: create stakeholder onchain
-    const tx = await contract.createStakeholder(stakeholderIdBytes16, stakeholder.stakeholder_type, stakeholder.current_relationship); // Pass all three values
+    const tx = await contract.createStakeholder(stakeholderIdBytes16);
     await tx.wait();
 
     console.log("✅ | Stakeholder created  onchain");

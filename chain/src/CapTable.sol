@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { AccessControlDefaultAdminRulesUpgradeable } from "openzeppelin-upgradeable/contracts/access/AccessControlDefaultAdminRulesUpgradeable.sol";
+import { AccessControlDefaultAdminRulesUpgradeable } from "openzeppelin-contracts-upgradeable/contracts/access/AccessControlDefaultAdminRulesUpgradeable.sol";
 
 import { ICapTable } from "./interfaces/ICapTable.sol";
 import { StockTransferParams, Issuer, Stakeholder, StockClass, InitialShares, ActivePositions, SecIdsStockClass, StockLegendTemplate, StockParams, StockParamsQuantity, StockIssuanceParams } from "./lib/Structs.sol";
@@ -424,18 +424,18 @@ contract CapTable is ICapTable, AccessControlDefaultAdminRulesUpgradeable {
     }
 
     /// @inheritdoc ICapTable
-    function getActivePosition(bytes16 stakeholderId, bytes16 securityId) external view returns (bytes16, uint, uint, uint40) {
+    function getActivePosition(bytes16 stakeholderId, bytes16 securityId) external view returns (bytes16, uint256, uint256, uint40) {
         ActivePosition storage position = positions.activePositions[stakeholderId][securityId];
         return (position.stock_class_id, position.quantity, position.share_price, position.timestamp);
     }
 
     /// @inheritdoc ICapTable
-    function getAveragePosition(bytes16 stakeholderId, bytes16 stockClassId) external view returns (uint, uint, uint40) {
+    function getAveragePosition(bytes16 stakeholderId, bytes16 stockClassId) external view returns (uint256, uint256, uint40) {
         bytes16[] memory activeSecurityIDs = activeSecs.activeSecurityIdsByStockClass[stakeholderId][stockClassId];
-        uint quantityPrice = 0;
-        uint quantity = 0;
+        uint256 quantityPrice = 0;
+        uint256 quantity = 0;
         uint40 timestamp = 0;
-        for (uint i = 0; i < activeSecurityIDs.length; i++) {
+        for (uint256 i = 0; i < activeSecurityIDs.length; i++) {
             ActivePosition storage position = positions.activePositions[stakeholderId][activeSecurityIDs[i]];
             // Alley-oop the web2 caller to find the avg to avoid issues with fractions
             quantityPrice += position.quantity * position.share_price;

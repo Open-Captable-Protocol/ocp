@@ -7,8 +7,6 @@
   "description": "Transfer Agent Protocol onchain cap table",
   "type": "module",
   "scripts": {
-    "t": "npx tsx src/test.mjs",
-    "test-captables": "npx tsx testCaptables.js",
     "prod": "npx tsx src/app.js",
     "dev": "npx tsx watch src/app.js",
     "format": "prettier --write \"src/**/*.{js,mjs,ts,mts,json,md}\"",
@@ -20,7 +18,7 @@
     "typecheck:app": "tsc --noEmit",
     "prepare": "husky",
     "deploy-factory": "./scripts/deployFactory.sh",
-    "setup": "cd chain && foundryup && forge build --via-ir",
+    "setup": "sh forge_install.sh",
     "deseed": "npx tsx src/db/scripts/deseed.js",
     "test": "cd chain && forge test",
     "test-js": "jest --testPathPattern src/tests/unit",

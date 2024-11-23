@@ -2,69 +2,11 @@ export const StockIssuance = {
     type: "tuple",
     baseType: "tuple",
     components: [
-        { type: "bytes16", baseType: "bytes16", name: "id" },
-        { type: "string", baseType: "string", name: "object_type" },
+        { type: "bytes16", baseType: "bytes16", name: "stock_class_id" },
+        { type: "uint256", baseType: "uint256", name: "share_price" },
+        { type: "uint256", baseType: "uint256", name: "quantity" },
+        { type: "bytes16", baseType: "bytes16", name: "stakeholder_id" },
         { type: "bytes16", baseType: "bytes16", name: "security_id" },
-        {
-            type: "tuple",
-            baseType: "tuple",
-            name: "params",
-            components: [
-                { type: "bytes16", baseType: "bytes16", name: "stock_class_id" },
-                { type: "bytes16", baseType: "bytes16", name: "stock_plan_id" },
-                {
-                    type: "tuple",
-                    baseType: "tuple",
-                    name: "share_numbers_issued",
-                    components: [
-                        { type: "uint256", baseType: "uint256", name: "starting_share_number" },
-                        { type: "uint256", baseType: "uint256", name: "ending_share_number" },
-                    ],
-                },
-                { type: "uint256", baseType: "uint256", name: "share_price" },
-                { type: "uint256", baseType: "uint256", name: "quantity" },
-                { type: "bytes16", baseType: "bytes16", name: "vesting_terms_id" },
-                { type: "uint256", baseType: "uint256", name: "cost_basis" },
-                {
-                    type: "bytes16[]",
-                    baseType: "array",
-                    arrayLength: -1,
-                    arrayChildren: { type: "bytes16", baseType: "bytes16" },
-                    name: "stock_legend_ids",
-                },
-                { type: "string", baseType: "string", name: "issuance_type" },
-                {
-                    type: "string[]",
-                    baseType: "array",
-                    arrayLength: -1,
-                    arrayChildren: { type: "string", baseType: "string" },
-                    name: "comments",
-                },
-                { type: "string", baseType: "string", name: "custom_id" },
-                { type: "bytes16", baseType: "bytes16", name: "stakeholder_id" },
-                { type: "string", baseType: "string", name: "board_approval_date" },
-                { type: "string", baseType: "string", name: "stockholder_approval_date" },
-                { type: "string", baseType: "string", name: "consideration_text" },
-                {
-                    type: "tuple(string, string)[]",
-                    baseType: "array",
-                    arrayLength: -1,
-                    components: [
-                        {
-                            name: "description",
-                            type: "string",
-                            baseType: "string",
-                        },
-                        {
-                            name: "jurisdiction",
-                            type: "string",
-                            baseType: "string",
-                        },
-                    ],
-                    name: "security_law_exemptions",
-                },
-            ],
-        },
     ],
 };
 
@@ -184,16 +126,11 @@ export const StockAcceptance = {
     type: "tuple",
     baseType: "tuple",
     components: [
-        { type: "bytes16", baseType: "bytes16", name: "id" },
-        { type: "string", baseType: "string", name: "object_type" },
+        { type: "bytes16", baseType: "bytes16", name: "stock_class_id" },
+        { type: "uint256", baseType: "uint256", name: "share_price" },
+        { type: "uint256", baseType: "uint256", name: "quantity" },
+        { type: "bytes16", baseType: "bytes16", name: "stakeholder_id" },
         { type: "bytes16", baseType: "bytes16", name: "security_id" },
-        {
-            type: "string[]",
-            baseType: "array",
-            arrayLength: -1,
-            arrayChildren: { type: "string", baseType: "string" },
-            name: "comments",
-        },
     ],
 };
 
@@ -233,5 +170,47 @@ export const StockClassAuthorizedSharesAdjustment = {
         },
         { type: "string", baseType: "string", name: "board_approval_date" },
         { type: "string", baseType: "string", name: "stockholder_approval_date" },
+    ],
+};
+
+export const ConvertibleIssuance = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "stakeholder_id" },
+        { type: "uint256", baseType: "uint256", name: "investment_amount" },
+        { type: "bytes16", baseType: "bytes16", name: "security_id" },
+    ],
+};
+
+export const WarrantIssuance = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "stakeholder_id" },
+        { type: "uint256", baseType: "uint256", name: "quantity" },
+        { type: "bytes16", baseType: "bytes16", name: "security_id" },
+    ],
+};
+
+export const EquityCompensationIssuance = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "stakeholder_id" },
+        { type: "bytes16", baseType: "bytes16", name: "stock_class_id" },
+        { type: "bytes16", baseType: "bytes16", name: "stock_plan_id" },
+        { type: "uint256", baseType: "uint256", name: "quantity" },
+        { type: "bytes16", baseType: "bytes16", name: "security_id" },
+    ],
+};
+
+export const EquityCompensationExercise = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "equity_comp_security_id" },
+        { type: "bytes16", baseType: "bytes16", name: "resulting_stock_security_id" },
+        { type: "uint256", baseType: "uint256", name: "quantity" },
     ],
 };

@@ -8,6 +8,9 @@ import StockPlan from "../objects/StockPlan.js";
 import Valuation from "../objects/Valuation.js";
 import VestingTerms from "../objects/VestingTerms.js";
 import StockAcceptance from "../objects/transactions/acceptance/StockAcceptance.js";
+import WarrantIssuance from "../objects/transactions/issuance/WarrantIssuance.js";
+import EquityCompensationIssuance from "../objects/transactions/issuance/EquityCompensationIssuance.js";
+import EquityCompensationExercise from "../objects/transactions/exercise/EquityCompensationExercise.js";
 import IssuerAuthorizedSharesAdjustment from "../objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.js";
 import StockClassAuthorizedSharesAdjustment from "../objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
 import StockCancellation from "../objects/transactions/cancellation/StockCancellation.js";
@@ -16,8 +19,9 @@ import StockReissuance from "../objects/transactions/reissuance/StockReissuance.
 import StockRepurchase from "../objects/transactions/repurchase/StockRepurchase.js";
 import StockRetraction from "../objects/transactions/retraction/StockRetraction.js";
 import StockTransfer from "../objects/transactions/transfer/StockTransfer.js";
+import ConvertibleIssuance from "../objects/transactions/issuance/ConvertibleIssuance.js";
 import Fairmint from "../objects/Fairmint.js";
-import { findByIdAndUpdate, findOne } from "./atomic.ts";
+import { findByIdAndUpdate, findOne, findBySecurityIdAndUpdate } from "./atomic.ts";
 import { createFactory } from "./create.js";
 import get from "lodash/get";
 import { v4 as uuid } from "uuid";
@@ -48,6 +52,10 @@ export const updateStakeholderById = async (id, updatedData) => {
     return await retryOnMiss(async () => findByIdAndUpdate(Stakeholder, id, updatedData, { new: true }));
 };
 
+export const upsertStakeholderById = async (id, updatedData) => {
+    return await retryOnMiss(async () => findByIdAndUpdate(Stakeholder, id, updatedData, { new: true, upsert: true }));
+};
+
 export const updateStockClassById = async (id, updatedData) => {
     return await retryOnMiss(async () => findByIdAndUpdate(StockClass, id, updatedData, { new: true }));
 };
@@ -56,8 +64,14 @@ export const updateStockLegendTemplateById = async (id, updatedData) => {
     return await findByIdAndUpdate(StockLegendTemplate, id, updatedData, { new: true });
 };
 
-export const updateStockPlanById = async (id, updatedData) => {
-    return await findByIdAndUpdate(StockPlan, id, updatedData, { new: true });
+export const updateStockPlanById = async (id, update) => {
+    const stockPlan = await StockPlan.findByIdAndUpdate(id, { $set: update }, { new: true });
+
+    if (!stockPlan) {
+        throw new Error(`Stock Plan with id ${id} not found`);
+    }
+
+    return stockPlan;
 };
 
 export const updateValuationById = async (id, updatedData) => {
@@ -66,6 +80,14 @@ export const updateValuationById = async (id, updatedData) => {
 
 export const updateVestingTermsById = async (id, updatedData) => {
     return await findByIdAndUpdate(VestingTerms, id, updatedData, { new: true });
+};
+
+export const upsertStockIssuanceBySecurityId = async (securityId, updatedData) => {
+    return await findBySecurityIdAndUpdate(StockIssuance, securityId, updatedData, { new: true, upsert: true });
+};
+
+export const upsertConvertibleIssuanceBySecurityId = async (securityId, updatedData) => {
+    return await findBySecurityIdAndUpdate(ConvertibleIssuance, securityId, updatedData, { new: true, upsert: true });
 };
 
 export const upsertStockIssuanceById = async (id, updatedData) => {
@@ -124,8 +146,8 @@ export const upsertFairmintData = async (id, updatedData = {}) => {
     return await findByIdAndUpdate(Fairmint, get(existing, "_id"), updatedData, { new: true, upsert: true });
 };
 
-export const upsertFairmintDataBySeriesId = async (series_id, updatedData = {}) => {
-    const existing = await findOne(Fairmint, { series_id });
+export const upsertFairmintDataBySecurityId = async (security_id, updatedData = {}) => {
+    const existing = await findOne(Fairmint, { security_id });
     if (existing && existing._id) {
         updatedData.attributes = {
             ...get(existing, "attributes", {}),
@@ -133,4 +155,27 @@ export const upsertFairmintDataBySeriesId = async (series_id, updatedData = {}) 
         };
     }
     return await findByIdAndUpdate(Fairmint, get(existing, "_id", uuid()), updatedData, { new: true, upsert: true });
+};
+
+export const upsertFairmintDataByStakeholderId = async (stakeholder_id, updatedData = {}) => {
+    const existing = await findOne(Fairmint, { stakeholder_id });
+    if (existing && existing._id) {
+        updatedData.attributes = {
+            ...get(existing, "attributes", {}),
+            ...get(updatedData, "attributes", {}),
+        };
+    }
+    return await findByIdAndUpdate(Fairmint, get(existing, "_id", uuid()), updatedData, { new: true, upsert: true });
+};
+
+export const upsertWarrantIssuanceBySecurityId = async (securityId, updatedData) => {
+    return await findBySecurityIdAndUpdate(WarrantIssuance, securityId, updatedData, { new: true, upsert: true });
+};
+
+export const upsertEquityCompensationIssuanceBySecurityId = async (securityId, updatedData) => {
+    return await findBySecurityIdAndUpdate(EquityCompensationIssuance, securityId, updatedData, { new: true, upsert: true });
+};
+
+export const upsertEquityCompensationExerciseBySecurityId = async (securityId, updatedData) => {
+    return await findBySecurityIdAndUpdate(EquityCompensationExercise, securityId, updatedData, { new: true, upsert: true });
 };

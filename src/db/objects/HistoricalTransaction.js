@@ -18,6 +18,10 @@ const HistoricalTransactionSchema = new mongoose.Schema(
                 "StockAcceptance",
                 "IssuerAuthorizedSharesAdjustment",
                 "StockClassAuthorizedSharesAdjustment",
+                "EquityCompensationIssuance",
+                "EquityCompensationExercise",
+                "ConvertibleIssuance",
+                "WarrantIssuance",
             ], // List of possible models
             required: true,
         },

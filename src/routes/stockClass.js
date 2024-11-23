@@ -63,9 +63,11 @@ stockClass.post("/create", async (req, res) => {
             return res.status(200).send({ message: "StockClass already exists", stockClass: exists });
         }
 
-        await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
-
+        // Save Offchain
         const stockClass = await createStockClass(incomingStockClassForDB);
+
+        // Save Onchain
+        await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
 
         console.log("✅ | Stock Class created offchain:", stockClass);
 
