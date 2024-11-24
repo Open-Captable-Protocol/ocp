@@ -628,7 +628,6 @@ transactions.post("/exercise/equity-compensation", async (req, res) => {
 
         const incomingEquityCompensationExercise = {
             id: uuid(), // for OCF Validation
-            security_id: uuid(), // for OCF Validation
             date: new Date().toISOString().slice(0, 10), // for OCF Validation
             object_type: "TX_EQUITY_COMPENSATION_EXERCISE",
             ...data,
@@ -641,7 +640,7 @@ transactions.post("/exercise/equity-compensation", async (req, res) => {
             return res.status(400).send({ error: "resulting_security_ids array is required and must have at least one element" });
         }
         // Check if exercise exists
-        const exerciseExists = await readEquityCompensationExerciseBySecurityId(incomingEquityCompensationExercise.security_id);
+        const exerciseExists = await readEquityCompensationExerciseBySecurityId(incomingEquityCompensationExercise.id);
         if (exerciseExists && exerciseExists._id) {
             return res.status(200).send({
                 message: "Equity Compensation Exercise Already Exists",
