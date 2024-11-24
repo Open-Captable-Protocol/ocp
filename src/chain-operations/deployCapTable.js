@@ -9,6 +9,7 @@ import CONVERTIBLE_FACET from "../../chain/out/ConvertiblesFacet.sol/Convertible
 import WARRANT_FACET from "../../chain/out/WarrantFacet.sol/WarrantFacet.json";
 import EQUITY_COMPENSATION_FACET from "../../chain/out/EquityCompensationFacet.sol/EquityCompensationFacet.json";
 import STOCK_PLAN_FACET from "../../chain/out/StockPlanFacet.sol/StockPlanFacet.json";
+import STAKEHOLDER_NFT_FACET from "../../chain/out/StakeholderNFTFacet.sol/StakeholderNFTFacet.json";
 import { toScaledBigNumber } from "../utils/convertToFixedPointDecimals.js";
 import { setupEnv } from "../utils/env.js";
 import getProvider from "./getProvider.js";
@@ -53,20 +54,14 @@ async function deployCapTable(issuerId, initial_shares_authorized) {
         ...CONVERTIBLE_FACET.abi,
         ...WARRANT_FACET.abi,
         ...EQUITY_COMPENSATION_FACET.abi,
+        ...STAKEHOLDER_NFT_FACET.abi,
     ];
 
     // Create the diamond contract with combined ABI
     const diamond = new ethers.Contract(diamondAddress, combinedABI, wallet);
 
-    // Return both the diamond contract and individual facet contracts
     return {
         contract: diamond, // Main diamond contract with all facets
-        // facets: {
-        //     stakeholder: new ethers.Contract(diamondAddress, STAKEHOLDER_FACET.abi, wallet),
-        //     issuer: new ethers.Contract(diamondAddress, ISSUER_FACET.abi, wallet),
-        //     stockClass: new ethers.Contract(diamondAddress, STOCK_CLASS_FACET.abi, wallet),
-        //     stock: new ethers.Contract(diamondAddress, STOCK_FACET.abi, wallet),
-        // },
         address: diamondAddress,
         deployHash: tx.hash,
     };
