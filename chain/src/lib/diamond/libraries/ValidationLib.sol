@@ -10,7 +10,8 @@ library ValidationLib {
     error InvalidStockPlan(bytes16 stock_plan_id);
     error InvalidQuantity();
     error InvalidAmount();
-    error InvalidSecurity();
+    error InvalidSecurity(bytes16 security_id);
+    error InvalidSecurityStakeholder(bytes16 security_id, bytes16 stakeholder_id);
     error InsufficientShares();
 
     function validateStakeholder(bytes16 stakeholder_id) internal view {

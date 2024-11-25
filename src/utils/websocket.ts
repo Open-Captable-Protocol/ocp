@@ -12,7 +12,7 @@ const TOPICS = {
     TxCreated: ethers.id("TxCreated(uint8,bytes)"),
     StakeholderCreated: "0x53df47344d1cdf2ddb4901af5df61e37e14606bb7c8cc004d65c7c83ab3d0693",
     StockClassCreated: "0xc7496d70298fcc793e1d058617af680232585e302f0185b14bba498b247a9c1d",
-    StockPlanCreated: ethers.id("StockPlanCreated(bytes16)"),
+    StockPlanCreated: ethers.id("StockPlanCreated(bytes16,uint256)"),
     // IssuerCreated: "0xb8cbde9f597f493a1b4d1c4db5fded9cd26293080750a0df6b7e7097f4b680dd", // We don't receive this event because by time an issuer is created and we add it to the listener we have already missed it.
 };
 
@@ -148,12 +148,14 @@ const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
             break;
         case TOPICS.StockPlanCreated:
             const stockPlanIdBytes = get(log, "topics.1", null);
-            if (!stockPlanIdBytes) {
+            const sharesReservedBytes = get(log, "topics.2", null);
+            if (!stockPlanIdBytes || !sharesReservedBytes) {
                 console.error("No stock plan id found");
                 return;
             }
             const [stockPlanIdBytes16] = abiCoder.decode(["bytes16"], stockPlanIdBytes);
-            await handleStockPlan(stockPlanIdBytes16);
+            const [sharesReserved] = abiCoder.decode(["uint256"], sharesReservedBytes);
+            await handleStockPlan(stockPlanIdBytes16, sharesReserved);
             break;
 
         default:

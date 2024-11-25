@@ -50,10 +50,20 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
     function testExerciseEquityCompensation() public {
         uint256 exerciseQuantity = 500;
 
-        vm.expectEmit(true, true, false, true, address(diamond));
-        emit TxHelper.TxCreated(TxType.EQUITY_COMPENSATION_EXERCISE, abi.encode(equityCompSecurityId, stockSecurityId, exerciseQuantity));
+        // Issue new stock position with exact quantity to exercise
+        bytes16 newStockSecurityId = 0xd3373e0a4dd940000000000000000003;
+        StockFacet(address(diamond)).issueStock(
+            stockClassId,
+            1e18, // share price
+            exerciseQuantity, // Must match exercise quantity
+            stakeholderId,
+            newStockSecurityId
+        );
 
-        EquityCompensationFacet(address(diamond)).exerciseEquityCompensation(equityCompSecurityId, stockSecurityId, exerciseQuantity);
+        vm.expectEmit(true, true, false, true, address(diamond));
+        emit TxHelper.TxCreated(TxType.EQUITY_COMPENSATION_EXERCISE, abi.encode(equityCompSecurityId, newStockSecurityId, exerciseQuantity));
+
+        EquityCompensationFacet(address(diamond)).exerciseEquityCompensation(equityCompSecurityId, newStockSecurityId, exerciseQuantity);
 
         // Verify equity comp position was updated
         EquityCompensationActivePosition memory position = EquityCompensationFacet(address(diamond)).getPosition(equityCompSecurityId);
@@ -85,5 +95,23 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
     function testFailInsufficientShares() public {
         EquityCompensationFacet(address(diamond)).exerciseEquityCompensation(equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY + 1);
+    }
+
+    function testFailWrongStakeholder() public {
+        // Create a different stakeholder with unique ID
+        bytes16 otherStakeholderId = createStakeholder();
+
+        // Issue stock to different stakeholder
+        bytes16 otherStockSecurityId = 0xd3373e0a4dd940000000000000000003;
+        StockFacet(address(diamond)).issueStock(
+            stockClassId,
+            1e18, // share price
+            500,
+            otherStakeholderId,
+            otherStockSecurityId
+        );
+
+        vm.expectRevert(abi.encodeWithSelector(ValidationLib.InvalidSecurityStakeholder.selector, otherStockSecurityId, stakeholderId));
+        EquityCompensationFacet(address(diamond)).exerciseEquityCompensation(equityCompSecurityId, otherStockSecurityId, 500);
     }
 }

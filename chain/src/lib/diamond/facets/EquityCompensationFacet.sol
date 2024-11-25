@@ -48,20 +48,29 @@ contract EquityCompensationFacet {
 
         // Validate equity compensation security exists and has sufficient quantity
         EquityCompensationActivePosition memory equityPosition = ds.equityCompensationActivePositions.securities[equity_comp_security_id];
+
+        if (quantity == 0) {
+            revert ValidationLib.InvalidQuantity();
+        }
         if (equityPosition.quantity == 0) {
-            revert ValidationLib.InvalidSecurity();
+            revert ValidationLib.InvalidSecurity(equity_comp_security_id);
         }
         if (equityPosition.quantity < quantity) {
             revert ValidationLib.InsufficientShares();
         }
 
-        // Validate stock security exists and belongs to same stakeholder
+        // Validate stock position exists and belongs to same stakeholder
         StockActivePosition memory stockPosition = ds.stockActivePositions.securities[resulting_stock_security_id];
-        if (stockPosition.quantity == 0) {
-            revert ValidationLib.InvalidSecurity();
+        if (stockPosition.stakeholder_id == bytes16(0)) {
+            revert ValidationLib.InvalidSecurity(resulting_stock_security_id);
         }
         if (stockPosition.stakeholder_id != equityPosition.stakeholder_id) {
-            revert ValidationLib.InvalidSecurity();
+            revert ValidationLib.InvalidSecurityStakeholder(resulting_stock_security_id, equityPosition.stakeholder_id);
+        }
+
+        // Validate stock position quantity matches quantity to exercise
+        if (stockPosition.quantity != quantity) {
+            revert ValidationLib.InvalidQuantity();
         }
 
         // Update the equity compensation position
