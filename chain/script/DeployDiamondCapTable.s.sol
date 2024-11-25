@@ -6,26 +6,18 @@ import "forge-std/console.sol";
 import "../src/lib/diamond/DiamondCapTableFactory.sol";
 
 contract DeployDiamondCapTableScript is Script {
-    // Anvil's first default account private key
-    uint256 constant ANVIL_PRIVATE_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
-    address deployer;
-
     function setUp() public {
-        console.log("Setting up DiamondCapTable deployment");
-        deployer = vm.addr(ANVIL_PRIVATE_KEY);
-        console.log("Deployer address:", deployer);
+        // Setup for Base Sepolia deployment
     }
 
     function run() external {
-        console.log("Deploying DiamondCapTable system");
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        console.log("Deploying DiamondCapTable system to Base Sepolia");
 
-        vm.startBroadcast(ANVIL_PRIVATE_KEY);
+        vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy the factory
         DiamondCapTableFactory factory = new DiamondCapTableFactory();
         console.log("DiamondCapTableFactory deployed at:", address(factory));
-
-        // Log the NFT facet address
         console.log("StakeholderNFTFacet deployed at:", factory.stakeholderNFTFacet());
 
         vm.stopBroadcast();
