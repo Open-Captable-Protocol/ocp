@@ -397,10 +397,13 @@ export const handleIssuerAuthorizedSharesAdjusted = async (issuer, issuerId, tim
     );
 };
 
-export const handleStockPlan = async (id) => {
+export const handleStockPlan = async (id, sharesReserved) => {
     console.log("StockPlanCreated Event Emitted!", id);
     const incomingStockPlanId = convertBytes16ToUUID(id);
-    const stockPlan = await updateStockPlanById(incomingStockPlanId, { is_onchain_synced: true });
+    const stockPlan = await updateStockPlanById(incomingStockPlanId, {
+        initial_shares_reserved: toDecimal(sharesReserved).toString(),
+        is_onchain_synced: true,
+    });
     console.log("✅ | StockPlan confirmation onchain ", stockPlan);
 };
 

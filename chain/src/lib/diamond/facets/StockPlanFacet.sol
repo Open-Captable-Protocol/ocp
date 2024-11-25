@@ -7,7 +7,7 @@ import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
 import { TxHelper, TxType } from "../DiamondTxHelper.sol";
 
 contract StockPlanFacet {
-    event StockPlanCreated(bytes16 indexed id);
+    event StockPlanCreated(bytes16 indexed id, uint256 shares_reserved);
     event StockPlanSharesReservedAdjusted(bytes16 indexed id, uint256 newSharesReserved);
 
     error StockPlanAlreadyExists(bytes16 stock_plan_id);
@@ -31,7 +31,7 @@ contract StockPlanFacet {
         ds.stockPlans.push(StockPlan({ stock_class_ids: _stock_class_ids, shares_reserved: _shares_reserved }));
         ds.stockPlanIndex[_id] = ds.stockPlans.length;
 
-        emit StockPlanCreated(_id);
+        emit StockPlanCreated(_id, _shares_reserved);
     }
 
     function adjustStockPlanPool(bytes16 stockPlanId, uint256 newSharesReserved) external {
