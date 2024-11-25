@@ -59,13 +59,13 @@ const main = async () => {
     const stakeholderId = "1c81483c-23fd-461f-aded-c73ef721b64e";
     const stockClassId = "f1ba685c-57ac-4d28-a9f3-574322337660";
     const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
-    let tokenId = null;
+    // let tokenId = null;
 
     const stakeholderWalletAddress = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
     const stkaeholderPK = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
 
     // console.log("🔑 | WALLET_PRIVATE_KEY", WALLET_PRIVATE_KEY);
-    await setup(issuerId, stakeholderId, stockClassId);
+    // await setup(issuerId, stakeholderId, stockClassId);
 
     const deployedIssuer = await Issuer.findById(issuerId);
 
@@ -77,7 +77,7 @@ const main = async () => {
         },
         async (log) => {
             console.log(log);
-            tokenId = get(log, "topics.3", null);
+            const tokenId = get(log, "topics.3", null);
             console.log("✅ | Minted tokenId", tokenId);
         }
     );
@@ -89,40 +89,21 @@ const main = async () => {
     // Link stakeholder address before minting
     const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholderId);
 
-    console.log("🔗 | Linking stakeholder wallet", stakeholderWalletAddress);
-    const tx = await diamond.linkStakeholderAddress(stakeholderIdBytes16, stakeholderWalletAddress);
-    await tx.wait();
-    console.log("✅ | linked stakeholder wallet");
+    // console.log("🔗 | Linking stakeholder wallet", stakeholderWalletAddress);
+    // const tx = await diamond.linkStakeholderAddress(stakeholderIdBytes16, stakeholderWalletAddress);
+    // await tx.wait();
+    // console.log("✅ | linked stakeholder wallet");
 
     await sleep(3000);
-    // const diamondWithStakeholderWallet = diamond.connect(new ethers.Wallet(stkaeholderPK, provider));
 
-    console.log("⏳ | Minting NFT");
-    // Cnnect to the stakeholder wallet to mint the NFT
-    const mintTx = await diamond.connect(new ethers.Wallet(stkaeholderPK, provider)).mint();
-    console.log("✅ | mintTx", mintTx);
-    await mintTx.wait();
+    // console.log("⏳ | Minting NFT");
+    // const mintTx = await diamond.connect(new ethers.Wallet(stkaeholderPK, provider)).mint();
+    // console.log("✅ | mintTx", mintTx);
+    // await mintTx.wait();
 
-    // Get tokenURI after minting
-    console.log("⏳ | Fetching token URI");
-
-    // Convert stakeholderId (bytes16) to tokenId (uint256)
-    console.log("🔑 | stakeholderIdBytes16:", stakeholderIdBytes16);
-
-    // Call getTokenURI directly with bytes16
-    const tokenURI = await diamond.getTokenURI(stakeholderIdBytes16);
-    console.log("✅ | Raw tokenURI:", tokenURI);
-
-    // Parse the base64 data URI
-    const json = tokenURI.replace("data:application/json;base64,", "");
-    const decodedData = Buffer.from(json, "base64").toString("utf-8");
-    const metadata = JSON.parse(decodedData);
-
-    console.log("✅ | Decoded Metadata:", JSON.stringify(metadata, null, 2));
-
-    // Save metadata to a file
-    await fs.writeFile(`./nft-metadata-${stakeholderId}.json`, JSON.stringify(metadata, null, 2));
-    console.log(`✅ | Metadata saved to nft-metadata-${stakeholderId}.json`);
+    // Get positions directly using StakeholderFacet's function
+    // const positions = await diamond.getStakeholderPositions(stakeholderIdBytes16);
+    console.log("✅ | Stakeholder positions:", positions);
 };
 
 main()
