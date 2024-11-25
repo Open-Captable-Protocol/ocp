@@ -61,4 +61,37 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         vm.prank(stakeholderWallet);
         StakeholderNFTFacet(address(diamond)).mint();
     }
+
+    function testTokenURI() public {
+        // Link address first
+        StakeholderFacet(address(diamond)).linkStakeholderAddress(stakeholderId, stakeholderWallet);
+
+        // Mint NFT
+        vm.prank(stakeholderWallet);
+        StakeholderNFTFacet(address(diamond)).mint();
+
+        // Get tokenId from stakeholderId
+        uint256 tokenId = uint256(bytes32(stakeholderId));
+
+        // Get URI
+        string memory uri = StakeholderNFTFacet(address(diamond)).tokenURI(tokenId);
+        console.log("Token URI:", uri);
+
+        // Let's also log the positions directly
+        StakeholderPositions memory positions = StakeholderFacet(address(diamond)).getStakeholderPositions(stakeholderId);
+
+        console.log("\nActive Positions:");
+        console.log("Stock Positions:", positions.stocks.length);
+        if (positions.stocks.length > 0) {
+            for (uint i = 0; i < positions.stocks.length; i++) {
+                console.log("  Stock Position", i);
+                console.log("    Quantity:", positions.stocks[i].quantity);
+                console.log("    Share Price:", positions.stocks[i].share_price);
+            }
+        }
+
+        console.log("Warrant Positions:", positions.warrants.length);
+        console.log("Convertible Positions:", positions.convertibles.length);
+        console.log("Equity Compensation Positions:", positions.equityCompensations.length);
+    }
 }

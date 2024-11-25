@@ -78,21 +78,29 @@ contract StakeholderNFTFacet is ERC721 {
             );
     }
 
-    // Helper functions for JSON conversion (to be implemented)
+    // Helper functions for JSON conversion
     function _getStockPositionsJson(StockActivePosition[] memory positions) internal pure returns (string memory) {
-        // TODO: Implement
+        if (positions.length == 0) return '{"trait_type": "Stock Positions", "value": "0"}';
+
+        return string(abi.encodePacked('{"trait_type": "Stock Positions", "value": "', toString(positions.length), '"}'));
     }
 
     function _getWarrantPositionsJson(WarrantActivePosition[] memory positions) internal pure returns (string memory) {
-        // TODO: Implement
+        if (positions.length == 0) return '{"trait_type": "Warrant Positions", "value": "0"}';
+
+        return string(abi.encodePacked('{"trait_type": "Warrant Positions", "value": "', toString(positions.length), '"}'));
     }
 
     function _getConvertiblePositionsJson(ConvertibleActivePosition[] memory positions) internal pure returns (string memory) {
-        // TODO: Implement
+        if (positions.length == 0) return '{"trait_type": "Convertible Positions", "value": "0"}';
+
+        return string(abi.encodePacked('{"trait_type": "Convertible Positions", "value": "', toString(positions.length), '"}'));
     }
 
     function _getEquityCompPositionsJson(EquityCompensationActivePosition[] memory positions) internal pure returns (string memory) {
-        // TODO: Implement
+        if (positions.length == 0) return '{"trait_type": "Equity Compensation Positions", "value": "0"}';
+
+        return string(abi.encodePacked('{"trait_type": "Equity Compensation Positions", "value": "', toString(positions.length), '"}'));
     }
 
     function toString(uint256 value) internal pure returns (string memory) {
