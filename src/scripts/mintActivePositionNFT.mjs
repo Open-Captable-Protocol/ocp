@@ -65,7 +65,7 @@ const main = async () => {
     const stkaeholderPK = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
 
     // console.log("🔑 | WALLET_PRIVATE_KEY", WALLET_PRIVATE_KEY);
-    // await setup(issuerId, stakeholderId, stockClassId);
+    await setup(issuerId, stakeholderId, stockClassId);
 
     const deployedIssuer = await Issuer.findById(issuerId);
 
@@ -89,21 +89,41 @@ const main = async () => {
     // Link stakeholder address before minting
     const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholderId);
 
-    // console.log("🔗 | Linking stakeholder wallet", stakeholderWalletAddress);
-    // const tx = await diamond.linkStakeholderAddress(stakeholderIdBytes16, stakeholderWalletAddress);
-    // await tx.wait();
-    // console.log("✅ | linked stakeholder wallet");
+    console.log("🔗 | Linking stakeholder wallet", stakeholderWalletAddress);
+    const tx = await diamond.linkStakeholderAddress(stakeholderIdBytes16, stakeholderWalletAddress);
+    await tx.wait();
+    console.log("✅ | linked stakeholder wallet");
 
     await sleep(3000);
 
-    // console.log("⏳ | Minting NFT");
-    // const mintTx = await diamond.connect(new ethers.Wallet(stkaeholderPK, provider)).mint();
-    // console.log("✅ | mintTx", mintTx);
-    // await mintTx.wait();
+    console.log("⏳ | Minting NFT");
+    const mintTx = await diamond.connect(new ethers.Wallet(stkaeholderPK, provider)).mint();
+    console.log("✅ | mintTx", mintTx);
+    const receipt = await mintTx.wait();
 
-    // Get positions directly using StakeholderFacet's function
-    // const positions = await diamond.getStakeholderPositions(stakeholderIdBytes16);
-    console.log("✅ | Stakeholder positions:", positions);
+    // Get tokenId from the Transfer event
+    const transferEvent = receipt.logs.find(
+        log => log.topics[0] === ethers.id("Transfer(address,address,uint256)")
+    );
+    const tokenId = transferEvent.topics[3];  // The tokenId is the third topic
+
+    console.log("⏳ | Testing getter function");
+    try {
+        const positions = await diamond.getStakeholderPositions(stakeholderIdBytes16);
+        console.log("✅ | Stakeholder positions:", positions);
+    } catch (error) {
+        console.log("❌ | Error calling getStakeholderPositions:", error.message);
+    }
+
+    // Then try tokenURI...
+    console.log("⏳ | Fetching tokenURI for tokenId:", tokenId);
+    const tokenURI = await diamond.tokenURI(tokenId);
+    console.log("✅ | Raw tokenURI:", tokenURI);
+
+    // Decode the base64 data URI
+    const base64Data = tokenURI.split(',')[1];
+    const decodedData = Buffer.from(base64Data, 'base64').toString();
+    console.log("✅ | Decoded metadata:", JSON.parse(decodedData));
 };
 
 main()

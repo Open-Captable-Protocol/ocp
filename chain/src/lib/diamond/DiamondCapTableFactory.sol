@@ -15,6 +15,7 @@ import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { DiamondCapTable } from "./DiamondCapTable.sol";
 import "forge-std/console.sol";
 import { StakeholderNFTFacet } from "./facets/StakeholderNFTFacet.sol";
+import "forge-std/console2.sol";
 
 contract DiamondCapTableFactory {
     event CapTableCreated(address indexed capTable, bytes16 indexed issuerId);
@@ -63,9 +64,10 @@ contract DiamondCapTableFactory {
         });
 
         // StakeholderFacet
-        bytes4[] memory stakeholderSelectors = new bytes4[](2);
+        bytes4[] memory stakeholderSelectors = new bytes4[](3);
         stakeholderSelectors[0] = StakeholderFacet.createStakeholder.selector;
         stakeholderSelectors[1] = StakeholderFacet.linkStakeholderAddress.selector;
+        stakeholderSelectors[2] = StakeholderFacet.getStakeholderPositions.selector;
         facetCuts[1] = IDiamondCut.FacetCut({
             facetAddress: stakeholderFacet,
             action: IDiamondCut.FacetCutAction.Add,
@@ -131,7 +133,18 @@ contract DiamondCapTableFactory {
         // StakeholderNFTFacet
         bytes4[] memory stakeholderNFTSelectors = new bytes4[](2);
         stakeholderNFTSelectors[0] = StakeholderNFTFacet.mint.selector;
-        stakeholderNFTSelectors[1] = StakeholderNFTFacet.getTokenURI.selector;
+        stakeholderNFTSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
+        // stakeholderNFTSelectors[1] = bytes4(keccak256("tokenURI(uint256)"));
+        // stakeholderNFTSelectors[2] = bytes4(keccak256("balanceOf(address)"));
+        // stakeholderNFTSelectors[3] = bytes4(keccak256("ownerOf(uint256)"));
+        // stakeholderNFTSelectors[4] = bytes4(keccak256("name()"));
+        // stakeholderNFTSelectors[5] = bytes4(keccak256("symbol()"));
+
+        // Add debug logs here
+        console2.logBytes4(bytes4(keccak256("tokenURI(uint256)")));
+        for (uint i = 0; i < stakeholderNFTSelectors.length; i++) {
+            console2.logBytes4(stakeholderNFTSelectors[i]);
+        }
 
         facetCuts[8] = IDiamondCut.FacetCut({
             facetAddress: stakeholderNFTFacet,

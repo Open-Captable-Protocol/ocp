@@ -4,15 +4,6 @@ pragma solidity ^0.8.20;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/lib/diamond/DiamondCapTableFactory.sol";
-import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
-import { IssuerFacet } from "../src/lib/diamond/facets/IssuerFacet.sol";
-import { StakeholderFacet } from "../src/lib/diamond/facets/StakeholderFacet.sol";
-import { StockClassFacet } from "../src/lib/diamond/facets/StockClassFacet.sol";
-import { StockFacet } from "../src/lib/diamond/facets/StockFacet.sol";
-import { ConvertiblesFacet } from "../src/lib/diamond/facets/ConvertiblesFacet.sol";
-import { EquityCompensationFacet } from "../src/lib/diamond/facets/EquityCompensationFacet.sol";
-import { StockPlanFacet } from "../src/lib/diamond/facets/StockPlanFacet.sol";
-import { WarrantFacet } from "../src/lib/diamond/facets/WarrantFacet.sol";
 
 contract DeployDiamondCapTableScript is Script {
     // Anvil's first default account private key
@@ -33,6 +24,10 @@ contract DeployDiamondCapTableScript is Script {
         // Deploy the factory
         DiamondCapTableFactory factory = new DiamondCapTableFactory();
         console.log("DiamondCapTableFactory deployed at:", address(factory));
+
+        // Log the NFT facet address
+        console.log("StakeholderNFTFacet deployed at:", factory.stakeholderNFTFacet());
+
         vm.stopBroadcast();
     }
 }
