@@ -3,17 +3,17 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../src/core/DiamondCapTableFactory.sol";
+import "../src/core/CapTableFactory.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
-import { IssuerFacet } from "../src/facets/IssuerFacet.sol";
-import { StakeholderFacet } from "../src/facets/StakeholderFacet.sol";
-import { StockClassFacet } from "../src/facets/StockClassFacet.sol";
-import { StockFacet } from "../src/facets/StockFacet.sol";
-import { ConvertiblesFacet } from "../src/facets/ConvertiblesFacet.sol";
-import { EquityCompensationFacet } from "../src/facets/EquityCompensationFacet.sol";
-import { StockPlanFacet } from "../src/facets/StockPlanFacet.sol";
-import { WarrantFacet } from "../src/facets/WarrantFacet.sol";
-import { StakeholderNFTFacet } from "../src/facets/StakeholderNFTFacet.sol";
+import { IssuerFacet } from "@facets/IssuerFacet.sol";
+import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
+import { StockClassFacet } from "@facets/StockClassFacet.sol";
+import { StockFacet } from "@facets/StockFacet.sol";
+import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
+import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
+import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
+import { WarrantFacet } from "@facets/WarrantFacet.sol";
+import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 
 contract DeployDiamondCapTableScript is Script {
     function setUp() public {
@@ -138,7 +138,7 @@ contract DeployDiamondCapTableScript is Script {
         }
 
         // Deploy factory with facet addresses
-        DiamondCapTableFactory factory = new DiamondCapTableFactory(
+        CapTableFactory factory = new CapTableFactory(
             diamondCutFacet,
             issuerFacet,
             stakeholderFacet,

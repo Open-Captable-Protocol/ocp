@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import { StorageLib, Storage } from "@core/Storage.sol";
 import { StockPlan } from "@libraries/Structs.sol";
 import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
-import { TxHelper, TxType } from "@libraries/DiamondTxHelper.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 
 contract StockPlanFacet {
     event StockPlanCreated(bytes16 indexed id, uint256 shares_reserved);

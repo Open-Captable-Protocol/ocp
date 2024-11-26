@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./DiamondTestBase.sol";
+import "./TestBase.sol";
 import { StorageLib } from "@core/Storage.sol";
-import { TxHelper, TxType } from "@libraries/DiamondTxHelper.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { WarrantActivePosition } from "@libraries/Structs.sol";
 
@@ -13,13 +13,13 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         uint256 quantity = 1000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        vm.expectEmit(true, true, false, true, address(diamond));
+        vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(TxType.WARRANT_ISSUANCE, abi.encode(stakeholderId, quantity, securityId));
 
-        WarrantFacet(address(diamond)).issueWarrant(stakeholderId, quantity, securityId);
+        WarrantFacet(address(capTable)).issueWarrant(stakeholderId, quantity, securityId);
 
         // Verify position was created correctly
-        WarrantActivePosition memory position = WarrantFacet(address(diamond)).getWarrantPosition(securityId);
+        WarrantActivePosition memory position = WarrantFacet(address(capTable)).getWarrantPosition(securityId);
         assertEq(position.quantity, quantity);
         assertEq(position.stakeholder_id, stakeholderId);
     }
@@ -29,7 +29,7 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
         // Just let it fail without expectRevert
-        WarrantFacet(address(diamond)).issueWarrant(invalidStakeholderId, 1000, securityId);
+        WarrantFacet(address(capTable)).issueWarrant(invalidStakeholderId, 1000, securityId);
     }
 
     function testFailZeroQuantity() public {
@@ -37,6 +37,6 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
         // Just let it fail without expectRevert
-        WarrantFacet(address(diamond)).issueWarrant(stakeholderId, 0, securityId);
+        WarrantFacet(address(capTable)).issueWarrant(stakeholderId, 0, securityId);
     }
 }

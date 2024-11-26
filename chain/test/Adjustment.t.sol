@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./DiamondTestBase.sol";
-import { TxHelper, TxType } from "@libraries/DiamondTxHelper.sol";
+import "./TestBase.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 
 contract DiamondAdjustmentTest is DiamondTestBase {
     bytes16 public stockClassId;
@@ -20,34 +20,34 @@ contract DiamondAdjustmentTest is DiamondTestBase {
         uint256 newSharesAuthorized = 2000000;
 
         // Expect both events in order
-        vm.expectEmit(true, false, false, true, address(diamond));
+        vm.expectEmit(true, false, false, true, address(capTable));
         emit IssuerAuthorizedSharesAdjusted(newSharesAuthorized);
 
-        vm.expectEmit(true, true, false, true, address(diamond));
+        vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(TxType.ISSUER_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(newSharesAuthorized));
 
-        IssuerFacet(payable(address(diamond))).adjustAuthorizedShares(newSharesAuthorized);
+        IssuerFacet(payable(address(capTable))).adjustAuthorizedShares(newSharesAuthorized);
     }
 
     function test_AdjustStockClassAuthorizedShares() public {
         uint256 newSharesAuthorized = 2000000;
 
-        vm.expectEmit(true, true, false, true, address(diamond));
+        vm.expectEmit(true, true, false, true, address(capTable));
         emit StockClassAuthorizedSharesAdjusted(stockClassId, newSharesAuthorized);
 
-        vm.expectEmit(true, true, false, true, address(diamond));
+        vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(newSharesAuthorized));
 
-        StockClassFacet(payable(address(diamond))).adjustAuthorizedShares(stockClassId, newSharesAuthorized);
+        StockClassFacet(payable(address(capTable))).adjustAuthorizedShares(stockClassId, newSharesAuthorized);
     }
 
     function test_AdjustStockPlanPool() public {
         uint256 newSharesReserved = 200000;
 
-        vm.expectEmit(true, true, false, true, address(diamond));
+        vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(TxType.STOCK_PLAN_POOL_ADJUSTMENT, abi.encode(newSharesReserved));
 
-        StockPlanFacet(payable(address(diamond))).adjustStockPlanPool(stockPlanId, newSharesReserved);
+        StockPlanFacet(payable(address(capTable))).adjustStockPlanPool(stockPlanId, newSharesReserved);
     }
 
     function test_RevertWhen_AdjustingNonExistentStockClass() public {
@@ -55,7 +55,7 @@ contract DiamondAdjustmentTest is DiamondTestBase {
         uint256 newSharesAuthorized = 2000000;
 
         vm.expectRevert(abi.encodeWithSelector(StockClassFacet.StockClassNotFound.selector, invalidStockClassId));
-        StockClassFacet(payable(address(diamond))).adjustAuthorizedShares(invalidStockClassId, newSharesAuthorized);
+        StockClassFacet(payable(address(capTable))).adjustAuthorizedShares(invalidStockClassId, newSharesAuthorized);
     }
 
     function test_RevertWhen_AdjustingNonExistentStockPlan() public {
@@ -63,6 +63,6 @@ contract DiamondAdjustmentTest is DiamondTestBase {
         uint256 newSharesReserved = 200000;
 
         vm.expectRevert(abi.encodeWithSelector(StockPlanFacet.StockPlanNotFound.selector, invalidStockPlanId));
-        StockPlanFacet(payable(address(diamond))).adjustStockPlanPool(invalidStockPlanId, newSharesReserved);
+        StockPlanFacet(payable(address(capTable))).adjustStockPlanPool(invalidStockPlanId, newSharesReserved);
     }
 }

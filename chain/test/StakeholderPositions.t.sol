@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./DiamondTestBase.sol";
+import "./TestBase.sol";
 import { StockActivePosition, WarrantActivePosition, ConvertibleActivePosition, EquityCompensationActivePosition, StakeholderPositions } from "@libraries/Structs.sol";
 
 contract DiamondStakeholderPositionsTest is DiamondTestBase {
@@ -23,19 +23,19 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue stock
         stockSecurityId = 0xd3373e0a4dd940000000000000000001;
-        StockFacet(address(diamond)).issueStock(stockClassId, 1e18, 1000, stakeholderId, stockSecurityId);
+        StockFacet(address(capTable)).issueStock(stockClassId, 1e18, 1000, stakeholderId, stockSecurityId);
 
         // Issue convertible
         convertibleSecurityId = 0xd3373e0a4dd940000000000000000002;
-        ConvertiblesFacet(address(diamond)).issueConvertible(stakeholderId, 1000000, convertibleSecurityId);
+        ConvertiblesFacet(address(capTable)).issueConvertible(stakeholderId, 1000000, convertibleSecurityId);
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000003;
-        EquityCompensationFacet(address(diamond)).issueEquityCompensation(stakeholderId, stockClassId, stockPlanId, 1000, equityCompSecurityId);
+        EquityCompensationFacet(address(capTable)).issueEquityCompensation(stakeholderId, stockClassId, stockPlanId, 1000, equityCompSecurityId);
     }
 
     function testGetStakeholderPositions() public {
-        StakeholderPositions memory positions = StakeholderFacet(address(diamond)).getStakeholderPositions(stakeholderId);
+        StakeholderPositions memory positions = StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
 
         // Verify stock position
         assertEq(positions.stocks.length, 1);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { DiamondCapTable } from "./DiamondCapTable.sol";
+import { CapTable } from "./CapTable.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { IssuerFacet } from "@facets/IssuerFacet.sol";
@@ -15,7 +15,7 @@ import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import "forge-std/console.sol";
 
-contract DiamondCapTableFactory {
+contract CapTableFactory {
     event CapTableCreated(address indexed capTable, bytes16 indexed issuerId);
 
     address[] public capTables;
@@ -68,7 +68,7 @@ contract DiamondCapTableFactory {
         console.log("factory address (this): ", address(this));
 
         // Make the factory the owner, not msg.sender
-        DiamondCapTable diamond = new DiamondCapTable(address(this), diamondCutFacet);
+        CapTable diamond = new CapTable(address(this), diamondCutFacet);
 
         // Create facet cuts in memory
         IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](9);

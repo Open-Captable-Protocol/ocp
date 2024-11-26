@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import { StorageLib, Storage } from "@core/Storage.sol";
 import { StockClass } from "@libraries/Structs.sol";
-import { TxHelper, TxType } from "@libraries/DiamondTxHelper.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
 
 contract StockClassFacet {

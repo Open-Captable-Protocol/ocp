@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
-import "@core/DiamondCapTable.sol";
+import "@core/CapTable.sol";
 import "@facets/IssuerFacet.sol";
 import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
 import { StockClassFacet } from "@facets/StockClassFacet.sol";
@@ -29,7 +29,7 @@ contract DiamondTestBase is Test {
     ConvertiblesFacet public convertiblesFacet;
     EquityCompensationFacet public equityCompensationFacet;
     StockPlanFacet public stockPlanFacet;
-    DiamondCapTable public diamond;
+    CapTable public capTable;
     WarrantFacet public warrantFacet;
     StakeholderNFTFacet public stakeholderNFTFacet;
 
@@ -48,7 +48,7 @@ contract DiamondTestBase is Test {
         // Deploy facets
         diamondCutFacet = new DiamondCutFacet();
         issuerFacet = new IssuerFacet();
-        diamond = new DiamondCapTable(contractOwner, address(diamondCutFacet));
+        capTable = new CapTable(contractOwner, address(diamondCutFacet));
         stakeholderFacet = new StakeholderFacet();
         stockClassFacet = new StockClassFacet();
         stockFacet = new StockFacet();
@@ -160,10 +160,10 @@ contract DiamondTestBase is Test {
             functionSelectors: nftSelectors
         });
 
-        DiamondCutFacet(address(diamond)).diamondCut(cut, address(0), "");
+        DiamondCutFacet(address(capTable)).diamondCut(cut, address(0), "");
 
         // Initialize issuer
-        IssuerFacet(payable(address(diamond))).initializeIssuer(issuerId, issuerInitialSharesAuthorized);
+        IssuerFacet(payable(address(capTable))).initializeIssuer(issuerId, issuerInitialSharesAuthorized);
     }
 
     // Common helper functions
@@ -173,11 +173,11 @@ contract DiamondTestBase is Test {
         // Debug log before creation
         console.log("Before creation - index:", StorageLib.get().stakeholderIndex[stakeholderId]);
 
-        vm.expectEmit(true, false, false, false, address(diamond));
+        vm.expectEmit(true, false, false, false, address(capTable));
         emit StakeholderCreated(stakeholderId);
 
         // Call through the diamond proxy instead of using delegatecall
-        StakeholderFacet(address(diamond)).createStakeholder(stakeholderId);
+        StakeholderFacet(address(capTable)).createStakeholder(stakeholderId);
 
         // Debug log after creation
         console.log("After creation - index:", StorageLib.get().stakeholderIndex[stakeholderId]);
@@ -192,10 +192,10 @@ contract DiamondTestBase is Test {
         uint256 pricePerShare = 1e18;
         uint256 initialSharesAuthorized = 1000000;
 
-        vm.expectEmit(true, true, true, true, address(diamond));
+        vm.expectEmit(true, true, true, true, address(capTable));
         emit StockClassCreated(stockClassId, classType, pricePerShare, initialSharesAuthorized);
 
-        StockClassFacet(payable(address(diamond))).createStockClass(stockClassId, classType, pricePerShare, initialSharesAuthorized);
+        StockClassFacet(payable(address(capTable))).createStockClass(stockClassId, classType, pricePerShare, initialSharesAuthorized);
 
         return stockClassId;
     }
@@ -205,16 +205,16 @@ contract DiamondTestBase is Test {
         bytes16 stockPlanId = 0xd3373e0a4dd940000000000000000007;
         uint256 sharesReserved = 100000;
 
-        vm.expectEmit(true, false, false, true, address(diamond));
+        vm.expectEmit(true, false, false, true, address(capTable));
         emit StockPlanCreated(stockPlanId, sharesReserved);
 
-        StockPlanFacet(payable(address(diamond))).createStockPlan(stockPlanId, stockClassIds, sharesReserved);
+        StockPlanFacet(payable(address(capTable))).createStockPlan(stockPlanId, stockClassIds, sharesReserved);
 
         return stockPlanId;
     }
 
     // Add this helper function alongside the other helpers
     function linkStakeholderAddress(bytes16 _stakeholderId, address _wallet) public {
-        StakeholderFacet(payable(address(diamond))).linkStakeholderAddress(_stakeholderId, _wallet);
+        StakeholderFacet(payable(address(capTable))).linkStakeholderAddress(_stakeholderId, _wallet);
     }
 }

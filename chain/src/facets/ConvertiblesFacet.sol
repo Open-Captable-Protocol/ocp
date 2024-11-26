@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import { StorageLib, Storage } from "@core/Storage.sol";
 import { ConvertibleActivePosition } from "@libraries/Structs.sol";
-import { TxHelper, TxType } from "@libraries/DiamondTxHelper.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 
 contract ConvertiblesFacet {
