@@ -74,7 +74,7 @@ contract CapTableFactory {
         // IssuerFacet
         bytes4[] memory issuerSelectors = new bytes4[](2);
         issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
-        issuerSelectors[1] = IssuerFacet.adjustAuthorizedShares.selector;
+        issuerSelectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
         cuts[0] = IDiamondCut.FacetCut({ facetAddress: issuerFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: issuerSelectors });
 
         // StakeholderFacet

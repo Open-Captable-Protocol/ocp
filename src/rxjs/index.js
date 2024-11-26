@@ -1,6 +1,5 @@
 import { from, lastValueFrom } from "rxjs";
 import { scan, tap, last, map } from "rxjs/operators";
-import { getAllStateMachineObjectsById } from "../db/operations/read.js";
 import { dashboardInitialState, processDashboardConvertibleIssuance, processDashboardStockIssuance } from "./dashboard.js";
 import {
     captableInitialState,
@@ -376,9 +375,7 @@ export const processEquityCompensationExercise = (state, transaction) => {
     };
 };
 
-export const dashboardStats = async (issuerId) => {
-    const { issuer, stockClasses, stockPlans, stakeholders, transactions } = await getAllStateMachineObjectsById(issuerId);
-
+export const dashboardStats = async ({ issuer, stockClasses, stockPlans, stakeholders, transactions }) => {
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
         const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
@@ -456,9 +453,7 @@ export const dashboardStats = async (issuerId) => {
     return finalState;
 };
 
-export const captableStats = async (issuerId) => {
-    const { issuer, stockClasses, stockPlans, stakeholders, transactions } = await getAllStateMachineObjectsById(issuerId);
-
+export const captableStats = async ({ issuer, stockClasses, stockPlans, stakeholders, transactions }) => {
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
         const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);

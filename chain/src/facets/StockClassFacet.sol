@@ -37,8 +37,6 @@ contract StockClassFacet {
     }
 
     function adjustAuthorizedShares(bytes16 stockClassId, uint256 newSharesAuthorized) external {
-        LibDiamond.enforceIsContractOwner();
-
         Storage storage ds = StorageLib.get();
         uint256 stockClassIndex = ds.stockClassIndex[stockClassId];
 

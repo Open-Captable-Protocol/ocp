@@ -18,7 +18,6 @@ contract EquityCompensationFacet {
 
         ValidationLib.validateStakeholder(stakeholder_id);
         ValidationLib.validateStockClass(stock_class_id);
-        ValidationLib.validateStockPlan(stock_plan_id);
         ValidationLib.validateQuantity(quantity);
 
         // Create and store position

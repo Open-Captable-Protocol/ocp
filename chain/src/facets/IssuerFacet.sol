@@ -13,7 +13,6 @@ contract IssuerFacet {
     event IssuerAuthorizedSharesAdjusted(uint256 newSharesAuthorized);
 
     function initializeIssuer(bytes16 id, uint256 initial_shares_authorized) external {
-        LibDiamond.enforceIsContractOwner();
         Storage storage ds = StorageLib.get();
 
         if (ds.issuer.shares_authorized != 0) {
@@ -23,9 +22,7 @@ contract IssuerFacet {
         ds.issuer = Issuer({ id: id, shares_issued: 0, shares_authorized: initial_shares_authorized });
     }
 
-    function adjustAuthorizedShares(uint256 newSharesAuthorized) external {
-        LibDiamond.enforceIsContractOwner();
-
+    function adjustIssuerAuthorizedShares(uint256 newSharesAuthorized) external {
         Storage storage ds = StorageLib.get();
 
         ds.issuer.shares_authorized = newSharesAuthorized;

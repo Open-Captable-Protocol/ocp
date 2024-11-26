@@ -7,8 +7,7 @@ import { ethers } from "ethers";
 import Issuer from "../db/objects/Issuer.js";
 import getProvider from "../chain-operations/getProvider.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
-import { connectDB } from "../db/config/mongoose.js";
-import fs from "fs/promises";
+import { connectDB } from "../db/config/mongoose.ts";
 import get from "lodash/get.js";
 
 const combinedABI = [...STAKEHOLDER_FACET.abi, ...STAKEHOLDER_NFT_FACET.abi];

@@ -17,10 +17,23 @@ import Factory from "../db/objects/Factory.js";
 
 setupEnv();
 
+export const facetsABI = [
+    ...STAKEHOLDER_FACET.abi,
+    ...ISSUER_FACET.abi,
+    ...STOCK_CLASS_FACET.abi,
+    ...STOCK_FACET.abi,
+    ...STOCK_PLAN_FACET.abi,
+    ...CONVERTIBLE_FACET.abi,
+    ...WARRANT_FACET.abi,
+    ...EQUITY_COMPENSATION_FACET.abi,
+    ...STAKEHOLDER_NFT_FACET.abi,
+];
+
+const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
+const provider = getProvider();
+export const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
+
 async function deployCapTable(issuerId, initial_shares_authorized) {
-    const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
-    const provider = getProvider();
-    const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
     console.log("🗽 | Wallet address: ", wallet.address);
 
     const factory = await findOne(Factory, { version: "DIAMOND" });
@@ -45,17 +58,6 @@ async function deployCapTable(issuerId, initial_shares_authorized) {
     console.log("✅ | Diamond address: ", diamondAddress);
 
     // Diamond Facets ABI
-    const facetsABI = [
-        ...STAKEHOLDER_FACET.abi,
-        ...ISSUER_FACET.abi,
-        ...STOCK_CLASS_FACET.abi,
-        ...STOCK_FACET.abi,
-        ...STOCK_PLAN_FACET.abi,
-        ...CONVERTIBLE_FACET.abi,
-        ...WARRANT_FACET.abi,
-        ...EQUITY_COMPENSATION_FACET.abi,
-        ...STAKEHOLDER_NFT_FACET.abi,
-    ];
 
     return {
         contract: new ethers.Contract(diamondAddress, facetsABI, wallet),

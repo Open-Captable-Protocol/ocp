@@ -35,8 +35,6 @@ contract StockPlanFacet {
     }
 
     function adjustStockPlanPool(bytes16 stockPlanId, uint256 newSharesReserved) external {
-        LibDiamond.enforceIsContractOwner();
-
         Storage storage ds = StorageLib.get();
         uint256 stockPlanIndex = ds.stockPlanIndex[stockPlanId];
 
