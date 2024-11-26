@@ -42,9 +42,8 @@ async function deployCapTable(issuerId, initial_shares_authorized) {
     const diamondAddress = await capTableFactory.capTables(capTableCount - BigInt(1));
     console.log("✅ | Diamond address: ", diamondAddress);
 
-    // Create a combined ABI from all facets
-    const combinedABI = [
-        ...CAP_TABLE.abi,
+    // Diamond Facets ABI
+    const facetsABI = [
         ...STAKEHOLDER_FACET.abi,
         ...ISSUER_FACET.abi,
         ...STOCK_CLASS_FACET.abi,
@@ -56,11 +55,8 @@ async function deployCapTable(issuerId, initial_shares_authorized) {
         ...STAKEHOLDER_NFT_FACET.abi,
     ];
 
-    // Create the diamond contract with combined ABI
-    const diamond = new ethers.Contract(diamondAddress, combinedABI, wallet);
-
     return {
-        contract: diamond, // Main diamond contract with all facets
+        contract: new ethers.Contract(diamondAddress, facetsABI, wallet),
         address: diamondAddress,
         deployHash: tx.hash,
     };

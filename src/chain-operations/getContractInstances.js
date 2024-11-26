@@ -11,6 +11,7 @@ import CONVERTIBLE_FACET from "../../chain/out/ConvertiblesFacet.sol/Convertible
 import WARRANT_FACET from "../../chain/out/WarrantFacet.sol/WarrantFacet.json";
 import EQUITY_COMPENSATION_FACET from "../../chain/out/EquityCompensationFacet.sol/EquityCompensationFacet.json";
 import STOCK_PLAN_FACET from "../../chain/out/StockPlanFacet.sol/StockPlanFacet.json";
+import STAKEHOLDER_NFT_FACET from "../../chain/out/StakeholderNFTFacet.sol/StakeholderNFTFacet.json";
 
 setupEnv();
 
@@ -28,6 +29,7 @@ export const getContractInstance = (address) => {
         ...CONVERTIBLE_FACET.abi,
         ...WARRANT_FACET.abi,
         ...EQUITY_COMPENSATION_FACET.abi,
+        ...STAKEHOLDER_NFT_FACET.abi,
     ];
 
     const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
