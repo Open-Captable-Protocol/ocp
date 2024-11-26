@@ -39,19 +39,10 @@ export const getTotalNumberOfStockClasses = async (contract) => {
     return totalStockClasses.toString();
 };
 
-export const convertAndAdjustStockClassAuthorizedSharesOnchain = async (
-    contract,
-    { stock_class_id, new_shares_authorized, board_approval_date = "", stakeholder_approval_date = "", comments = [] }
-) => {
+export const convertAndAdjustStockClassAuthorizedSharesOnchain = async (contract, { stock_class_id, new_shares_authorized }) => {
     const stockClassIdBytes16 = convertUUIDToBytes16(stock_class_id);
     const newSharesAuthorizedScaled = toScaledBigNumber(new_shares_authorized);
 
-    const tx = await contract.adjustStockClassAuthorizedShares(
-        stockClassIdBytes16,
-        newSharesAuthorizedScaled,
-        comments,
-        board_approval_date,
-        stakeholder_approval_date
-    );
+    const tx = await contract.adjustAuthorizedShares(stockClassIdBytes16, newSharesAuthorizedScaled);
     await tx.wait();
 };
