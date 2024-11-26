@@ -1,10 +1,10 @@
 {
   "name": "open-captable-protocol",
-  "version": "1.0.0-alpha.0",
+  "version": "2.0.1",
   "private": true,
-  "author": "Alex Palmer, Victor Mimo",
+  "author": "Victor Mimo, Adam Momen, Fairmint Inc., Plural Everything Inc.",
   "license": "MIT",
-  "description": "Transfer Agent Protocol onchain cap table",
+  "description": "Open Cap Table Protocol, fairmint.com fork",
   "type": "module",
   "scripts": {
     "migrate": "npx tsx src/scripts/migrate.js",
