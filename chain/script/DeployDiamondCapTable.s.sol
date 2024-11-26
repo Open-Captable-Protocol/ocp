@@ -19,6 +19,61 @@ contract DeployDiamondCapTableScript is Script {
     function setUp() public {
         // Setup for Base Sepolia deployment
     }
+    function checkEnv(
+        address diamondCutFacet,
+        address issuerFacet,
+        address stakeholderFacet,
+        address stockClassFacet,
+        address stockFacet,
+        address convertiblesFacet,
+        address equityCompensationFacet,
+        address stockPlanFacet,
+        address warrantFacet,
+        address stakeholderNFTFacet
+    ) public returns (bool) {
+        // check one by one
+        if (diamondCutFacet == address(0)) {
+            console.log("DIAMOND_CUT_FACET not set");
+            return false;
+        }
+        if (issuerFacet == address(0)) {
+            console.log("ISSUER_FACET not set");
+            return false;
+        }
+        if (stakeholderFacet == address(0)) {
+            console.log("STAKEHOLDER_FACET not set");
+            return false;
+        }
+        if (stockClassFacet == address(0)) {
+            console.log("STOCK_CLASS_FACET not set");
+            return false;
+        }
+        if (stockFacet == address(0)) {
+            console.log("STOCK_FACET not set");
+            return false;
+        }
+        if (convertiblesFacet == address(0)) {
+            console.log("CONVERTIBLES_FACET not set");
+            return false;
+        }
+        if (equityCompensationFacet == address(0)) {
+            console.log("EQUITY_COMPENSATION_FACET not set");
+            return false;
+        }
+        if (stockPlanFacet == address(0)) {
+            console.log("STOCK_PLAN_FACET not set");
+            return false;
+        }
+        if (warrantFacet == address(0)) {
+            console.log("WARRANT_FACET not set");
+            return false;
+        }
+        if (stakeholderNFTFacet == address(0)) {
+            console.log("STAKEHOLDER_NFT_FACET not set");
+            return false;
+        }
+        return true;
+    }
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -38,19 +93,33 @@ contract DeployDiamondCapTableScript is Script {
         address warrantFacet = vm.envOr("WARRANT_FACET", address(0));
         address stakeholderNFTFacet = vm.envOr("STAKEHOLDER_NFT_FACET", address(0));
 
+        bool allSet = checkEnv(
+            diamondCutFacet,
+            issuerFacet,
+            stakeholderFacet,
+            stockClassFacet,
+            stockFacet,
+            convertiblesFacet,
+            equityCompensationFacet,
+            stockPlanFacet,
+            warrantFacet,
+            stakeholderNFTFacet
+        );
+
         // Deploy new facets if addresses not in env
-        if (diamondCutFacet == address(0)) {
-            console.log("Deploying new facets...");
-            diamondCutFacet = address(new DiamondCutFacet());
-            issuerFacet = address(new IssuerFacet());
-            stakeholderFacet = address(new StakeholderFacet());
-            stockClassFacet = address(new StockClassFacet());
-            stockFacet = address(new StockFacet());
-            convertiblesFacet = address(new ConvertiblesFacet());
-            equityCompensationFacet = address(new EquityCompensationFacet());
-            stockPlanFacet = address(new StockPlanFacet());
-            warrantFacet = address(new WarrantFacet());
-            stakeholderNFTFacet = address(new StakeholderNFTFacet());
+        if (!allSet) {
+            revert("One or more required addresses are not set in the .env file");
+            // console.log("Deploying new facets...");
+            // diamondCutFacet = address(new DiamondCutFacet());
+            // issuerFacet = address(new IssuerFacet());
+            // stakeholderFacet = address(new StakeholderFacet());
+            // stockClassFacet = address(new StockClassFacet());
+            // stockFacet = address(new StockFacet());
+            // convertiblesFacet = address(new ConvertiblesFacet());
+            // equityCompensationFacet = address(new EquityCompensationFacet());
+            // stockPlanFacet = address(new StockPlanFacet());
+            // warrantFacet = address(new WarrantFacet());
+            // stakeholderNFTFacet = address(new StakeholderNFTFacet());
 
             console.log("------- New Facet Addresses (Add to .env) -------");
             console.log("DIAMOND_CUT_FACET=", diamondCutFacet);
@@ -63,6 +132,7 @@ contract DeployDiamondCapTableScript is Script {
             console.log("STOCK_PLAN_FACET=", stockPlanFacet);
             console.log("WARRANT_FACET=", warrantFacet);
             console.log("STAKEHOLDER_NFT_FACET=", stakeholderNFTFacet);
+            console.log("-------------------------------------------------");
         } else {
             console.log("Using existing facets from .env");
         }
@@ -81,7 +151,7 @@ contract DeployDiamondCapTableScript is Script {
             stakeholderNFTFacet
         );
 
-        console.log("DiamondCapTableFactory deployed at:", address(factory));
+        console.log("\nDiamondCapTableFactory deployed at:", address(factory));
 
         vm.stopBroadcast();
     }
