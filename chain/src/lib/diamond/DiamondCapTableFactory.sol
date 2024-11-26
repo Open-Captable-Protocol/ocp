@@ -34,9 +34,6 @@ contract DiamondCapTableFactory {
     address public immutable warrantFacet;
     address public immutable stakeholderNFTFacet;
 
-    // Store facet cuts
-    IDiamondCut.FacetCut[] public facetCuts;
-
     constructor() {
         // Deploy all facets once
         diamondCutFacet = address(new DiamondCutFacet());
@@ -49,108 +46,6 @@ contract DiamondCapTableFactory {
         stockPlanFacet = address(new StockPlanFacet());
         warrantFacet = address(new WarrantFacet());
         stakeholderNFTFacet = address(new StakeholderNFTFacet());
-
-        // Initialize facet cuts array
-        facetCuts = new IDiamondCut.FacetCut[](9);
-
-        // IssuerFacet
-        bytes4[] memory issuerSelectors = new bytes4[](2);
-        issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
-        issuerSelectors[1] = IssuerFacet.adjustAuthorizedShares.selector;
-        facetCuts[0] = IDiamondCut.FacetCut({
-            facetAddress: issuerFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: issuerSelectors
-        });
-
-        // StakeholderFacet
-        bytes4[] memory stakeholderSelectors = new bytes4[](3);
-        stakeholderSelectors[0] = StakeholderFacet.createStakeholder.selector;
-        stakeholderSelectors[1] = StakeholderFacet.linkStakeholderAddress.selector;
-        stakeholderSelectors[2] = StakeholderFacet.getStakeholderPositions.selector;
-        facetCuts[1] = IDiamondCut.FacetCut({
-            facetAddress: stakeholderFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stakeholderSelectors
-        });
-
-        // StockClassFacet
-        bytes4[] memory stockClassSelectors = new bytes4[](2);
-        stockClassSelectors[0] = StockClassFacet.createStockClass.selector;
-        stockClassSelectors[1] = StockClassFacet.adjustAuthorizedShares.selector;
-        facetCuts[2] = IDiamondCut.FacetCut({
-            facetAddress: stockClassFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stockClassSelectors
-        });
-
-        // StockFacet
-        bytes4[] memory stockSelectors = new bytes4[](1);
-        stockSelectors[0] = StockFacet.issueStock.selector;
-        facetCuts[3] = IDiamondCut.FacetCut({ facetAddress: stockFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: stockSelectors });
-
-        // ConvertiblesFacet
-        bytes4[] memory convertibleSelectors = new bytes4[](2);
-        convertibleSelectors[0] = ConvertiblesFacet.issueConvertible.selector;
-        convertibleSelectors[1] = ConvertiblesFacet.getConvertiblePosition.selector;
-        facetCuts[4] = IDiamondCut.FacetCut({
-            facetAddress: convertiblesFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: convertibleSelectors
-        });
-
-        // EquityCompensationFacet
-        bytes4[] memory equityCompensationSelectors = new bytes4[](3);
-        equityCompensationSelectors[0] = EquityCompensationFacet.issueEquityCompensation.selector;
-        equityCompensationSelectors[1] = EquityCompensationFacet.getPosition.selector;
-        equityCompensationSelectors[2] = EquityCompensationFacet.exerciseEquityCompensation.selector;
-        facetCuts[5] = IDiamondCut.FacetCut({
-            facetAddress: equityCompensationFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: equityCompensationSelectors
-        });
-
-        // StockPlanFacet
-        bytes4[] memory stockPlanSelectors = new bytes4[](2);
-        stockPlanSelectors[0] = StockPlanFacet.createStockPlan.selector;
-        stockPlanSelectors[1] = StockPlanFacet.adjustStockPlanPool.selector;
-        facetCuts[6] = IDiamondCut.FacetCut({
-            facetAddress: stockPlanFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stockPlanSelectors
-        });
-
-        // WarrantFacet
-        bytes4[] memory warrantSelectors = new bytes4[](2);
-        warrantSelectors[0] = WarrantFacet.issueWarrant.selector;
-        warrantSelectors[1] = WarrantFacet.getWarrantPosition.selector;
-        facetCuts[7] = IDiamondCut.FacetCut({
-            facetAddress: warrantFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: warrantSelectors
-        });
-
-        // StakeholderNFTFacet
-        bytes4[] memory stakeholderNFTSelectors = new bytes4[](2);
-        stakeholderNFTSelectors[0] = StakeholderNFTFacet.mint.selector;
-        stakeholderNFTSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
-        // stakeholderNFTSelectors[1] = bytes4(keccak256("tokenURI(uint256)"));
-        // stakeholderNFTSelectors[2] = bytes4(keccak256("balanceOf(address)"));
-        // stakeholderNFTSelectors[3] = bytes4(keccak256("ownerOf(uint256)"));
-        // stakeholderNFTSelectors[4] = bytes4(keccak256("name()"));
-        // stakeholderNFTSelectors[5] = bytes4(keccak256("symbol()"));
-
-        // Add debug logs here
-        console2.logBytes4(bytes4(keccak256("tokenURI(uint256)")));
-        for (uint i = 0; i < stakeholderNFTSelectors.length; i++) {
-            console2.logBytes4(stakeholderNFTSelectors[i]);
-        }
-
-        facetCuts[8] = IDiamondCut.FacetCut({
-            facetAddress: stakeholderNFTFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stakeholderNFTSelectors
-        });
     }
 
     function createCapTable(bytes16 id, uint256 initialSharesAuthorized) external returns (address) {
@@ -164,8 +59,90 @@ contract DiamondCapTableFactory {
         // Make the factory the owner, not msg.sender
         DiamondCapTable diamond = new DiamondCapTable(address(this), diamondCutFacet);
 
+        // Create facet cuts in memory
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](9);
+
+        // IssuerFacet
+        bytes4[] memory issuerSelectors = new bytes4[](2);
+        issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
+        issuerSelectors[1] = IssuerFacet.adjustAuthorizedShares.selector;
+        cuts[0] = IDiamondCut.FacetCut({ facetAddress: issuerFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: issuerSelectors });
+
+        // StakeholderFacet
+        bytes4[] memory stakeholderSelectors = new bytes4[](3);
+        stakeholderSelectors[0] = StakeholderFacet.createStakeholder.selector;
+        stakeholderSelectors[1] = StakeholderFacet.linkStakeholderAddress.selector;
+        stakeholderSelectors[2] = StakeholderFacet.getStakeholderPositions.selector;
+        cuts[1] = IDiamondCut.FacetCut({
+            facetAddress: stakeholderFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: stakeholderSelectors
+        });
+
+        // StockClassFacet
+        bytes4[] memory stockClassSelectors = new bytes4[](2);
+        stockClassSelectors[0] = StockClassFacet.createStockClass.selector;
+        stockClassSelectors[1] = StockClassFacet.adjustAuthorizedShares.selector;
+        cuts[2] = IDiamondCut.FacetCut({
+            facetAddress: stockClassFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: stockClassSelectors
+        });
+
+        // StockFacet
+        bytes4[] memory stockSelectors = new bytes4[](1);
+        stockSelectors[0] = StockFacet.issueStock.selector;
+        cuts[3] = IDiamondCut.FacetCut({ facetAddress: stockFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: stockSelectors });
+
+        // ConvertiblesFacet
+        bytes4[] memory convertibleSelectors = new bytes4[](2);
+        convertibleSelectors[0] = ConvertiblesFacet.issueConvertible.selector;
+        convertibleSelectors[1] = ConvertiblesFacet.getConvertiblePosition.selector;
+        cuts[4] = IDiamondCut.FacetCut({
+            facetAddress: convertiblesFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: convertibleSelectors
+        });
+
+        // EquityCompensationFacet
+        bytes4[] memory equityCompensationSelectors = new bytes4[](3);
+        equityCompensationSelectors[0] = EquityCompensationFacet.issueEquityCompensation.selector;
+        equityCompensationSelectors[1] = EquityCompensationFacet.getPosition.selector;
+        equityCompensationSelectors[2] = EquityCompensationFacet.exerciseEquityCompensation.selector;
+        cuts[5] = IDiamondCut.FacetCut({
+            facetAddress: equityCompensationFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: equityCompensationSelectors
+        });
+
+        // StockPlanFacet
+        bytes4[] memory stockPlanSelectors = new bytes4[](2);
+        stockPlanSelectors[0] = StockPlanFacet.createStockPlan.selector;
+        stockPlanSelectors[1] = StockPlanFacet.adjustStockPlanPool.selector;
+        cuts[6] = IDiamondCut.FacetCut({
+            facetAddress: stockPlanFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: stockPlanSelectors
+        });
+
+        // WarrantFacet
+        bytes4[] memory warrantSelectors = new bytes4[](2);
+        warrantSelectors[0] = WarrantFacet.issueWarrant.selector;
+        warrantSelectors[1] = WarrantFacet.getWarrantPosition.selector;
+        cuts[7] = IDiamondCut.FacetCut({ facetAddress: warrantFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: warrantSelectors });
+
+        // StakeholderNFTFacet
+        bytes4[] memory stakeholderNFTSelectors = new bytes4[](2);
+        stakeholderNFTSelectors[0] = StakeholderNFTFacet.mint.selector;
+        stakeholderNFTSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
+        cuts[8] = IDiamondCut.FacetCut({
+            facetAddress: stakeholderNFTFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: stakeholderNFTSelectors
+        });
+
         // Perform the cuts
-        DiamondCutFacet(address(diamond)).diamondCut(facetCuts, address(0), "");
+        DiamondCutFacet(address(diamond)).diamondCut(cuts, address(0), "");
 
         // Initialize the issuer
         IssuerFacet(address(diamond)).initializeIssuer(id, initialSharesAuthorized);
