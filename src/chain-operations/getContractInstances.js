@@ -1,7 +1,6 @@
 import { ethers } from "ethers";
 import CAP_TABLE_FACTORY from "../../chain/out/DiamondCapTableFactory.sol/DiamondCapTableFactory.json";
 import { setupEnv } from "../utils/env.js";
-import getTXLibContracts from "../utils/getLibrariesContracts.js";
 import getProvider from "./getProvider.js";
 import STAKEHOLDER_FACET from "../../chain/out/StakeholderFacet.sol/StakeholderFacet.json";
 import ISSUER_FACET from "../../chain/out/IssuerFacet.sol/IssuerFacet.json";
@@ -34,7 +33,6 @@ export const getContractInstance = (address) => {
 
     const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
     const contract = new ethers.Contract(address, combinedABI, wallet);
-    const libraries = getTXLibContracts(contract.target, wallet);
 
-    return { contract, provider, libraries };
+    return contract;
 };
