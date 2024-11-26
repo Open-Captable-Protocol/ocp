@@ -12,6 +12,8 @@ import STAKEHOLDER_NFT_FACET from "../../chain/out/StakeholderNFTFacet.sol/Stake
 import { toScaledBigNumber } from "../utils/convertToFixedPointDecimals.js";
 import { setupEnv } from "../utils/env.js";
 import getProvider from "./getProvider.js";
+import { findOne } from "../db/operations/atomic";
+import Factory from "../db/objects/Factory.js";
 
 setupEnv();
 
@@ -21,13 +23,13 @@ async function deployCapTable(issuerId, initial_shares_authorized) {
     const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
     console.log("🗽 | Wallet address: ", wallet.address);
 
-    // const factories = await readfactories();
-    const factoryAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // factories[0]?.factory_address;
-    // console.log({ factories, factoryAddress });
+    const factory = await findOne(Factory, { version: "DIAMOND" });
+    const factoryAddress = factory?.factory_address;
 
     if (!factoryAddress) {
         throw new Error(`❌ | Factory address not found`);
     }
+    console.log("🏭 | Factory address: ", factoryAddress);
 
     const capTableFactory = new ethers.Contract(factoryAddress, CAP_TABLE_FACTORY.abi, wallet);
 
