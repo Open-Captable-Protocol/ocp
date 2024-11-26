@@ -57,13 +57,12 @@ const contractMiddleware = async (req, res, next) => {
 
     // Check if contract instance already exists in cache
     if (!contractCache[req.body.issuerId]) {
-        const { contract, provider, libraries } = await getContractInstance(issuer.deployed_to);
-        contractCache[req.body.issuerId] = { contract, provider, libraries };
+        const contract = await getContractInstance(issuer.deployed_to);
+        contractCache[req.body.issuerId] = { contract };
     }
 
     setTag("issuerId", req.body.issuerId);
     req.contract = contractCache[req.body.issuerId].contract;
-    req.provider = contractCache[req.body.issuerId].provider;
     next();
 };
 
