@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import CAP_TABLE from "../../chain/out/DiamondCapTable.sol/DiamondCapTable.json";
+import CAP_TABLE_FACTORY from "../../chain/out/DiamondCapTableFactory.sol/DiamondCapTableFactory.json";
 import { setupEnv } from "../utils/env.js";
 import getTXLibContracts from "../utils/getLibrariesContracts.js";
 import getProvider from "./getProvider.js";
@@ -19,7 +19,7 @@ export const getContractInstance = (address) => {
     const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
     // Create a combined ABI from all facets
     const combinedABI = [
-        ...CAP_TABLE.abi,
+        ...CAP_TABLE_FACTORY.abi,
         ...STAKEHOLDER_FACET.abi,
         ...ISSUER_FACET.abi,
         ...STOCK_CLASS_FACET.abi,

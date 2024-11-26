@@ -1,6 +1,7 @@
 /* eslint-disable no-case-declarations */
 
-import { Log, AbiCoder, Provider, Block, ethers } from "ethers";
+import { Log, AbiCoder, Block, ethers } from "ethers";
+import { Provider } from "ethers/src.ts/providers";
 import getProvider from "../chain-operations/getProvider";
 import get from "lodash/get.js";
 import { handleStockPlan, txMapper, txTypes } from "../chain-operations/transactionHandlers";
