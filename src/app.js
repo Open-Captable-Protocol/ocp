@@ -1,11 +1,11 @@
 import express, { json, urlencoded } from "express";
+import { setupEnv } from "./utils/env.js";
 import { connectDB } from "./db/config/mongoose.ts";
-
-import { startEventProcessing, stopEventProcessing } from "./chain-operations/transactionPoller.ts";
+import { startListener } from "./utils/websocket.ts";
+import { setTag } from "@sentry/node";
+import * as Sentry from "@sentry/node";
 
 // Routes
-import { capTable as capTableRoutes } from "./routes/capTable.ts";
-import { router as factoryRoutes } from "./routes/factory.ts";
 import historicalTransactions from "./routes/historicalTransactions.js";
 import mainRoutes from "./routes/index.js";
 import issuerRoutes from "./routes/issuer.js";
@@ -16,17 +16,32 @@ import stockPlanRoutes from "./routes/stockPlan.js";
 import transactionRoutes from "./routes/transactions.js";
 import valuationRoutes from "./routes/valuation.js";
 import vestingTermsRoutes from "./routes/vestingTerms.js";
+import statsRoutes from "./routes/stats/index.js";
+import exportRoutes from "./routes/export.js";
+import ocfRoutes from "./routes/ocf.js";
 
-import mongoose from "mongoose";
-import { readIssuerById } from "./db/operations/read.js";
-import { getIssuerContract } from "./utils/caches.ts";
-import { setupEnv } from "./utils/env.js";
+import { readAllIssuers, readIssuerById } from "./db/operations/read.js";
+import { contractCache } from "./utils/simple_caches.js";
+import { getContractInstance } from "./chain-operations/getContractInstances.js";
 
 setupEnv();
+Sentry.init({
+    integrations: [Sentry.captureConsoleIntegration({ levels: ["error"] })],
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV,
+    sendDefaultPii: false,
+});
 
 const app = express();
 
 const PORT = process.env.PORT;
+const CHAIN = process.env.CHAIN;
+
+// Middlewares
+const chainMiddleware = (req, res, next) => {
+    req.chain = CHAIN;
+    next();
+};
 
 // Middleware to get or create contract instance
 // the listener is first started on deployment, then here as a backup
@@ -38,75 +53,76 @@ const contractMiddleware = async (req, res, next) => {
 
     // fetch issuer to ensure it exists
     const issuer = await readIssuerById(req.body.issuerId);
-    if (!issuer) return res.status(400).send("Issuer not found");
+    if (!issuer || !issuer.id) return res.status(404).send("issuer not found ");
 
-    const { contract, provider } = await getIssuerContract(issuer);
-    req.contract = contract;
-    req.provider = provider;
+    // Check if contract instance already exists in cache
+    if (!contractCache[req.body.issuerId]) {
+        const contract = await getContractInstance(issuer.deployed_to);
+        contractCache[req.body.issuerId] = { contract };
+    }
+
+    setTag("issuerId", req.body.issuerId);
+    req.contract = contractCache[req.body.issuerId].contract;
     next();
 };
+
 app.use(urlencoded({ limit: "50mb", extended: true }));
 app.use(json({ limit: "50mb" }));
 app.enable("trust proxy");
 
-app.use("/", mainRoutes);
-app.use("/cap-table", capTableRoutes);
-app.use("/factory", factoryRoutes);
-app.use("/issuer", issuerRoutes);
+app.use("/", chainMiddleware, mainRoutes);
+app.use("/issuer", chainMiddleware, issuerRoutes);
 app.use("/stakeholder", contractMiddleware, stakeholderRoutes);
 app.use("/stock-class", contractMiddleware, stockClassRoutes);
+
 // No middleware required since these are only created offchain
 app.use("/stock-legend", stockLegendRoutes);
-app.use("/stock-plan", stockPlanRoutes);
+app.use("/stock-plan", contractMiddleware, stockPlanRoutes);
 app.use("/valuation", valuationRoutes);
 app.use("/vesting-terms", vestingTermsRoutes);
 app.use("/historical-transactions", historicalTransactions);
+app.use("/stats", statsRoutes);
+app.use("/export", exportRoutes);
+app.use("/ocf", ocfRoutes);
 
 // transactions
 app.use("/transactions/", contractMiddleware, transactionRoutes);
 
-export const startServer = async (finalizedOnly) => {
-    /*
-    processTo can be "latest" or "finalized". Latest helps during testing bc we dont have to wait for blocks to finalize
-    */
-
+const startServer = async () => {
     // Connect to MongoDB
-    const dbConn = await connectDB();
+    console.log("Connecting to MongoDB...");
+    await connectDB();
+    console.log("Connected to MongoDB");
 
-    const server = app
-        .listen(PORT, async () => {
-            console.log(`🚀  Server successfully launched at ${PORT}`);
-            // Asynchronous job to track web3 events in web2
-            startEventProcessing(finalizedOnly, dbConn);
-        })
-        .on("error", (err) => {
-            if (err.code === "EADDRINUSE") {
-                console.log(`Port ${PORT} is already in use.`);
-            } else {
-                console.log(err);
-            }
-        });
+    app.listen(PORT, async () => {
+        console.log(`🚀  Server successfully launched at:${PORT}`);
 
-    server.on("listening", () => {
-        const address = server.address();
-        const bind = typeof address === "string" ? "pipe " + address : "port " + address.port;
-        console.log("Listening on " + bind);
+        const issuers = (await readAllIssuers()) || null;
+        if (issuers) {
+            const contractAddresses = issuers
+                .filter((issuer) => issuer?.deployed_to)
+                .reduce((acc, issuer) => {
+                    acc[issuer.id] = issuer.deployed_to;
+                    return acc;
+                }, {});
+
+            console.log(contractAddresses);
+            console.log("Issuer -> Contract Address");
+            const contractsToWatch = Object.values(contractAddresses);
+            console.log("Watching ", contractsToWatch.length, " Contracts");
+            startListener(contractsToWatch);
+        }
     });
-
-    return server;
+    app.on("error", (err) => {
+        console.error(err);
+        if (err.code === "EADDRINUSE") {
+            console.log(`Port ${PORT} is already in use.`);
+        } else {
+            console.log(err);
+        }
+    });
 };
 
-export const shutdownServer = async (server) => {
-    if (server) {
-        console.log("Shutting down app server...");
-        server.close();
-    }
-
-    console.log("Waiting for event processing to stop...");
-    await stopEventProcessing();
-
-    if (mongoose.connection?.readyState === mongoose.STATES.connected) {
-        console.log("Disconnecting from mongo...");
-        await mongoose.disconnect();
-    }
-};
+startServer().catch((error) => {
+    console.error("Error starting server:", error);
+});

@@ -1,0 +1,17 @@
+# Dependencies
+/node_modules
+/chain/out
+.history
+
+# Build output
+/dist
+/build
+
+# Coverage reports
+/coverage
+
+# Environment files
+.env*
+
+# Logs
+*.log 

@@ -58,7 +58,7 @@ const seedSharesAuthorizedAndIssued = async (uuid, contract) => {
 
 export const initiateSeeding = async (uuid, contract) => {
     console.log("⏳ | Initiating Seeding...");
-    const { stakeholders, stockClasses, stockIssuances, stockTransfers } = await getAllIssuerDataById(uuid);
+    const { stakeholders, stockClasses } = await getAllIssuerDataById(uuid);
 
     await sleep(300);
 

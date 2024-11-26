@@ -8,7 +8,7 @@ historicalTransactions.get("/issuer-id/:issuerId", async (req, res) => {
 
     try {
         // checking issuer exists, else return error
-        const issuer = await readIssuerById(issuerId);
+        await readIssuerById(issuerId);
 
         const historicalTransactions = await readHistoricalTransactionByIssuerId(issuerId);
 

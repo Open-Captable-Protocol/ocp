@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { v4 as uuid } from "uuid";
-import stockClassSchema from "../../ocf/schema/objects/StockClass.schema.json" assert { type: "json" };
+import stockClassSchema from "../../ocf/schema/objects/StockClass.schema.json";
 import { convertAndReflectStockClassOnchain, getStockClassById, getTotalNumberOfStockClasses } from "../controllers/stockClassController.js";
 import { createStockClass } from "../db/operations/create.js";
-import { readIssuerById } from "../db/operations/read.js";
+import { readIssuerById, readStockClassById } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 
 const stockClass = Router();
@@ -57,9 +57,17 @@ stockClass.post("/create", async (req, res) => {
             issuer: issuer._id,
         };
         await validateInputAgainstOCF(incomingStockClassToValidate, stockClassSchema);
-        await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
+        console.log("stockClassId", data.id);
+        const exists = await readStockClassById(incomingStockClassToValidate.id);
+        if (exists && exists._id) {
+            return res.status(200).send({ message: "StockClass already exists", stockClass: exists });
+        }
 
+        // Save Offchain
         const stockClass = await createStockClass(incomingStockClassForDB);
+
+        // Save Onchain
+        await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
 
         console.log("✅ | Stock Class created offchain:", stockClass);
 

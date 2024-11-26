@@ -1,0 +1,385 @@
+{
+  "abi": [
+    {
+      "type": "function",
+      "name": "adjustStockPlanPool",
+      "inputs": [
+        {
+          "name": "stockPlanId",
+          "type": "bytes16",
+          "internalType": "bytes16"
+        },
+        {
+          "name": "newSharesReserved",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "createStockPlan",
+      "inputs": [
+        {
+          "name": "_id",
+          "type": "bytes16",
+          "internalType": "bytes16"
+        },
+        {
+          "name": "_stock_class_ids",
+          "type": "bytes16[]",
+          "internalType": "bytes16[]"
+        },
+        {
+          "name": "_shares_reserved",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "event",
+      "name": "StockPlanCreated",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes16",
+          "indexed": true,
+          "internalType": "bytes16"
+        },
+        {
+          "name": "shares_reserved",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "StockPlanSharesReservedAdjusted",
+      "inputs": [
+        {
+          "name": "id",
+          "type": "bytes16",
+          "indexed": true,
+          "internalType": "bytes16"
+        },
+        {
+          "name": "newSharesReserved",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "TxCreated",
+      "inputs": [
+        {
+          "name": "txType",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "enum TxType"
+        },
+        {
+          "name": "txData",
+          "type": "bytes",
+          "indexed": false,
+          "internalType": "bytes"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "InvalidStockClass",
+      "inputs": [
+        {
+          "name": "stock_class_id",
+          "type": "bytes16",
+          "internalType": "bytes16"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "StockPlanAlreadyExists",
+      "inputs": [
+        {
+          "name": "stock_plan_id",
+          "type": "bytes16",
+          "internalType": "bytes16"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "StockPlanNotFound",
+      "inputs": [
+        {
+          "name": "stock_plan_id",
+          "type": "bytes16",
+          "internalType": "bytes16"
+        }
+      ]
+    }
+  ],
+  "bytecode": {
+    "object": "0x6080806040523461001657610698908161001c8239f35b600080fdfe608080604052600436101561001357600080fd5b60003560e01c9081636b348f411461018f575063e1c5951c1461003557600080fd5b3461018a57604036600319011261018a5761004e6105f0565b602435906001600160801b031916806000526020907f2031468f0c30f7087de4da9398818763b546d7f89935fa65485c24ff1df26bfb82526040600020549081156101725750600019810190811161015c5760016100ac8492610631565b5001556040519181830152808252604082019082821067ffffffffffffffff8311176101465781604052600c82526040606084015282519081608085015260005b82811061013257600083860160a001527f88aa35e399ceb8d6b2e810abb3df607c140128e7c089c428f212598bda6a7eb7601f8401601f1916860186900360600185a1005b808291860160a083820151910152016100ed565b634e487b7160e01b600052604160045260246000fd5b634e487b7160e01b600052601160045260246000fd5b60249060405190632148b60160e01b82526004820152fd5b600080fd5b3461018a57606036600319011261018a576101a86105f0565b60249167ffffffffffffffff9190833583811161018a573660238201121561018a578060040135908482116105db578160051b91601f19603f8401168401848110878211176105c65760405283528560208401928201019036821161018a578601915b8183106105a5575050506001600160801b0319918281166000527f2031468f0c30f7087de4da9398818763b546d7f89935fa65485c24ff1df26bfb60205260406000205461058c5760005b82518110156102e7578361026a8285610607565b51166000527f2031468f0c30f7087de4da9398818763b546d7f89935fa65485c24ff1df26bf9602052604060002054156102c45760001981146102af57600101610256565b85634e487b7160e01b60005260116004526000fd5b836102d0879285610607565b51604051630b2b152360e21b815291166004820152fd5b509391926040519160408301838110838211176105775760405282526044356020830152600080516020610678833981519152546801000000000000000090818110156105775780600161034b920160008051602061067883398151915255610631565b94909461056357835191825193841161054e57831161053a575083548285558083106104de575b50602001908360005260206000208160011c9160005b83811061048f57506001198116900380610419575b877f62cb99f09061d2ccca9332015b4b6fc4feca38d02e058bb0683bb8ebed934cf0602089896001838b0151910155600080516020610678833981519152548185166000527f2031468f0c30f7087de4da9398818763b546d7f89935fa65485c24ff1df26bfb83526040600020556040519360443585521692a2005b9260009360005b81811061045757505050015581600160207f62cb99f09061d2ccca9332015b4b6fc4feca38d02e058bb0683bb8ebed934cf061039d565b9091946020610485600192885160801c908560041b60031b916001600160801b03809116831b921b19161790565b9601929101610420565b6000805b600281106104a8575083820155600101610388565b959060206104d5600192845160801c908a60041b60031b916001600160801b03809116831b921b19161790565b92019601610493565b8460005260206000206001808501811c8201920160011c019060108460041b168061051f575b505b8181106105135750610372565b60008155600101610506565b600019908183019182549160200360031b1c16905588610504565b634e487b7160e01b60009081526041600452fd5b50634e487b7160e01b60009081526041600452fd5b634e487b7160e01b60005260006004526000fd5b84634e487b7160e01b60005260416004526000fd5b60405163b8f59a7760e01b815292166004830152509050fd5b82356001600160801b03198116810361018a5781526020928301920161020b565b87634e487b7160e01b60005260416004526000fd5b85634e487b7160e01b60005260416004526000fd5b600435906001600160801b03198216820361018a57565b805182101561061b5760209160051b010190565b634e487b7160e01b600052603260045260246000fd5b600080516020610678833981519152805482101561061b5760005260011b7f0de091a2bf9cd02c57bf491faca384ed63a687285048f1ca1a1538d6eb308ac0019060009056fe2031468f0c30f7087de4da9398818763b546d7f89935fa65485c24ff1df26bfa",
+    "sourceMap": "288:1635:42:-:0;;;;;;;;;;;;;;;;;",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x608080604052600436101561001357600080fd5b60003560e01c9081636b348f411461018f575063e1c5951c1461003557600080fd5b3461018a57604036600319011261018a5761004e6105f0565b602435906001600160801b031916806000526020907f2031468f0c30f7087de4da9398818763b546d7f89935fa65485c24ff1df26bfb82526040600020549081156101725750600019810190811161015c5760016100ac8492610631565b5001556040519181830152808252604082019082821067ffffffffffffffff8311176101465781604052600c82526040606084015282519081608085015260005b82811061013257600083860160a001527f88aa35e399ceb8d6b2e810abb3df607c140128e7c089c428f212598bda6a7eb7601f8401601f1916860186900360600185a1005b808291860160a083820151910152016100ed565b634e487b7160e01b600052604160045260246000fd5b634e487b7160e01b600052601160045260246000fd5b60249060405190632148b60160e01b82526004820152fd5b600080fd5b3461018a57606036600319011261018a576101a86105f0565b60249167ffffffffffffffff9190833583811161018a573660238201121561018a578060040135908482116105db578160051b91601f19603f8401168401848110878211176105c65760405283528560208401928201019036821161018a578601915b8183106105a5575050506001600160801b0319918281166000527f2031468f0c30f7087de4da9398818763b546d7f89935fa65485c24ff1df26bfb60205260406000205461058c5760005b82518110156102e7578361026a8285610607565b51166000527f2031468f0c30f7087de4da9398818763b546d7f89935fa65485c24ff1df26bf9602052604060002054156102c45760001981146102af57600101610256565b85634e487b7160e01b60005260116004526000fd5b836102d0879285610607565b51604051630b2b152360e21b815291166004820152fd5b509391926040519160408301838110838211176105775760405282526044356020830152600080516020610678833981519152546801000000000000000090818110156105775780600161034b920160008051602061067883398151915255610631565b94909461056357835191825193841161054e57831161053a575083548285558083106104de575b50602001908360005260206000208160011c9160005b83811061048f57506001198116900380610419575b877f62cb99f09061d2ccca9332015b4b6fc4feca38d02e058bb0683bb8ebed934cf0602089896001838b0151910155600080516020610678833981519152548185166000527f2031468f0c30f7087de4da9398818763b546d7f89935fa65485c24ff1df26bfb83526040600020556040519360443585521692a2005b9260009360005b81811061045757505050015581600160207f62cb99f09061d2ccca9332015b4b6fc4feca38d02e058bb0683bb8ebed934cf061039d565b9091946020610485600192885160801c908560041b60031b916001600160801b03809116831b921b19161790565b9601929101610420565b6000805b600281106104a8575083820155600101610388565b959060206104d5600192845160801c908a60041b60031b916001600160801b03809116831b921b19161790565b92019601610493565b8460005260206000206001808501811c8201920160011c019060108460041b168061051f575b505b8181106105135750610372565b60008155600101610506565b600019908183019182549160200360031b1c16905588610504565b634e487b7160e01b60009081526041600452fd5b50634e487b7160e01b60009081526041600452fd5b634e487b7160e01b60005260006004526000fd5b84634e487b7160e01b60005260416004526000fd5b60405163b8f59a7760e01b815292166004830152509050fd5b82356001600160801b03198116810361018a5781526020928301920161020b565b87634e487b7160e01b60005260416004526000fd5b85634e487b7160e01b60005260416004526000fd5b600435906001600160801b03198216820361018a57565b805182101561061b5760209160051b010190565b634e487b7160e01b600052603260045260246000fd5b600080516020610678833981519152805482101561061b5760005260011b7f0de091a2bf9cd02c57bf491faca384ed63a687285048f1ca1a1538d6eb308ac0019060009056fe2031468f0c30f7087de4da9398818763b546d7f89935fa65485c24ff1df26bfa",
+    "sourceMap": "288:1635:42:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;288:1635:42;;;;;;:::i;:::-;;;;-1:-1:-1;;;;;288:1635:42;;;;;;;1564:17;288:1635;;;;;;1609:19;;;1605:87;;-1:-1:-1;;;288:1635:42;;;;;;;;1732:33;;;;:::i;:::-;1775:25;;288:1635;;;1884:29;;;;288:1635;1884:29;;;288:1635;;;;;;;;;;;;;;;;1849:33;288:1635;;;;;;;;;;;;;;;;;;;;;;;;;;;;;1098:25:32;288:1635:42;;;-1:-1:-1;;288:1635:42;;;1098:25:32;;;288:1635:42;1098:25:32;288:1635:42;1098:25:32;288:1635:42;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;1605:87;288:1635;;;;1651:30;;;;;;288:1635;1651:30;;288:1635;1651:30;288:1635;;;;;;;;;;-1:-1:-1;;288:1635:42;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;288:1635:42;;;;;;;815:17;288:1635;;;;;;811:91;;288:1635;1003:3;288:1635;;974:27;;;;;1045:19;;;;;:::i;:::-;288:1635;;;;1026:18;288:1635;;;;;;1026:44;1022:128;;-1:-1:-1;;288:1635:42;;;;;;959:13;;288:1635;;;;;;;;;;;;1022:128;1115:19;;;;;;:::i;:::-;288:1635;;;-1:-1:-1;;;1097:38:42;;288:1635;;;1097:38;;288:1635;1097:38;974:27;;;;;288:1635;;;;;;;;;;;;;;;;;;;;;;1189:83;;288:1635;-1:-1:-1;;;;;;;;;;;288:1635:42;;;;;;;;;;;;;;-1:-1:-1;;;;;;;;;;;288:1635:42;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;954:206;288:1635;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;288:1635:42;;;;;;;;1189:83;1344:39;288:1635;1189:83;;288:1635;1189:83;;;288:1635;;;;-1:-1:-1;;;;;;;;;;;288:1635:42;;;;;;815:17;288:1635;;;;;;;;;;;;;;1344:39;;288:1635;;;;;;;;;;;;-1:-1:-1;;;288:1635:42;;;;;1344:39;288:1635;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;288:1635:42;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;288:1635:42;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;288:1635:42;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;288:1635:42;;;;;;;;;-1:-1:-1;;;;288:1635:42;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;811:91;288:1635;;-1:-1:-1;;;864:27:42;;288:1635;;;864:27;;288:1635;-1:-1:-1;288:1635:42;-1:-1:-1;864:27:42;288:1635;;;-1:-1:-1;;;;;;288:1635:42;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;;288:1635:42;;;;;;:::o;:::-;;;;;;;;;;;;;;;:::o;:::-;;;;;;;;;;;;;-1:-1:-1;;;;;;;;;;;288:1635:42;;;;;;;-1:-1:-1;288:1635:42;;;;;;-1:-1:-1;288:1635:42;:::o",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "adjustStockPlanPool(bytes16,uint256)": "e1c5951c",
+    "createStockPlan(bytes16,bytes16[],uint256)": "6b348f41"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.20+commit.a1b79de6\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"stock_class_id\",\"type\":\"bytes16\"}],\"name\":\"InvalidStockClass\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"stock_plan_id\",\"type\":\"bytes16\"}],\"name\":\"StockPlanAlreadyExists\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"stock_plan_id\",\"type\":\"bytes16\"}],\"name\":\"StockPlanNotFound\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"id\",\"type\":\"bytes16\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"shares_reserved\",\"type\":\"uint256\"}],\"name\":\"StockPlanCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"id\",\"type\":\"bytes16\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newSharesReserved\",\"type\":\"uint256\"}],\"name\":\"StockPlanSharesReservedAdjusted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"enum TxType\",\"name\":\"txType\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"txData\",\"type\":\"bytes\"}],\"name\":\"TxCreated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"stockPlanId\",\"type\":\"bytes16\"},{\"internalType\":\"uint256\",\"name\":\"newSharesReserved\",\"type\":\"uint256\"}],\"name\":\"adjustStockPlanPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"_id\",\"type\":\"bytes16\"},{\"internalType\":\"bytes16[]\",\"name\":\"_stock_class_ids\",\"type\":\"bytes16[]\"},{\"internalType\":\"uint256\",\"name\":\"_shares_reserved\",\"type\":\"uint256\"}],\"name\":\"createStockPlan\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/lib/diamond/facets/StockPlanFacet.sol\":\"StockPlanFacet\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"appendCBOR\":false,\"bytecodeHash\":\"none\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":@diamond/=src/lib/diamond/\",\":diamond-3-hardhat/=lib/diamond-3-hardhat/contracts/\",\":ds-test/=lib/forge-std/lib/ds-test/src/\",\":erc4626-tests/=lib/openzeppelin-contracts-upgradeable/lib/erc4626-tests/\",\":forge-std/=lib/forge-std/src/\",\":openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/\",\":openzeppelin/=lib/openzeppelin-contracts-upgradeable/contracts/\"],\"viaIR\":true},\"sources\":{\"lib/diamond-3-hardhat/contracts/interfaces/IDiamondCut.sol\":{\"keccak256\":\"0xc00c16bfa30a3fa5f3dc684f7f8ba62c259962b25f647d9588739458989717fc\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://119d9a5acd99b9462a8341c9b95ddd468648799eefa47038f81521431743c1ae\",\"dweb:/ipfs/QmTF7WNyPWTUtUzNcpq5rf5v2uw5TwzqsSg9D53pfQufcu\"]},\"lib/diamond-3-hardhat/contracts/libraries/LibDiamond.sol\":{\"keccak256\":\"0xc5044f5a7a031e4e1869a26addf83b25c8b20d5949ba13b613dfbc72ad2f63b0\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://25f2ac88867d97bfd13b503c06512b082ecf861f3f00702ca2747502c9113a79\",\"dweb:/ipfs/QmSYDNeaLGXDsPa2maoaeim5qJiLNuM3PbDguoYmsUmAZL\"]},\"src/lib/Structs.sol\":{\"keccak256\":\"0x404e740ae677baf5cc57884ee32d9accb367ae58f56a23f4e59b4f2987ae5100\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://349ec5d7e23684f71836001d70c012e59c0f2c94c9fa1fae83f85eeccda1fe52\",\"dweb:/ipfs/QmTVT5hzGePT8FxFxWhX77bH1DS1Z8iu8NAfAdn4PfsyCh\"]},\"src/lib/diamond/DiamondTxHelper.sol\":{\"keccak256\":\"0xe72ba093a5b16735d0193624d5b6585deb2cfe7e419a468c90fd70317fccf5e6\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://4ae3bd1ccbe005c63bed07e255c2b25c9bfdb37b9d85bb75f8f65cfeb0f6df98\",\"dweb:/ipfs/QmbTpzVeLkvthzpasQLvuvAfwE3g4sMsjEfpRBNwyG4eMQ\"]},\"src/lib/diamond/Storage.sol\":{\"keccak256\":\"0x5534e8d79be2bb31bdc004982e95a3e6e4e515312ec0ca2cf38a4a50c7a62e2f\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://1c42f04102bfd02153434b69c986db79baad9bdc96e791f57ade9a096527843d\",\"dweb:/ipfs/Qmb8bUxXJqbPQjNhGcfcGgZEr2GKfhYWxJEJvf87CX9MbL\"]},\"src/lib/diamond/Structs.sol\":{\"keccak256\":\"0x111f5e7a7b9a71745925edc3019c17afcfaf21848dadde9163bbab8b0fdf3bc2\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://68b545403c8460e2971b220d1b462229566f28313f97ea129085f57ac4176dab\",\"dweb:/ipfs/QmXeuWr1crQXhrDVcFKVF33XpTaK3pY1oKxugQKwXX4XuD\"]},\"src/lib/diamond/facets/StockPlanFacet.sol\":{\"keccak256\":\"0x2f7dae680ad926c2788ce52e65cdb95b31e323c1e04f4e69d304e68e81e4e727\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://6d2de2814568867928c4340841625dbd2b0094bc224b1488f03f9799b949fe28\",\"dweb:/ipfs/QmU58fHpqy3Bp79ZoshMu6Rewp6PZTzrH8hmCERmy1u35o\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.20+commit.a1b79de6"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "bytes16",
+              "name": "stock_class_id",
+              "type": "bytes16"
+            }
+          ],
+          "type": "error",
+          "name": "InvalidStockClass"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes16",
+              "name": "stock_plan_id",
+              "type": "bytes16"
+            }
+          ],
+          "type": "error",
+          "name": "StockPlanAlreadyExists"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes16",
+              "name": "stock_plan_id",
+              "type": "bytes16"
+            }
+          ],
+          "type": "error",
+          "name": "StockPlanNotFound"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes16",
+              "name": "id",
+              "type": "bytes16",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "shares_reserved",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "StockPlanCreated",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes16",
+              "name": "id",
+              "type": "bytes16",
+              "indexed": true
+            },
+            {
+              "internalType": "uint256",
+              "name": "newSharesReserved",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "StockPlanSharesReservedAdjusted",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "enum TxType",
+              "name": "txType",
+              "type": "uint8",
+              "indexed": false
+            },
+            {
+              "internalType": "bytes",
+              "name": "txData",
+              "type": "bytes",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "TxCreated",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes16",
+              "name": "stockPlanId",
+              "type": "bytes16"
+            },
+            {
+              "internalType": "uint256",
+              "name": "newSharesReserved",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "adjustStockPlanPool"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes16",
+              "name": "_id",
+              "type": "bytes16"
+            },
+            {
+              "internalType": "bytes16[]",
+              "name": "_stock_class_ids",
+              "type": "bytes16[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_shares_reserved",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "createStockPlan"
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {},
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {},
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        "@diamond/=src/lib/diamond/",
+        "diamond-3-hardhat/=lib/diamond-3-hardhat/contracts/",
+        "ds-test/=lib/forge-std/lib/ds-test/src/",
+        "erc4626-tests/=lib/openzeppelin-contracts-upgradeable/lib/erc4626-tests/",
+        "forge-std/=lib/forge-std/src/",
+        "openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/",
+        "openzeppelin-contracts/=lib/openzeppelin-contracts/",
+        "openzeppelin/=lib/openzeppelin-contracts-upgradeable/contracts/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "none",
+        "appendCBOR": false
+      },
+      "compilationTarget": {
+        "src/lib/diamond/facets/StockPlanFacet.sol": "StockPlanFacet"
+      },
+      "evmVersion": "paris",
+      "libraries": {},
+      "viaIR": true
+    },
+    "sources": {
+      "lib/diamond-3-hardhat/contracts/interfaces/IDiamondCut.sol": {
+        "keccak256": "0xc00c16bfa30a3fa5f3dc684f7f8ba62c259962b25f647d9588739458989717fc",
+        "urls": [
+          "bzz-raw://119d9a5acd99b9462a8341c9b95ddd468648799eefa47038f81521431743c1ae",
+          "dweb:/ipfs/QmTF7WNyPWTUtUzNcpq5rf5v2uw5TwzqsSg9D53pfQufcu"
+        ],
+        "license": "MIT"
+      },
+      "lib/diamond-3-hardhat/contracts/libraries/LibDiamond.sol": {
+        "keccak256": "0xc5044f5a7a031e4e1869a26addf83b25c8b20d5949ba13b613dfbc72ad2f63b0",
+        "urls": [
+          "bzz-raw://25f2ac88867d97bfd13b503c06512b082ecf861f3f00702ca2747502c9113a79",
+          "dweb:/ipfs/QmSYDNeaLGXDsPa2maoaeim5qJiLNuM3PbDguoYmsUmAZL"
+        ],
+        "license": "MIT"
+      },
+      "src/lib/Structs.sol": {
+        "keccak256": "0x404e740ae677baf5cc57884ee32d9accb367ae58f56a23f4e59b4f2987ae5100",
+        "urls": [
+          "bzz-raw://349ec5d7e23684f71836001d70c012e59c0f2c94c9fa1fae83f85eeccda1fe52",
+          "dweb:/ipfs/QmTVT5hzGePT8FxFxWhX77bH1DS1Z8iu8NAfAdn4PfsyCh"
+        ],
+        "license": "MIT"
+      },
+      "src/lib/diamond/DiamondTxHelper.sol": {
+        "keccak256": "0xe72ba093a5b16735d0193624d5b6585deb2cfe7e419a468c90fd70317fccf5e6",
+        "urls": [
+          "bzz-raw://4ae3bd1ccbe005c63bed07e255c2b25c9bfdb37b9d85bb75f8f65cfeb0f6df98",
+          "dweb:/ipfs/QmbTpzVeLkvthzpasQLvuvAfwE3g4sMsjEfpRBNwyG4eMQ"
+        ],
+        "license": "MIT"
+      },
+      "src/lib/diamond/Storage.sol": {
+        "keccak256": "0x5534e8d79be2bb31bdc004982e95a3e6e4e515312ec0ca2cf38a4a50c7a62e2f",
+        "urls": [
+          "bzz-raw://1c42f04102bfd02153434b69c986db79baad9bdc96e791f57ade9a096527843d",
+          "dweb:/ipfs/Qmb8bUxXJqbPQjNhGcfcGgZEr2GKfhYWxJEJvf87CX9MbL"
+        ],
+        "license": "MIT"
+      },
+      "src/lib/diamond/Structs.sol": {
+        "keccak256": "0x111f5e7a7b9a71745925edc3019c17afcfaf21848dadde9163bbab8b0fdf3bc2",
+        "urls": [
+          "bzz-raw://68b545403c8460e2971b220d1b462229566f28313f97ea129085f57ac4176dab",
+          "dweb:/ipfs/QmXeuWr1crQXhrDVcFKVF33XpTaK3pY1oKxugQKwXX4XuD"
+        ],
+        "license": "MIT"
+      },
+      "src/lib/diamond/facets/StockPlanFacet.sol": {
+        "keccak256": "0x2f7dae680ad926c2788ce52e65cdb95b31e323c1e04f4e69d304e68e81e4e727",
+        "urls": [
+          "bzz-raw://6d2de2814568867928c4340841625dbd2b0094bc224b1488f03f9799b949fe28",
+          "dweb:/ipfs/QmU58fHpqy3Bp79ZoshMu6Rewp6PZTzrH8hmCERmy1u35o"
+        ],
+        "license": "MIT"
+      }
+    },
+    "version": 1
+  },
+  "id": 42
+}

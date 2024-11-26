@@ -7,10 +7,12 @@ const DATABASE_URL = process.env.DATABASE_URL;
 const DATABASE_OVERRIDE = process.env.DATABASE_OVERRIDE;
 
 export const connectDB = async () => {
-    const connectOptions = DATABASE_OVERRIDE ? {dbName: DATABASE_OVERRIDE} : {};
+    const connectOptions = DATABASE_OVERRIDE ? { dbName: DATABASE_OVERRIDE } : {};
     try {
+        const sanitizedDatabaseURL = DATABASE_URL.replace(/\/\/(.*):(.*)@/, "//$1:***@");
+        console.log(" Mongo connecting...", sanitizedDatabaseURL);
         await mongoose.connect(DATABASE_URL, connectOptions);
-        console.log("✅ | Mongo connected succesfully", DATABASE_OVERRIDE);
+        console.log("✅ | Mongo connected successfully", sanitizedDatabaseURL);
         return mongoose.connection;
     } catch (error) {
         console.error(error);
