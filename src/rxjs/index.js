@@ -376,8 +376,6 @@ export const processEquityCompensationExercise = (state, transaction) => {
 };
 
 export const dashboardStats = async ({ issuer, stockClasses, stockPlans, stakeholders, transactions }) => {
-    // const { issuer, stockClasses, stockPlans, stakeholders, transactions } = await getAllStateMachineObjectsById(issuerId);
-
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
         const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
