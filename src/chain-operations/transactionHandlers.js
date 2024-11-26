@@ -138,7 +138,7 @@ export const handleStockTransfer = async (stock, issuerId) => {
         consideration_text: stock.consideration_text,
         balance_security_id: convertBytes16ToUUID(stock.balance_security_id),
         resulting_security_ids: convertBytes16ToUUID(stock.resulting_security_ids),
-        // TAP Native Fields
+        // OCP Native Fields
         issuer: issuerId,
         is_onchain_synced: true,
     });
@@ -163,7 +163,7 @@ export const handleStakeholder = async (id) => {
         const incomingStakeholderId = convertBytes16ToUUID(id);
         const stakeholder = await upsertStakeholderById(incomingStakeholderId, { is_onchain_synced: true });
 
-        // fiarmint data reflection
+        // fairmint data reflection
         const fairmintData = await readFairmintDataByStakeholderId(incomingStakeholderId);
         if (fairmintData && fairmintData._id) {
             await reflectStakeholder({ stakeholder, issuerId: stakeholder.issuer });
@@ -193,7 +193,7 @@ export const handleStockCancellation = async (stock, issuerId, timestamp) => {
         date: dateOCF,
         reason_text: stock.reason_text,
         balance_security_id: convertBytes16ToUUID(stock.balance_security_id),
-        // TAP Native Fields
+        // OCP Native Fields
         issuer: issuerId,
         is_onchain_synced: true,
     });
@@ -220,7 +220,7 @@ export const handleStockRetraction = async (stock, issuerId, timestamp) => {
         security_id: convertBytes16ToUUID(stock.security_id),
         date: dateOCF,
         reason_text: stock.reason_text,
-        // TAP Native Fields
+        // OCP Native Fields
         issuer: issuerId,
         is_onchain_synced: true,
     });
@@ -248,7 +248,7 @@ export const handleStockReissuance = async (stock, issuerId, timestamp) => {
         date: dateOCF,
         reason_text: stock.reason_text,
         resulting_security_ids: stock.resulting_security_ids.map((sId) => convertBytes16ToUUID(sId)),
-        // TAP Native Fields
+        // OCP Native Fields
         issuer: issuerId,
         is_onchain_synced: true,
     });
@@ -286,7 +286,7 @@ export const handleStockRepurchase = async (stock, issuerId, timestamp) => {
         consideration_text: stock.consideration_text,
         balance_security_id: convertBytes16ToUUID(stock.balance_security_id),
 
-        // TAP Native Fields
+        // OCP Native Fields
         issuer: issuerId,
         is_onchain_synced: true,
     });
@@ -314,7 +314,7 @@ export const handleStockAcceptance = async (stock, issuerId, timestamp) => {
         security_id: convertBytes16ToUUID(stock.security_id),
         date: dateOCF,
 
-        // TAP Native Fields
+        // OCP Native Fields
         issuer: issuerId,
         is_onchain_synced: true,
     });
@@ -348,7 +348,7 @@ export const handleStockClassAuthorizedSharesAdjusted = async (stock, issuerId, 
         board_approval_date: stock.board_approval_date,
         stockholder_approval_date: stock.stockholder_approval_date,
 
-        // TAP Native Fields
+        // OCP Native Fields
         issuer: issuerId,
         is_onchain_synced: true,
     });
@@ -381,7 +381,7 @@ export const handleIssuerAuthorizedSharesAdjusted = async (issuer, issuerId, tim
         board_approval_date: issuer.board_approval_date,
         stockholder_approval_date: issuer.stockholder_approval_date,
 
-        // TAP Native Fields
+        // OCP Native Fields
         issuer: issuerId,
         is_onchain_synced: true,
     });
