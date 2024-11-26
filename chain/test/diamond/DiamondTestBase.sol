@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
-import "@diamond/DiamondCapTable.sol";
+import "diamond-3-hardhat/Diamond.sol";
 import "@diamond/facets/IssuerFacet.sol";
 import { StakeholderFacet } from "@diamond/facets/StakeholderFacet.sol";
 import { StockClassFacet } from "@diamond/facets/StockClassFacet.sol";
@@ -29,7 +29,7 @@ contract DiamondTestBase is Test {
     ConvertiblesFacet public convertiblesFacet;
     EquityCompensationFacet public equityCompensationFacet;
     StockPlanFacet public stockPlanFacet;
-    DiamondCapTable public diamond;
+    Diamond public diamond;
     WarrantFacet public warrantFacet;
     StakeholderNFTFacet public stakeholderNFTFacet;
 
@@ -48,7 +48,7 @@ contract DiamondTestBase is Test {
         // Deploy facets
         diamondCutFacet = new DiamondCutFacet();
         issuerFacet = new IssuerFacet();
-        diamond = new DiamondCapTable(contractOwner, address(diamondCutFacet));
+        diamond = new Diamond(contractOwner, address(diamondCutFacet));
         stakeholderFacet = new StakeholderFacet();
         stockClassFacet = new StockClassFacet();
         stockFacet = new StockFacet();
