@@ -1,26 +1,26 @@
 export const issuer = {
-    legal_name: "Transfer Agent Protocol",
-    formation_date: "2022-08-23",
+    legal_name: "Example Corp",
+    formation_date: "2024-01-01",
     country_of_formation: "US",
     country_subdivision_of_formation: "DE",
     tax_ids: [
         {
-            tax_id: "88-3977591",
+            tax_id: "00-0000000",
             country: "US",
         },
     ],
     email: {
-        email_address: "alex@transferagentprotocol.xyz",
+        email_address: "contact@example.com",
         email_type: "BUSINESS",
     },
     initial_shares_authorized: "10000000",
     address: {
         address_type: "LEGAL",
-        street_suite: "447 Broadway\n2nd Fl #713",
-        city: "New York",
-        country_subdivision: "NY",
+        street_suite: "123 Main St\nSuite 100",
+        city: "Dover",
+        country_subdivision: "DE",
         country: "US",
-        postal_code: "10013",
+        postal_code: "19901",
     },
     comments: [],
 };
@@ -30,9 +30,9 @@ export const stakeholder1 = (issuerId) => {
         issuerId,
         data: {
             name: {
-                legal_name: "Alex Palmer",
-                first_name: "Alex",
-                last_name: "Palmer",
+                legal_name: "John Smith",
+                first_name: "John",
+                last_name: "Smith",
             },
             issuer_assigned_id: "",
             stakeholder_type: "INDIVIDUAL",
