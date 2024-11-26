@@ -63,7 +63,7 @@ contract DiamondTestBase is Test {
 
         bytes4[] memory issuerSelectors = new bytes4[](2);
         issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
-        issuerSelectors[1] = IssuerFacet.adjustAuthorizedShares.selector;
+        issuerSelectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
 
         bytes4[] memory stakeholderSelectors = new bytes4[](3);
         stakeholderSelectors[0] = StakeholderFacet.createStakeholder.selector;

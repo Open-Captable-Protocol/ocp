@@ -26,7 +26,7 @@ contract DiamondAdjustmentTest is DiamondTestBase {
         vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(TxType.ISSUER_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(newSharesAuthorized));
 
-        IssuerFacet(payable(address(capTable))).adjustAuthorizedShares(newSharesAuthorized);
+        IssuerFacet(payable(address(capTable))).adjustIssuerAuthorizedShares(newSharesAuthorized);
     }
 
     function test_AdjustStockClassAuthorizedShares() public {
