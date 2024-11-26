@@ -3,6 +3,8 @@ set -e  # Exit on error
 
 cd chain
 
+forge clean
+
 # Remove current installations
 rm -rf lib/*
 
@@ -23,6 +25,6 @@ echo "Generating remappings..."
 forge remappings > remappings.txt || exit 1
 echo '@diamond/=src/lib/diamond/' >> remappings.txt
 echo "Building contracts..."
-forge build || exit 1
+forge build --via-ir || exit 1
 
 echo "Setup completed successfully!"
