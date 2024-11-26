@@ -5,4 +5,6 @@ forge-std/=lib/forge-std/src/
 openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/
 openzeppelin-contracts/=lib/openzeppelin-contracts/
 openzeppelin/=lib/openzeppelin-contracts-upgradeable/contracts/
-@diamond/=src/lib/diamond/
+@facets/=src/facets/
+@libraries/=src/libraries/
+@core/=src/core/

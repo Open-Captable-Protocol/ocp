@@ -3,17 +3,17 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../src/lib/diamond/DiamondCapTableFactory.sol";
+import "../src/core/DiamondCapTableFactory.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
-import { IssuerFacet } from "../src/lib/diamond/facets/IssuerFacet.sol";
-import { StakeholderFacet } from "../src/lib/diamond/facets/StakeholderFacet.sol";
-import { StockClassFacet } from "../src/lib/diamond/facets/StockClassFacet.sol";
-import { StockFacet } from "../src/lib/diamond/facets/StockFacet.sol";
-import { ConvertiblesFacet } from "../src/lib/diamond/facets/ConvertiblesFacet.sol";
-import { EquityCompensationFacet } from "../src/lib/diamond/facets/EquityCompensationFacet.sol";
-import { StockPlanFacet } from "../src/lib/diamond/facets/StockPlanFacet.sol";
-import { WarrantFacet } from "../src/lib/diamond/facets/WarrantFacet.sol";
-import { StakeholderNFTFacet } from "../src/lib/diamond/facets/StakeholderNFTFacet.sol";
+import { IssuerFacet } from "../src/facets/IssuerFacet.sol";
+import { StakeholderFacet } from "../src/facets/StakeholderFacet.sol";
+import { StockClassFacet } from "../src/facets/StockClassFacet.sol";
+import { StockFacet } from "../src/facets/StockFacet.sol";
+import { ConvertiblesFacet } from "../src/facets/ConvertiblesFacet.sol";
+import { EquityCompensationFacet } from "../src/facets/EquityCompensationFacet.sol";
+import { StockPlanFacet } from "../src/facets/StockPlanFacet.sol";
+import { WarrantFacet } from "../src/facets/WarrantFacet.sol";
+import { StakeholderNFTFacet } from "../src/facets/StakeholderNFTFacet.sol";
 
 contract DeployDiamondCapTableScript is Script {
     function setUp() public {
@@ -30,7 +30,7 @@ contract DeployDiamondCapTableScript is Script {
         address stockPlanFacet,
         address warrantFacet,
         address stakeholderNFTFacet
-    ) public returns (bool) {
+    ) public view returns (bool) {
         // check one by one
         if (diamondCutFacet == address(0)) {
             console.log("DIAMOND_CUT_FACET not set");
