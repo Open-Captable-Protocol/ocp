@@ -16,7 +16,7 @@ const splitPath = (path) => {
 
 const getEnvFile = (fileName) => {
     // Find the .env file by iterating up the PWD. However do not go past the repo root!
-    const repoRootDirName = "tap-cap-table";
+    const repoRootDirName = "open-captable-protocol";
     const cwd = process.env.PWD;
     let { dir, rightMost } = splitPath(cwd);
     let check = pathTools.join(cwd, fileName);
