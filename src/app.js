@@ -78,7 +78,7 @@ app.use("/stock-class", contractMiddleware, stockClassRoutes);
 
 // No middleware required since these are only created offchain
 app.use("/stock-legend", stockLegendRoutes);
-app.use("/stock-plan", stockPlanRoutes);
+app.use("/stock-plan", contractMiddleware, stockPlanRoutes);
 app.use("/valuation", valuationRoutes);
 app.use("/vesting-terms", vestingTermsRoutes);
 app.use("/historical-transactions", historicalTransactions);

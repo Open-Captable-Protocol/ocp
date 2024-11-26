@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/CapTable.sol";
 import "../src/CapTableFactory.sol";
-import {StockIssuanceParams, SecurityLawExemption} from "../src/lib/Structs.sol";
+import { StockIssuanceParams, SecurityLawExemption } from "../src/lib/Structs.sol";
 
 contract CapTableTest is Test {
     CapTableFactory public factory;
@@ -28,10 +28,7 @@ contract CapTableTest is Test {
         vm.expectRevert("Does not have admin role");
     }
 
-    function createStockClassAndStakeholder(uint256 stockClassInitialSharesAuthorized)
-        public
-        returns (bytes16, bytes16)
-    {
+    function createStockClassAndStakeholder(uint256 stockClassInitialSharesAuthorized) public returns (bytes16, bytes16) {
         bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
         capTable.createStakeholder(stakeholderId, "INDIVIDUAL", "EMPLOYEE");
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { StockIssuance, StockIssuanceParams, ActivePositions, ActivePosition, SecIdsStockClass, Issuer, StockClass, StockTransfer, StockRepurchase, ShareNumbersIssued, StockAcceptance, StockCancellation, StockReissuance, StockRetraction, IssuerAuthorizedSharesAdjustment, StockClassAuthorizedSharesAdjustment, StockTransferParams, StockParamsQuantity, StockIssuanceParams, SecurityLawExemption} from "./Structs.sol";
+import { StockIssuance, StockIssuanceParams, ActivePositions, ActivePosition, SecIdsStockClass, Issuer, StockClass, StockTransfer, StockRepurchase, ShareNumbersIssued, StockAcceptance, StockCancellation, StockReissuance, StockRetraction, IssuerAuthorizedSharesAdjustment, StockClassAuthorizedSharesAdjustment, StockTransferParams, StockParamsQuantity, StockIssuanceParams, SecurityLawExemption } from "./Structs.sol";
 
 enum TxType {
     INVALID,
@@ -13,7 +13,8 @@ enum TxType {
     STOCK_REISSUANCE,
     STOCK_REPURCHASE,
     STOCK_RETRACTION,
-    STOCK_TRANSFER
+    STOCK_TRANSFER,
+    CONVERTIBLE_ISSUANCE
 }
 
 struct Tx {
@@ -68,7 +69,7 @@ library TxHelper {
             "", // Board approval date (optional)
             "", // Stockholder approval date (optional)
             "", // Consideration text (optional)
-            new SecurityLawExemption[](0)  // Security law exemptions (optional)
+            new SecurityLawExemption[](0) // Security law exemptions (optional)
         );
         return
             StockIssuance(

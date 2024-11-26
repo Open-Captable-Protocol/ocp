@@ -1,5 +1,5 @@
 import axios from "axios";
-import { connectDB } from "../config/mongoose.ts";
+import { connectDB } from "../db/config/mongoose.ts";
 import Issuer from "../db/objects/Issuer.js";
 import Stakeholder from "../db/objects/Stakeholder.js";
 import StockClass from "../db/objects/StockClass.js";

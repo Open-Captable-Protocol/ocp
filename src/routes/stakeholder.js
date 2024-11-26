@@ -9,8 +9,8 @@ import {
 } from "../controllers/stakeholderController.js"; // Importing the controller functions
 
 import stakeholderSchema from "../../ocf/schema/objects/Stakeholder.schema.json";
-import { createStakeholder } from "../db/operations/create.js";
-import { readIssuerById, readStakeholderById, readStakeholderByIssuerAssignedId, getAllStakeholdersByIssuerId } from "../db/operations/read.js";
+import { createFairmintData, createStakeholder } from "../db/operations/create.js";
+import { readIssuerById, readStakeholderById, getAllStakeholdersByIssuerId } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
 import { updateStakeholderById } from "../db/operations/update.js";
@@ -106,8 +106,8 @@ stakeholder.post("/create", async (req, res) => {
         };
 
         await validateInputAgainstOCF(incomingStakeholderToValidate, stakeholderSchema);
-        console.log(`Checking if Stakeholder id: ${data.issuer_assigned_id} exists`);
-        const existingStakeholder = await readStakeholderByIssuerAssignedId(incomingStakeholderToValidate.id);
+        console.log(`Checking if Stakeholder id: ${incomingStakeholderToValidate.id} exists`);
+        const existingStakeholder = await readStakeholderById(incomingStakeholderToValidate.id);
 
         if (existingStakeholder && existingStakeholder._id) {
             return res.status(200).send({
@@ -116,9 +116,11 @@ stakeholder.post("/create", async (req, res) => {
             });
         }
 
-        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
-
+        // Save offchain
         const stakeholder = await createStakeholder(incomingStakeholderForDB);
+
+        // Save onchain
+        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id);
 
         console.log("✅ | Stakeholder created offchain:", stakeholder);
 
@@ -161,9 +163,11 @@ stakeholder.post("/create-fairmint-reflection", async (req, res) => {
             });
         }
 
-        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB);
+        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id);
 
         const stakeholder = await createStakeholder(incomingStakeholderForDB);
+        const fairmintData = await createFairmintData({ stakeholder_id: stakeholder._id });
+        console.log("✅ | Fairmint Data created:", fairmintData);
 
         console.log("✅ | Stakeholder created offchain:", stakeholder);
 

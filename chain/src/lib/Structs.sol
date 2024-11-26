@@ -25,12 +25,71 @@ struct Stakeholder {
     string current_relationship; // ["ADVISOR","BOARD_MEMBER","CONSULTANT","EMPLOYEE","EX_ADVISOR" "EX_CONSULTANT","EX_EMPLOYEE","EXECUTIVE","FOUNDER","INVESTOR","NON_US_EMPLOYEE","OFFICER","OTHER"]
 }
 
-struct ActivePosition {
+struct StockActivePosition {
     bytes16 stock_class_id;
     uint256 quantity;
     uint256 share_price;
     uint40 timestamp;
 }
+
+struct StockActivePositions {
+    mapping(bytes16 => bytes16[]) stakeholderToSecurities; // Stakeholder ID -> List of Security IDs
+    mapping(bytes16 => StockActivePosition) securities; // Security ID -> ActivePosition
+}
+
+struct ConvertibleActivePosition {
+    uint256 investment_amount;
+    // uint256 valuation_cap; // unsure we want to store this
+    // uint256 discount_rate; // unsure we want to store this
+    // string convertible_type; // ["NOTE", "SAFE"] // do we even care?
+    uint40 timestamp;
+}
+
+struct ConvertibleActivePositions {
+    mapping(bytes16 => bytes16[]) stakeholderToSecurities; // Stakeholder ID -> List of Security IDs
+    mapping(bytes16 => ConvertibleActivePosition) securities; // Security ID -> ActivePosition
+}
+
+struct EquityCompensationActivePosition {
+    uint256 quantity;
+    uint40 timestamp;
+    bytes16 stock_class_id;
+    bytes16 stock_plan_id;
+}
+
+struct EquityCompensationActivePositions {
+    mapping(bytes16 => bytes16[]) stakeholderToSecurities; // Stakeholder ID -> List of Security IDs
+    mapping(bytes16 => EquityCompensationActivePosition) securities; // Security ID -> ActivePosition
+}
+
+struct StockIssuanceDiamond {
+    bytes16 stock_class_id;
+    // bytes16 stock_plan_id; // Optional
+    // ShareNumbersIssued share_numbers_issued; // Optional
+    uint256 share_price; // OCF Monetary (USD is all that matters). Amount is Numeric: Fixed-point string representation of a number (up to 10 decimal places supported)
+    uint256 quantity; // Numeric: Fixed-point string representation of a number (up to 10 decimal places supported)
+    // bytes16 vesting_terms_id; // Optional
+    // uint256 cost_basis; // Optional OCF Monetary (USD is all that matters). Amount is Numeric: Fixed-point string representation of a number (up to 10 decimal places supported)
+    // bytes16[] stock_legend_ids; // Optional
+    // string issuance_type; // Optional for special types (["RSA", "FOUNDERS_STOCK"],)
+    // string[] comments; // Optional
+    // string custom_id; // Optional (eg R2-D2)
+    bytes16 stakeholder_id;
+    // string board_approval_date; // Optional
+    // string stockholder_approval_date; // Optional
+    // string consideration_text; // Optional
+    // SecurityLawExemption[] security_law_exemptions; // Optional
+}
+
+// date fields are going to use block timestamp
+struct StockIssuance {
+    bytes16 id;
+    string object_type;
+    bytes16 security_id;
+    StockIssuanceParams params;
+}
+
+// V1 Mappings, inefficient.
 
 struct ShareNumbersIssued {
     uint256 starting_share_number;
@@ -123,14 +182,6 @@ struct StockClassAuthorizedSharesAdjustment {
     string stockholder_approval_date; // optional
 }
 
-// date fields are going to use block timestamp
-struct StockIssuance {
-    bytes16 id;
-    string object_type;
-    bytes16 security_id;
-    StockIssuanceParams params;
-}
-
 struct StockLegendTemplate {
     bytes16 id;
 }
@@ -192,6 +243,28 @@ struct StockTransfer {
     string consideration_text; // optional
     bytes16 balance_security_id; // optional
     bytes16[] resulting_security_ids;
+}
+
+struct ConvertibleParams {
+    bytes16 stakeholder_id;
+    uint256 investment_amount;
+    string convertible_type; // ["NOTE", "SAFE"]
+    uint256 valuation_cap;
+    uint256 discount_rate; // solidty doesn't accept decimals so we use a uint256 and assume it's a percentage
+}
+
+struct ConvertibleIssuance {
+    bytes16 id;
+    string object_type;
+    bytes16 security_id;
+    ConvertibleParams params;
+}
+
+struct ActivePosition {
+    bytes16 stock_class_id;
+    uint256 quantity;
+    uint256 share_price;
+    uint40 timestamp;
 }
 
 struct ActivePositions {
