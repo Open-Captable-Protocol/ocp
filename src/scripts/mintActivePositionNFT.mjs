@@ -102,8 +102,10 @@ const main = async () => {
     const receipt = await mintTx.wait();
 
     // Get tokenId from the Transfer event
-    const transferEvent = receipt.logs.find((log) => log.topics[0] === ethers.id("Transfer(address,address,uint256)"));
-    const tokenId = transferEvent.topics[3]; // The tokenId is the third topic
+    const transferEvent = receipt.logs.find(
+        log => log.topics[0] === ethers.id("Transfer(address,address,uint256)")
+    );
+    const tokenId = transferEvent.topics[3];  // The tokenId is the third topic
 
     console.log("⏳ | Testing getter function");
     try {
@@ -119,8 +121,8 @@ const main = async () => {
     console.log("✅ | Raw tokenURI:", tokenURI);
 
     // Decode the base64 data URI
-    const base64Data = tokenURI.split(",")[1];
-    const decodedData = Buffer.from(base64Data, "base64").toString();
+    const base64Data = tokenURI.split(',')[1];
+    const decodedData = Buffer.from(base64Data, 'base64').toString();
     console.log("✅ | Decoded metadata:", JSON.parse(decodedData));
 };
 
