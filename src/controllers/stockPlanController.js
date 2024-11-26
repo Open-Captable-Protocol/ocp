@@ -1,8 +1,7 @@
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import { toScaledBigNumber } from "../utils/convertToFixedPointDecimals.js";
-import { withChainErrorHandler } from "./helper.js";
 
-export const convertAndReflectStockPlanOnchain = withChainErrorHandler(async (contract, stockPlan) => {
+export const convertAndReflectStockPlanOnchain = async (contract, stockPlan) => {
     // Convert OCF Types to Onchain Types
     const stockPlanIdBytes16 = convertUUIDToBytes16(stockPlan.id);
     const stockClassIdsBytes16 = stockPlan.stock_class_ids.map((id) => convertUUIDToBytes16(id));
@@ -17,9 +16,9 @@ export const convertAndReflectStockPlanOnchain = withChainErrorHandler(async (co
     await tx.wait();
 
     console.log("✅ | Stock Plan created onchain");
-});
+};
 
-export const adjustStockPlanPool = withChainErrorHandler(async (contract, stockPlanId, newSharesReserved) => {
+export const adjustStockPlanPool = async (contract, stockPlanId, newSharesReserved) => {
     const stockPlanIdBytes16 = convertUUIDToBytes16(stockPlanId);
     const scaledShares = toScaledBigNumber(newSharesReserved);
 
@@ -27,4 +26,4 @@ export const adjustStockPlanPool = withChainErrorHandler(async (contract, stockP
     await tx.wait();
 
     console.log("✅ | Stock Plan pool adjusted onchain");
-});
+};

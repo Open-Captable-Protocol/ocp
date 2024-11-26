@@ -1,9 +1,8 @@
 import { toScaledBigNumber } from "../utils/convertToFixedPointDecimals.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
-import { withChainErrorHandler } from "./helper.js";
 
 /// @dev: controller handles conversion from OCF type to Onchain types and creates the stock class.
-export const convertAndReflectStockClassOnchain = withChainErrorHandler(async (contract, stockClass) => {
+export const convertAndReflectStockClassOnchain = async (contract, stockClass) => {
     // First: convert OCF Types to Onchain Types
     const stockClassIdBytes16 = convertUUIDToBytes16(stockClass.id);
     const scaledSharePrice = toScaledBigNumber(stockClass.price_per_share.amount);
@@ -17,10 +16,10 @@ export const convertAndReflectStockClassOnchain = withChainErrorHandler(async (c
     await tx.wait();
 
     console.log("✅ | Stock Class created  onchain");
-});
+};
 
 //TODO: to decide if we want to also return offchain data.
-export const getStockClassById = withChainErrorHandler(async (contract, id) => {
+export const getStockClassById = async (contract, id) => {
     // First: convert OCF Types to Onchain Types
     const stockClassIdBytes16 = convertUUIDToBytes16(id);
     // Second: get stock class onchain
@@ -32,26 +31,27 @@ export const getStockClassById = withChainErrorHandler(async (contract, id) => {
     console.log("Stock Class:", { stockClassId, classType, pricePerShare, initialSharesAuthorized });
 
     return { stockClassId, classType, pricePerShare, initialSharesAuthorized };
-});
+};
 
-export const getTotalNumberOfStockClasses = withChainErrorHandler(async (contract) => {
+export const getTotalNumberOfStockClasses = async (contract) => {
     const totalStockClasses = await contract.getTotalNumberOfStockClasses();
     console.log("＃ | Total number of stock classes:", totalStockClasses.toString());
     return totalStockClasses.toString();
-});
+};
 
-export const convertAndAdjustStockClassAuthorizedSharesOnchain = withChainErrorHandler(
-    async (contract, { stock_class_id, new_shares_authorized, board_approval_date = "", stakeholder_approval_date = "", comments = [] }) => {
-        const stockClassIdBytes16 = convertUUIDToBytes16(stock_class_id);
-        const newSharesAuthorizedScaled = toScaledBigNumber(new_shares_authorized);
+export const convertAndAdjustStockClassAuthorizedSharesOnchain = async (
+    contract,
+    { stock_class_id, new_shares_authorized, board_approval_date = "", stakeholder_approval_date = "", comments = [] }
+) => {
+    const stockClassIdBytes16 = convertUUIDToBytes16(stock_class_id);
+    const newSharesAuthorizedScaled = toScaledBigNumber(new_shares_authorized);
 
-        const tx = await contract.adjustStockClassAuthorizedShares(
-            stockClassIdBytes16,
-            newSharesAuthorizedScaled,
-            comments,
-            board_approval_date,
-            stakeholder_approval_date
-        );
-        await tx.wait();
-    }
-);
+    const tx = await contract.adjustStockClassAuthorizedShares(
+        stockClassIdBytes16,
+        newSharesAuthorizedScaled,
+        comments,
+        board_approval_date,
+        stakeholder_approval_date
+    );
+    await tx.wait();
+};
