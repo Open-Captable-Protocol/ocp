@@ -7,7 +7,7 @@ import { ethers } from "ethers";
 import Issuer from "../db/objects/Issuer.js";
 import getProvider from "../chain-operations/getProvider.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
-import { connectDB } from "../db/config/mongoose.ts";
+import { connectDB } from "../db/config/mongoose.js";
 import fs from "fs/promises";
 import get from "lodash/get.js";
 
