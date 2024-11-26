@@ -45,8 +45,6 @@ contract CapTableFactory {
         address _stakeholderNFTFacet
     ) {
         require(_diamondCutFacet != address(0), "Invalid diamondCutFacet");
-        // ... similar requires for other facets
-
         diamondCutFacet = _diamondCutFacet;
         issuerFacet = _issuerFacet;
         stakeholderFacet = _stakeholderFacet;

@@ -9,7 +9,6 @@ import { ValidationLib } from "@libraries/ValidationLib.sol";
 contract WarrantFacet {
     function issueWarrant(bytes16 stakeholder_id, uint256 quantity, bytes16 security_id) external {
         Storage storage ds = StorageLib.get();
-        ds.nonce++;
 
         ValidationLib.validateStakeholder(stakeholder_id);
         ValidationLib.validateQuantity(quantity);

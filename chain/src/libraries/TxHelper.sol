@@ -30,9 +30,4 @@ library TxHelper {
     function createTx(TxType txType, bytes memory txData) internal {
         emit TxCreated(txType, txData);
     }
-
-    function generateDeterministicUniqueID(bytes16 stakeholderId, uint256 nonce) public view returns (bytes16) {
-        bytes16 deterministicValue = bytes16(keccak256(abi.encodePacked(stakeholderId, block.timestamp, block.prevrandao, nonce)));
-        return deterministicValue;
-    }
 }

@@ -10,7 +10,6 @@ struct Storage {
     mapping(bytes16 => uint256) stockClassIndex;
     StockPlan[] stockPlans;
     mapping(bytes16 => uint256) stockPlanIndex;
-    uint256 nonce;
     StockActivePositions stockActivePositions;
     ConvertibleActivePositions convertibleActivePositions;
     EquityCompensationActivePositions equityCompensationActivePositions;

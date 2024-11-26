@@ -15,7 +15,6 @@ contract EquityCompensationFacet {
         bytes16 security_id
     ) external {
         Storage storage ds = StorageLib.get();
-        ds.nonce++;
 
         ValidationLib.validateStakeholder(stakeholder_id);
         ValidationLib.validateStockClass(stock_class_id);
@@ -44,7 +43,6 @@ contract EquityCompensationFacet {
 
     function exerciseEquityCompensation(bytes16 equity_comp_security_id, bytes16 resulting_stock_security_id, uint256 quantity) external {
         Storage storage ds = StorageLib.get();
-        ds.nonce++;
 
         // Validate equity compensation security exists and has sufficient quantity
         EquityCompensationActivePosition memory equityPosition = ds.equityCompensationActivePositions.securities[equity_comp_security_id];

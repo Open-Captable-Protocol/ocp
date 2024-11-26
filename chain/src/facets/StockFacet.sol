@@ -9,7 +9,6 @@ import { ValidationLib } from "@libraries/ValidationLib.sol";
 contract StockFacet {
     function issueStock(bytes16 stock_class_id, uint256 share_price, uint256 quantity, bytes16 stakeholder_id, bytes16 security_id) external {
         Storage storage ds = StorageLib.get();
-        ds.nonce++;
 
         ValidationLib.validateStakeholder(stakeholder_id);
         ValidationLib.validateStockClass(stock_class_id);

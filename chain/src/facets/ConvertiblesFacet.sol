@@ -9,7 +9,6 @@ import { ValidationLib } from "@libraries/ValidationLib.sol";
 contract ConvertiblesFacet {
     function issueConvertible(bytes16 stakeholder_id, uint256 investment_amount, bytes16 security_id) external {
         Storage storage ds = StorageLib.get();
-        ds.nonce++;
 
         ValidationLib.validateStakeholder(stakeholder_id);
         ValidationLib.validateAmount(investment_amount);
