@@ -8,7 +8,7 @@ import { countIssuers, readIssuerById } from "../db/operations/read.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { checkPortal } from "../fairmint/checkPortal.js";
-import { addAddressesToWatch } from "../utils/websocket.js";
+import { addAddressesToWatch } from "../utils/websocket.ts";
 import { reflectPortal } from "../fairmint/reflectPortal.js";
 const issuer = Router();
 

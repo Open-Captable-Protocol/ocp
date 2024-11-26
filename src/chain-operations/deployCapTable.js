@@ -1,5 +1,4 @@
 import { ethers } from "ethers";
-import CAP_TABLE from "../../chain/out/DiamondCapTable.sol/DiamondCapTable.json";
 import CAP_TABLE_FACTORY from "../../chain/out/DiamondCapTableFactory.sol/DiamondCapTableFactory.json";
 import STAKEHOLDER_FACET from "../../chain/out/StakeholderFacet.sol/StakeholderFacet.json";
 import ISSUER_FACET from "../../chain/out/IssuerFacet.sol/IssuerFacet.json";
