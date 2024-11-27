@@ -2,7 +2,13 @@
 pragma solidity ^0.8.0;
 
 import { StockActivePositions, ConvertibleActivePositions, EquityCompensationActivePositions, WarrantActivePositions, Issuer, StockClass, StockPlan } from "@libraries/Structs.sol";
+import { AccessControlUpgradeable } from "openzeppelin/access/AccessControlUpgradeable.sol";
+
 struct Storage {
+    // Access Control storage
+    mapping(bytes32 => mapping(address => bool)) roles;
+    mapping(bytes32 => bytes32) roleAdmin;
+    // Existing storage
     Issuer issuer;
     bytes16[] stakeholders;
     mapping(bytes16 => uint256) stakeholderIndex;

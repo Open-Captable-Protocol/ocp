@@ -13,6 +13,7 @@ import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
 import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
 import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
+import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 import "forge-std/console.sol";
 
 contract CapTableFactory {
@@ -31,6 +32,7 @@ contract CapTableFactory {
     address public immutable stockPlanFacet;
     address public immutable warrantFacet;
     address public immutable stakeholderNFTFacet;
+    address public immutable accessControlFacet;
 
     constructor(
         address _diamondCutFacet,
@@ -42,7 +44,8 @@ contract CapTableFactory {
         address _equityCompensationFacet,
         address _stockPlanFacet,
         address _warrantFacet,
-        address _stakeholderNFTFacet
+        address _stakeholderNFTFacet,
+        address _accessControlFacet
     ) {
         require(_diamondCutFacet != address(0), "Invalid diamondCutFacet");
         diamondCutFacet = _diamondCutFacet;
@@ -55,6 +58,7 @@ contract CapTableFactory {
         stockPlanFacet = _stockPlanFacet;
         warrantFacet = _warrantFacet;
         stakeholderNFTFacet = _stakeholderNFTFacet;
+        accessControlFacet = _accessControlFacet;
     }
 
     function createCapTable(bytes16 id, uint256 initialSharesAuthorized) external returns (address) {
@@ -69,20 +73,35 @@ contract CapTableFactory {
         CapTable diamond = new CapTable(address(this), diamondCutFacet);
 
         // Create facet cuts in memory
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](9);
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](10);
+
+        // AccessControlFacet (add first so other initializations can use roles)
+        bytes4[] memory accessControlSelectors = new bytes4[](7);
+        accessControlSelectors[0] = AccessControlFacet.initializeAccessControl.selector;
+        accessControlSelectors[1] = AccessControlFacet.hasRole.selector;
+        accessControlSelectors[2] = AccessControlFacet.getRoleAdmin.selector;
+        accessControlSelectors[3] = AccessControlFacet.grantRole.selector;
+        accessControlSelectors[4] = AccessControlFacet.revokeRole.selector;
+        accessControlSelectors[5] = AccessControlFacet.renounceRole.selector;
+        accessControlSelectors[6] = AccessControlFacet.setRoleAdmin.selector;
+        cuts[0] = IDiamondCut.FacetCut({
+            facetAddress: accessControlFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: accessControlSelectors
+        });
 
         // IssuerFacet
         bytes4[] memory issuerSelectors = new bytes4[](2);
         issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
         issuerSelectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
-        cuts[0] = IDiamondCut.FacetCut({ facetAddress: issuerFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: issuerSelectors });
+        cuts[1] = IDiamondCut.FacetCut({ facetAddress: issuerFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: issuerSelectors });
 
         // StakeholderFacet
         bytes4[] memory stakeholderSelectors = new bytes4[](3);
         stakeholderSelectors[0] = StakeholderFacet.createStakeholder.selector;
         stakeholderSelectors[1] = StakeholderFacet.linkStakeholderAddress.selector;
         stakeholderSelectors[2] = StakeholderFacet.getStakeholderPositions.selector;
-        cuts[1] = IDiamondCut.FacetCut({
+        cuts[2] = IDiamondCut.FacetCut({
             facetAddress: stakeholderFacet,
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: stakeholderSelectors
@@ -92,7 +111,7 @@ contract CapTableFactory {
         bytes4[] memory stockClassSelectors = new bytes4[](2);
         stockClassSelectors[0] = StockClassFacet.createStockClass.selector;
         stockClassSelectors[1] = StockClassFacet.adjustAuthorizedShares.selector;
-        cuts[2] = IDiamondCut.FacetCut({
+        cuts[3] = IDiamondCut.FacetCut({
             facetAddress: stockClassFacet,
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: stockClassSelectors
@@ -101,13 +120,13 @@ contract CapTableFactory {
         // StockFacet
         bytes4[] memory stockSelectors = new bytes4[](1);
         stockSelectors[0] = StockFacet.issueStock.selector;
-        cuts[3] = IDiamondCut.FacetCut({ facetAddress: stockFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: stockSelectors });
+        cuts[4] = IDiamondCut.FacetCut({ facetAddress: stockFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: stockSelectors });
 
         // ConvertiblesFacet
         bytes4[] memory convertibleSelectors = new bytes4[](2);
         convertibleSelectors[0] = ConvertiblesFacet.issueConvertible.selector;
         convertibleSelectors[1] = ConvertiblesFacet.getConvertiblePosition.selector;
-        cuts[4] = IDiamondCut.FacetCut({
+        cuts[5] = IDiamondCut.FacetCut({
             facetAddress: convertiblesFacet,
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: convertibleSelectors
@@ -118,7 +137,7 @@ contract CapTableFactory {
         equityCompensationSelectors[0] = EquityCompensationFacet.issueEquityCompensation.selector;
         equityCompensationSelectors[1] = EquityCompensationFacet.getPosition.selector;
         equityCompensationSelectors[2] = EquityCompensationFacet.exerciseEquityCompensation.selector;
-        cuts[5] = IDiamondCut.FacetCut({
+        cuts[6] = IDiamondCut.FacetCut({
             facetAddress: equityCompensationFacet,
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: equityCompensationSelectors
@@ -128,7 +147,7 @@ contract CapTableFactory {
         bytes4[] memory stockPlanSelectors = new bytes4[](2);
         stockPlanSelectors[0] = StockPlanFacet.createStockPlan.selector;
         stockPlanSelectors[1] = StockPlanFacet.adjustStockPlanPool.selector;
-        cuts[6] = IDiamondCut.FacetCut({
+        cuts[7] = IDiamondCut.FacetCut({
             facetAddress: stockPlanFacet,
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: stockPlanSelectors
@@ -138,20 +157,23 @@ contract CapTableFactory {
         bytes4[] memory warrantSelectors = new bytes4[](2);
         warrantSelectors[0] = WarrantFacet.issueWarrant.selector;
         warrantSelectors[1] = WarrantFacet.getWarrantPosition.selector;
-        cuts[7] = IDiamondCut.FacetCut({ facetAddress: warrantFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: warrantSelectors });
+        cuts[8] = IDiamondCut.FacetCut({ facetAddress: warrantFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: warrantSelectors });
 
         // StakeholderNFTFacet
         bytes4[] memory stakeholderNFTSelectors = new bytes4[](2);
         stakeholderNFTSelectors[0] = StakeholderNFTFacet.mint.selector;
         stakeholderNFTSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
-        cuts[8] = IDiamondCut.FacetCut({
+        cuts[9] = IDiamondCut.FacetCut({
             facetAddress: stakeholderNFTFacet,
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: stakeholderNFTSelectors
         });
 
-        // Perform the cuts
-        DiamondCutFacet(address(diamond)).diamondCut(cuts, address(0), "");
+        // Get the encoded initialization data
+        bytes memory initData = abi.encodeWithSelector(AccessControlFacet.initializeAccessControl.selector);
+
+        // Execute the diamond cut
+        DiamondCutFacet(address(diamond)).diamondCut(cuts, address(accessControlFacet), initData);
 
         // Initialize the issuer
         IssuerFacet(address(diamond)).initializeIssuer(id, initialSharesAuthorized);
