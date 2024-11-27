@@ -5,8 +5,11 @@ import { StorageLib, Storage } from "@core/Storage.sol";
 import { EquityCompensationActivePosition, StockActivePosition } from "@libraries/Structs.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract EquityCompensationFacet {
+    /// @notice Issue equity compensation to a stakeholder
+    /// @dev Only OPERATOR_ROLE can issue equity compensation
     function issueEquityCompensation(
         bytes16 stakeholder_id,
         bytes16 stock_class_id,
@@ -15,6 +18,10 @@ contract EquityCompensationFacet {
         bytes16 security_id
     ) external {
         Storage storage ds = StorageLib.get();
+
+        if (!AccessControl.hasOperatorRole(msg.sender)) {
+            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.OPERATOR_ROLE);
+        }
 
         ValidationLib.validateStakeholder(stakeholder_id);
         ValidationLib.validateStockClass(stock_class_id);
@@ -40,11 +47,19 @@ contract EquityCompensationFacet {
         TxHelper.createTx(TxType.EQUITY_COMPENSATION_ISSUANCE, txData);
     }
 
+    /// @notice Exercise equity compensation to convert it into stock
+    /// @dev Only the stakeholder who owns the equity compensation can exercise it
     function exerciseEquityCompensation(bytes16 equity_comp_security_id, bytes16 resulting_stock_security_id, uint256 quantity) external {
         Storage storage ds = StorageLib.get();
 
         // Validate equity compensation security exists and has sufficient quantity
         EquityCompensationActivePosition memory equityPosition = ds.equityCompensationActivePositions.securities[equity_comp_security_id];
+
+        // Verify caller is the stakeholder who owns this equity compensation
+        bytes16 stakeholderId = ds.addressToStakeholderId[msg.sender];
+        if (stakeholderId != equityPosition.stakeholder_id) {
+            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.INVESTOR_ROLE);
+        }
 
         if (quantity == 0) {
             revert ValidationLib.InvalidQuantity();
@@ -95,8 +110,24 @@ contract EquityCompensationFacet {
         TxHelper.createTx(TxType.EQUITY_COMPENSATION_EXERCISE, txData);
     }
 
+    /// @notice Get details of an equity compensation position
+    /// @dev Only OPERATOR_ROLE or the stakeholder who owns the position can view it
     function getPosition(bytes16 securityId) external view returns (EquityCompensationActivePosition memory) {
         Storage storage ds = StorageLib.get();
-        return ds.equityCompensationActivePositions.securities[securityId];
+
+        EquityCompensationActivePosition memory position = ds.equityCompensationActivePositions.securities[securityId];
+
+        // Allow operators and admins to view any position
+        if (AccessControl.hasOperatorRole(msg.sender) || AccessControl.hasAdminRole(msg.sender)) {
+            return position;
+        }
+
+        // Otherwise, verify caller is the stakeholder who owns this position
+        bytes16 stakeholderId = ds.addressToStakeholderId[msg.sender];
+        if (stakeholderId != position.stakeholder_id) {
+            revert AccessControl.AccessControlUnauthorizedOrInvestor(msg.sender);
+        }
+
+        return position;
     }
 }

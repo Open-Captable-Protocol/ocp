@@ -29,7 +29,8 @@ contract DeployDiamondCapTableScript is Script {
         address equityCompensationFacet,
         address stockPlanFacet,
         address warrantFacet,
-        address stakeholderNFTFacet
+        address stakeholderNFTFacet,
+        address accessControlFacet
     ) public view returns (bool) {
         // check one by one
         if (diamondCutFacet == address(0)) {
@@ -72,6 +73,10 @@ contract DeployDiamondCapTableScript is Script {
             console.log("STAKEHOLDER_NFT_FACET not set");
             return false;
         }
+        if (accessControlFacet == address(0)) {
+            console.log("ACCESS_CONTROL_FACET not set");
+            return false;
+        }
         return true;
     }
 
@@ -92,6 +97,7 @@ contract DeployDiamondCapTableScript is Script {
         address stockPlanFacet = vm.envOr("STOCK_PLAN_FACET", address(0));
         address warrantFacet = vm.envOr("WARRANT_FACET", address(0));
         address stakeholderNFTFacet = vm.envOr("STAKEHOLDER_NFT_FACET", address(0));
+        address accessControlFacet = vm.envOr("ACCESS_CONTROL_FACET", address(0));
 
         bool allSet = checkEnv(
             diamondCutFacet,
@@ -103,7 +109,8 @@ contract DeployDiamondCapTableScript is Script {
             equityCompensationFacet,
             stockPlanFacet,
             warrantFacet,
-            stakeholderNFTFacet
+            stakeholderNFTFacet,
+            accessControlFacet
         );
 
         // Deploy new facets if addresses not in env
@@ -132,6 +139,7 @@ contract DeployDiamondCapTableScript is Script {
             console.log("STOCK_PLAN_FACET=", stockPlanFacet);
             console.log("WARRANT_FACET=", warrantFacet);
             console.log("STAKEHOLDER_NFT_FACET=", stakeholderNFTFacet);
+            console.log("ACCESS_CONTROL_FACET=", accessControlFacet);
             console.log("-------------------------------------------------");
         } else {
             console.log("Using existing facets from .env");
@@ -148,7 +156,8 @@ contract DeployDiamondCapTableScript is Script {
             equityCompensationFacet,
             stockPlanFacet,
             warrantFacet,
-            stakeholderNFTFacet
+            stakeholderNFTFacet,
+            accessControlFacet
         );
 
         console.log("\nDiamondCapTableFactory deployed at:", address(factory));

@@ -5,10 +5,17 @@ import { StorageLib, Storage } from "@core/Storage.sol";
 import { WarrantActivePosition } from "@libraries/Structs.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract WarrantFacet {
+    /// @notice Issue a warrant to a stakeholder
+    /// @dev Only OPERATOR_ROLE can issue warrants
     function issueWarrant(bytes16 stakeholder_id, uint256 quantity, bytes16 security_id) external {
         Storage storage ds = StorageLib.get();
+
+        if (!AccessControl.hasOperatorRole(msg.sender)) {
+            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.OPERATOR_ROLE);
+        }
 
         ValidationLib.validateStakeholder(stakeholder_id);
         ValidationLib.validateQuantity(quantity);
@@ -27,8 +34,24 @@ contract WarrantFacet {
         TxHelper.createTx(TxType.WARRANT_ISSUANCE, txData);
     }
 
+    /// @notice Get details of a warrant position
+    /// @dev Only OPERATOR_ROLE or the stakeholder who owns the position can view it
     function getWarrantPosition(bytes16 securityId) external view returns (WarrantActivePosition memory) {
         Storage storage ds = StorageLib.get();
-        return ds.warrantActivePositions.securities[securityId];
+
+        WarrantActivePosition memory position = ds.warrantActivePositions.securities[securityId];
+
+        // Allow operators and admins to view any position
+        if (AccessControl.hasOperatorRole(msg.sender) || AccessControl.hasAdminRole(msg.sender)) {
+            return position;
+        }
+
+        // Otherwise, verify caller is the stakeholder who owns this position
+        bytes16 stakeholderId = ds.addressToStakeholderId[msg.sender];
+        if (stakeholderId != position.stakeholder_id) {
+            revert AccessControl.AccessControlUnauthorizedOrInvestor(msg.sender);
+        }
+
+        return position;
     }
 }
