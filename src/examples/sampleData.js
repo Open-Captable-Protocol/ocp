@@ -36,6 +36,7 @@ export const stakeholder1 = (issuerId) => {
             },
             issuer_assigned_id: "",
             stakeholder_type: "INDIVIDUAL",
+
             current_relationship: "EMPLOYEE",
             // "primary_contact": {
             //     "name": {
@@ -56,7 +57,6 @@ export const stakeholder1 = (issuerId) => {
         },
     };
 };
-
 export const stockClassAuthorizedSharesAdjust = (issuerId, stock_class_id, new_shares_authorized, comments) => {
     return {
         issuerId,
@@ -77,7 +77,6 @@ export const issuerAuthorizedSharesAdjust = (issuerId, new_shares_authorized, co
         },
     };
 };
-
 export const stockAccept = (issuerId, stakeholderId, stockClassId, security_id, comments) => {
     return {
         issuerId,
@@ -101,7 +100,6 @@ export const stockRetract = (issuerId, stakeholderId, stockClassId, security_id,
         },
     };
 };
-
 export const stockRepurchase = (issuerId, quantity, price, stakeholderId, stockClassId, security_id, comments) => {
     return {
         issuerId,
@@ -128,7 +126,6 @@ export const stockReissue = (issuerId, stakeholderId, stockClassId, security_id,
         },
     };
 };
-
 export const stockCancel = (issuerId, quantity, stakeholderId, stockClassId, security_id, reason_text, comments) => {
     return {
         issuerId,
@@ -142,7 +139,6 @@ export const stockCancel = (issuerId, quantity, stakeholderId, stockClassId, sec
         },
     };
 };
-
 export const stakeholder2 = (issuerId) => {
     return {
         issuerId,
@@ -174,7 +170,6 @@ export const stakeholder2 = (issuerId) => {
         },
     };
 };
-
 export const stakeholder3 = (issuerId) => {
     return {
         issuerId,
@@ -191,7 +186,6 @@ export const stakeholder3 = (issuerId) => {
         },
     };
 };
-
 export const stockClass = (issuerId) => {
     return {
         issuerId,
@@ -215,7 +209,6 @@ export const stockClass = (issuerId) => {
         },
     };
 };
-
 export const stockIssuance = (issuerId, stakeholderId, stockClassId, quantity, sharePriceAmount) => {
     return {
         issuerId,
@@ -245,7 +238,6 @@ export const stockIssuance = (issuerId, stakeholderId, stockClassId, quantity, s
         },
     };
 };
-
 export const stockTransfer = (issuerId, quantity, transferorId, transfereeId, stockClassId, sharePrice) => {
     return {
         issuerId,
