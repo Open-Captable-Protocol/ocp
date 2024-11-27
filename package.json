@@ -4,7 +4,7 @@
   "private": true,
   "author": "Victor Mimo, Adam Momen, Fairmint Inc., Plural Everything Inc.",
   "license": "MIT",
-  "description": "Open Captable Protocol",
+  "description": "Open Cap Table Protocol, fairmint.com fork",
   "type": "module",
   "scripts": {
     "migrate": "npx tsx src/scripts/migrate.js",
