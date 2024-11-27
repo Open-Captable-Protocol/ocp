@@ -15,9 +15,11 @@ import "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
+import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract DiamondTestBase is Test {
-    uint256 public issuerInitialSharesAuthorized = 1000000;
+    uint256 public issuerInitialSharesAuthorized = 10000000;
     bytes16 public issuerId = 0xd3373e0a4dd9430f8a563281f2800e1e;
     address public contractOwner;
 
@@ -32,6 +34,7 @@ contract DiamondTestBase is Test {
     CapTable public capTable;
     WarrantFacet public warrantFacet;
     StakeholderNFTFacet public stakeholderNFTFacet;
+    AccessControlFacet public accessControlFacet;
 
     event StockIssued(bytes16 indexed stakeholderId, bytes16 indexed stockClassId, uint256 quantity, uint256 sharePrice);
     event StakeholderCreated(bytes16 indexed id);
@@ -57,9 +60,10 @@ contract DiamondTestBase is Test {
         stockPlanFacet = new StockPlanFacet();
         warrantFacet = new WarrantFacet();
         stakeholderNFTFacet = new StakeholderNFTFacet();
+        accessControlFacet = new AccessControlFacet();
 
         // Add facets
-        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](9);
+        IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](10);
 
         bytes4[] memory issuerSelectors = new bytes4[](2);
         issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
@@ -97,6 +101,12 @@ contract DiamondTestBase is Test {
         bytes4[] memory nftSelectors = new bytes4[](2);
         nftSelectors[0] = StakeholderNFTFacet.mint.selector;
         nftSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
+
+        bytes4[] memory accessControlSelectors = new bytes4[](4);
+        accessControlSelectors[0] = AccessControlFacet.grantRole.selector;
+        accessControlSelectors[1] = AccessControlFacet.revokeRole.selector;
+        accessControlSelectors[2] = AccessControlFacet.hasRole.selector;
+        accessControlSelectors[3] = AccessControlFacet.initializeAccessControl.selector;
 
         // issuer facet
         cut[0] = IDiamondCut.FacetCut({
@@ -160,14 +170,28 @@ contract DiamondTestBase is Test {
             functionSelectors: nftSelectors
         });
 
+        // AccessControl facet
+        cut[9] = IDiamondCut.FacetCut({
+            facetAddress: address(accessControlFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: accessControlSelectors
+        });
+
         DiamondCutFacet(address(capTable)).diamondCut(cut, address(0), "");
 
         // Initialize issuer
         IssuerFacet(payable(address(capTable))).initializeIssuer(issuerId, issuerInitialSharesAuthorized);
+
+        // Initialize access control first
+        AccessControlFacet(address(capTable)).initializeAccessControl();
+
+        // Grant roles after initialization
+        AccessControlFacet(address(capTable)).grantRole(AccessControl.DEFAULT_ADMIN_ROLE, contractOwner);
+        AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, contractOwner);
     }
 
     // Common helper functions
-    function createStakeholder() public returns (bytes16) {
+    function createStakeholder() public virtual returns (bytes16) {
         bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
 
         // Debug log before creation
@@ -186,7 +210,7 @@ contract DiamondTestBase is Test {
     }
 
     // Helper function to create a stock class for testing
-    function createStockClass() public returns (bytes16) {
+    function createStockClass() public virtual returns (bytes16) {
         bytes16 stockClassId = 0xd3373e0a4dd940000000000000000006;
         string memory classType = "COMMON";
         uint256 pricePerShare = 1e18;

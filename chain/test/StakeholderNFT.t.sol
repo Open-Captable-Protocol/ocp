@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
@@ -14,10 +13,19 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
 
     function setUp() public override {
         super.setUp();
-        stakeholderId = createStakeholder();
-        stakeholderWallet = address(0xBEEF);
 
-        // Issue some positions to the stakeholder
+        // Create stakeholder and set wallet (but don't link yet)
+        stakeholderId = createStakeholder();
+        stakeholderWallet = address(0xF62849F9A0B5Bf2913b396098F7c7019b51A820a);
+
+        // Grant necessary roles
+        vm.startPrank(contractOwner);
+        AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, address(this));
+        AccessControlFacet(address(capTable)).grantRole(AccessControl.INVESTOR_ROLE, stakeholderWallet);
+        AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, stakeholderWallet);
+        vm.stopPrank();
+
+        // Create a stock class and issue some stock for the NFT metadata
         bytes16 stockClassId = createStockClass();
         bytes16 stockSecurityId = 0xd3373e0a4dd940000000000000000001;
         StockFacet(address(capTable)).issueStock(stockClassId, 1e18, 1000, stakeholderId, stockSecurityId);
@@ -25,9 +33,9 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
 
     function testLinkStakeholderAddress() public {
         // Link the address
-        StakeholderFacet(address(capTable)).linkStakeholderAddress(stakeholderId, stakeholderWallet);
+        linkStakeholderAddress(stakeholderId, stakeholderWallet);
 
-        // Verify the link was created by trying to mint (which requires a valid link)
+        // Verify the link was created by trying to mint
         vm.prank(stakeholderWallet);
         StakeholderNFTFacet(address(capTable)).mint();
 
@@ -37,7 +45,7 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
 
     function testMintNFT() public {
         // Link address first
-        StakeholderFacet(address(capTable)).linkStakeholderAddress(stakeholderId, stakeholderWallet);
+        linkStakeholderAddress(stakeholderId, stakeholderWallet);
 
         // Mint NFT
         vm.prank(stakeholderWallet);
@@ -45,13 +53,14 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
     }
 
     function testFailMintWithoutLink() public {
+        // Try to mint without linking - should fail
         vm.prank(stakeholderWallet);
         StakeholderNFTFacet(address(capTable)).mint();
     }
 
     function testFailDoubleMint() public {
         // Link address first
-        StakeholderFacet(address(capTable)).linkStakeholderAddress(stakeholderId, stakeholderWallet);
+        linkStakeholderAddress(stakeholderId, stakeholderWallet);
 
         // First mint
         vm.prank(stakeholderWallet);
@@ -63,8 +72,8 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
     }
 
     function testTokenURI() public {
-        // Link address first
-        StakeholderFacet(address(capTable)).linkStakeholderAddress(stakeholderId, stakeholderWallet);
+        // Link address and mint NFT
+        linkStakeholderAddress(stakeholderId, stakeholderWallet);
 
         // Mint NFT
         vm.prank(stakeholderWallet);
@@ -73,25 +82,18 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         // Get tokenId from stakeholderId
         uint256 tokenId = uint256(bytes32(stakeholderId));
 
-        // Get URI
+        // Get URI as stakeholderWallet (token owner)
+        vm.startPrank(stakeholderWallet);
         string memory uri = StakeholderNFTFacet(address(capTable)).tokenURI(tokenId);
-        console.log("Token URI:", uri);
+        vm.stopPrank();
 
-        // Let's also log the positions directly
+        // Basic validation of URI format
+        assertTrue(bytes(uri).length > 0, "URI should not be empty");
+
+        // Also check positions exist
+        vm.startPrank(stakeholderWallet);
         StakeholderPositions memory positions = StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
-
-        console.log("\nActive Positions:");
-        console.log("Stock Positions:", positions.stocks.length);
-        if (positions.stocks.length > 0) {
-            for (uint i = 0; i < positions.stocks.length; i++) {
-                console.log("  Stock Position", i);
-                console.log("    Quantity:", positions.stocks[i].quantity);
-                console.log("    Share Price:", positions.stocks[i].share_price);
-            }
-        }
-
-        console.log("Warrant Positions:", positions.warrants.length);
-        console.log("Convertible Positions:", positions.convertibles.length);
-        console.log("Equity Compensation Positions:", positions.equityCompensations.length);
+        vm.stopPrank();
+        assertTrue(positions.stocks.length > 0, "Should have stock positions");
     }
 }

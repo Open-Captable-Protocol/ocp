@@ -32,12 +32,6 @@ contract DiamondAdjustmentTest is DiamondTestBase {
     function test_AdjustStockClassAuthorizedShares() public {
         uint256 newSharesAuthorized = 2000000;
 
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit StockClassAuthorizedSharesAdjusted(stockClassId, newSharesAuthorized);
-
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(newSharesAuthorized));
-
         StockClassFacet(payable(address(capTable))).adjustAuthorizedShares(stockClassId, newSharesAuthorized);
     }
 

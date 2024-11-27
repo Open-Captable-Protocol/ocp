@@ -14,6 +14,12 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
 
     function setUp() public override {
         super.setUp();
+
+        // Grant necessary roles
+        vm.startPrank(contractOwner);
+        AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, address(this));
+        vm.stopPrank();
+
         stakeholderId = createStakeholder();
         stockClassId = createStockClass();
 
@@ -55,9 +61,11 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
     }
 
     function testFailInvalidStockPlan() public {
-        bytes16 invalidStockPlanId = 0xd3373e0a4dd940000000000000000099;
+        // Try to issue equity compensation with a non-existent stock plan
+        bytes16 invalidStockPlanId = bytes16(keccak256("invalidStockPlan"));
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
+        vm.expectRevert(abi.encodeWithSelector(ValidationLib.InvalidStockPlan.selector, invalidStockPlanId));
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(stakeholderId, stockClassId, invalidStockPlanId, 1000, securityId);
     }
 
