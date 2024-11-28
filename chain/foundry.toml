@@ -6,13 +6,20 @@ solc_version = '0.8.20'
 bytecode_hash = "none"
 cbor_metadata = false
 
+# Formatting options
+[fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = true
+multiline_func_header = "all"
+number_underscore = "thousands"
+quote_style = "double"
+ignore = []
 
 [rpc_endpoints]
 rpc_url = "${RPC_URL}"
 
 [etherscan]
 optimism_goerli_etherscan = { key = "${ETHERSCAN_L2_API_KEY}", chain = "sepolia" }
-
-
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

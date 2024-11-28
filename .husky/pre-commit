@@ -1,1 +1,2 @@
 yarn flightcheck
+cd chain && forge fmt

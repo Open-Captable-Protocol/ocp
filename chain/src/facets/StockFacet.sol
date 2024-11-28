@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {StorageLib, Storage} from "@core/Storage.sol";
-import {StockActivePosition, StockClass} from "@libraries/Structs.sol";
-import {TxHelper, TxType} from "@libraries/TxHelper.sol";
-import {ValidationLib} from "@libraries/ValidationLib.sol";
+import { StorageLib, Storage } from "@core/Storage.sol";
+import { StockActivePosition, StockClass } from "@libraries/Structs.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
+import { ValidationLib } from "@libraries/ValidationLib.sol";
 
 contract StockFacet {
     function issueStock(
@@ -13,7 +13,9 @@ contract StockFacet {
         uint256 quantity,
         bytes16 stakeholder_id,
         bytes16 security_id
-    ) external {
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         ValidationLib.validateStakeholder(stakeholder_id);

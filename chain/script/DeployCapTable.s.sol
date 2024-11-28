@@ -4,18 +4,18 @@ pragma solidity ^0.8.20;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/core/CapTableFactory.sol";
-import {DiamondCutFacet} from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
-import {IssuerFacet} from "@facets/IssuerFacet.sol";
-import {DiamondLoupeFacet} from "diamond-3-hardhat/facets/DiamondLoupeFacet.sol";
-import {IDiamondCut} from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
-import {StakeholderFacet} from "@facets/StakeholderFacet.sol";
-import {StockClassFacet} from "@facets/StockClassFacet.sol";
-import {StockFacet} from "@facets/StockFacet.sol";
-import {ConvertiblesFacet} from "@facets/ConvertiblesFacet.sol";
-import {EquityCompensationFacet} from "@facets/EquityCompensationFacet.sol";
-import {StockPlanFacet} from "@facets/StockPlanFacet.sol";
-import {WarrantFacet} from "@facets/WarrantFacet.sol";
-import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
+import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
+import { IssuerFacet } from "@facets/IssuerFacet.sol";
+import { DiamondLoupeFacet } from "diamond-3-hardhat/facets/DiamondLoupeFacet.sol";
+import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
+import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
+import { StockClassFacet } from "@facets/StockClassFacet.sol";
+import { StockFacet } from "@facets/StockFacet.sol";
+import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
+import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
+import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
+import { WarrantFacet } from "@facets/WarrantFacet.sol";
+import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 
 contract DeployDiamondCapTableScript is Script {
     function deployInitialFacets(address _contractOwner) internal returns (address) {
@@ -190,7 +190,7 @@ contract DeployDiamondCapTableScript is Script {
         // Deploy factory with facet addresses
         CapTableFactory factory = new CapTableFactory(referenceDiamond);
 
-        factory.createCapTable(bytes16("TEST"), 1000000);
+        factory.createCapTable(bytes16("TEST"), 1_000_000);
         console.log("\nCapTableFactory deployed at:", address(factory));
 
         vm.stopBroadcast();

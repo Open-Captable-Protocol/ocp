@@ -33,7 +33,7 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue convertible
         convertibleSecurityId = 0xd3373e0a4dd940000000000000000002;
-        ConvertiblesFacet(address(capTable)).issueConvertible(stakeholderId, 1000000, convertibleSecurityId);
+        ConvertiblesFacet(address(capTable)).issueConvertible(stakeholderId, 1_000_000, convertibleSecurityId);
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000003;
@@ -56,7 +56,7 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
         // Verify convertible position
         assertEq(positions.convertibles.length, 1);
         assertEq(positions.convertibles[0].stakeholder_id, stakeholderId);
-        assertEq(positions.convertibles[0].investment_amount, 1000000);
+        assertEq(positions.convertibles[0].investment_amount, 1_000_000);
 
         // Verify equity compensation position
         assertEq(positions.equityCompensations.length, 1);
