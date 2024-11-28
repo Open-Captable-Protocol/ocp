@@ -4,16 +4,16 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "./TestBase.sol";
 import "./mocks/MockFacet.sol";
-import { UpgradeFacetScript } from "../script/UpgradeFacet.s.sol";
+import { ManageFacetsScript } from "../script/ManageFacets.s.sol";
 import { SyncDiamondsScript } from "../script/SyncDiamonds.s.sol";
 import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
 import "../script/DeployCapTable.s.sol";
 import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
 
-contract DiamondUpgradeTest is Test, DeployDiamondCapTableScript {
+contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     MockFacet public mockFacet;
     MockFacet public mockFacetV2;
-    UpgradeFacetScript public upgrader;
+    ManageFacetsScript public manager;
     SyncDiamondsScript public syncer;
     address public contractOwner;
     address public referenceDiamond;

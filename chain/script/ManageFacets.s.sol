@@ -7,7 +7,7 @@ import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
 
-contract UpgradeFacetScript is Script {
+contract ManagerFacetScript is Script {
     function addFacet(address diamond, address newFacet, bytes4[] memory selectors) public {
         // Create the cut struct
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
