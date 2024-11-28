@@ -4,11 +4,11 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "./TestBase.sol";
 import "./mocks/MockFacet.sol";
-import {UpgradeFacetScript} from "../script/UpgradeFacet.s.sol";
-import {SyncDiamondsScript} from "../script/SyncDiamonds.s.sol";
-import {IDiamondLoupe} from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
+import { UpgradeFacetScript } from "../script/UpgradeFacet.s.sol";
+import { SyncDiamondsScript } from "../script/SyncDiamonds.s.sol";
+import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
 import "../script/DeployCapTable.s.sol";
-import {LibDiamond} from "diamond-3-hardhat/libraries/LibDiamond.sol";
+import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
 
 contract DiamondUpgradeTest is Test, DeployDiamondCapTableScript {
     MockFacet public mockFacet;
@@ -32,7 +32,7 @@ contract DiamondUpgradeTest is Test, DeployDiamondCapTableScript {
         factory = new CapTableFactory(referenceDiamond);
 
         // Create a new cap table for testing
-        capTable = factory.createCapTable(bytes16(uint128(1)), 1000000);
+        capTable = factory.createCapTable(bytes16(uint128(1)), 1_000_000);
         console.log("capTable: ", capTable);
         console.log("referenceDiamond: ", referenceDiamond);
 
@@ -144,7 +144,7 @@ contract DiamondUpgradeTest is Test, DeployDiamondCapTableScript {
         selectors[1] = MockFacet.getValue.selector;
 
         // Create new cap table (won't have mock facet yet)
-        address newCapTable = factory.createCapTable(bytes16(uint128(2)), 1000000);
+        address newCapTable = factory.createCapTable(bytes16(uint128(2)), 1_000_000);
 
         // Store the mock facet address for later comparison
         address mockFacetAddr = address(new MockFacet());

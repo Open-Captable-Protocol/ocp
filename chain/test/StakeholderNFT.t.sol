@@ -2,11 +2,11 @@
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import {StorageLib} from "@core/Storage.sol";
-import {TxHelper, TxType} from "@libraries/TxHelper.sol";
-import {ValidationLib} from "@libraries/ValidationLib.sol";
-import {StakeholderPositions} from "@libraries/Structs.sol";
-import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
+import { StorageLib } from "@core/Storage.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
+import { ValidationLib } from "@libraries/ValidationLib.sol";
+import { StakeholderPositions } from "@libraries/Structs.sol";
+import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 
 contract DiamondStakeholderNFTTest is DiamondTestBase {
     bytes16 stakeholderId;

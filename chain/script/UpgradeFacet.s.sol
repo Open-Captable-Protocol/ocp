@@ -3,9 +3,9 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import {IDiamondCut} from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
-import {DiamondCutFacet} from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
-import {IDiamondLoupe} from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
+import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
+import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
+import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
 
 contract UpgradeFacetScript is Script {
     function addFacet(address diamond, address newFacet, bytes4[] memory selectors) public {
