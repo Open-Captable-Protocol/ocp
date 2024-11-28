@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import { StorageLib } from "@core/Storage.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
+import {StorageLib} from "@core/Storage.sol";
+import {TxHelper, TxType} from "@libraries/TxHelper.sol";
 
 contract DiamondStockIssuanceTest is DiamondTestBase {
     function createStockClassAndStakeholder(uint256 sharesAuthorized) public returns (bytes16, bytes16) {
@@ -29,7 +29,9 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         uint256 quantity = 1000;
 
         vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(TxType.STOCK_ISSUANCE, abi.encode(stockClassId, sharePrice, quantity, stakeholderId, securityId));
+        emit TxHelper.TxCreated(
+            TxType.STOCK_ISSUANCE, abi.encode(stockClassId, sharePrice, quantity, stakeholderId, securityId)
+        );
 
         StockFacet(address(capTable)).issueStock(stockClassId, sharePrice, quantity, stakeholderId, securityId);
     }

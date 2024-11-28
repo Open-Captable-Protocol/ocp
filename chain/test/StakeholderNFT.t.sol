@@ -2,11 +2,11 @@
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import { StorageLib } from "@core/Storage.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
-import { ValidationLib } from "@libraries/ValidationLib.sol";
-import { StakeholderPositions } from "@libraries/Structs.sol";
-import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
+import {StorageLib} from "@core/Storage.sol";
+import {TxHelper, TxType} from "@libraries/TxHelper.sol";
+import {ValidationLib} from "@libraries/ValidationLib.sol";
+import {StakeholderPositions} from "@libraries/Structs.sol";
+import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
 
 contract DiamondStakeholderNFTTest is DiamondTestBase {
     bytes16 stakeholderId;
@@ -78,12 +78,13 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         console.log("Token URI:", uri);
 
         // Let's also log the positions directly
-        StakeholderPositions memory positions = StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
+        StakeholderPositions memory positions =
+            StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
 
         console.log("\nActive Positions:");
         console.log("Stock Positions:", positions.stocks.length);
         if (positions.stocks.length > 0) {
-            for (uint i = 0; i < positions.stocks.length; i++) {
+            for (uint256 i = 0; i < positions.stocks.length; i++) {
                 console.log("  Stock Position", i);
                 console.log("    Quantity:", positions.stocks[i].quantity);
                 console.log("    Share Price:", positions.stocks[i].share_price);

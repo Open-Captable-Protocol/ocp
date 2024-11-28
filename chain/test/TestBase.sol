@@ -5,16 +5,16 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "@core/CapTable.sol";
 import "@facets/IssuerFacet.sol";
-import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
-import { StockClassFacet } from "@facets/StockClassFacet.sol";
-import { StockFacet } from "@facets/StockFacet.sol";
-import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
-import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
-import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
+import {StakeholderFacet} from "@facets/StakeholderFacet.sol";
+import {StockClassFacet} from "@facets/StockClassFacet.sol";
+import {StockFacet} from "@facets/StockFacet.sol";
+import {ConvertiblesFacet} from "@facets/ConvertiblesFacet.sol";
+import {EquityCompensationFacet} from "@facets/EquityCompensationFacet.sol";
+import {StockPlanFacet} from "@facets/StockPlanFacet.sol";
 import "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import "diamond-3-hardhat/interfaces/IDiamondCut.sol";
-import { WarrantFacet } from "@facets/WarrantFacet.sol";
-import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
+import {WarrantFacet} from "@facets/WarrantFacet.sol";
+import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
 
 contract DiamondTestBase is Test {
     uint256 public issuerInitialSharesAuthorized = 1000000;
@@ -33,9 +33,13 @@ contract DiamondTestBase is Test {
     WarrantFacet public warrantFacet;
     StakeholderNFTFacet public stakeholderNFTFacet;
 
-    event StockIssued(bytes16 indexed stakeholderId, bytes16 indexed stockClassId, uint256 quantity, uint256 sharePrice);
+    event StockIssued(
+        bytes16 indexed stakeholderId, bytes16 indexed stockClassId, uint256 quantity, uint256 sharePrice
+    );
     event StakeholderCreated(bytes16 indexed id);
-    event StockClassCreated(bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized);
+    event StockClassCreated(
+        bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized
+    );
     event StockPlanCreated(bytes16 indexed id, uint256 shares_reserved);
     // TOOD: figure out if should use the facets' events?
     event IssuerAuthorizedSharesAdjusted(uint256 newSharesAuthorized);
@@ -195,7 +199,9 @@ contract DiamondTestBase is Test {
         vm.expectEmit(true, true, true, true, address(capTable));
         emit StockClassCreated(stockClassId, classType, pricePerShare, initialSharesAuthorized);
 
-        StockClassFacet(payable(address(capTable))).createStockClass(stockClassId, classType, pricePerShare, initialSharesAuthorized);
+        StockClassFacet(payable(address(capTable))).createStockClass(
+            stockClassId, classType, pricePerShare, initialSharesAuthorized
+        );
 
         return stockClassId;
     }

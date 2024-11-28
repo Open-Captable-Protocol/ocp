@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { StorageLib, Storage } from "@core/Storage.sol";
-import { ConvertibleActivePosition } from "@libraries/Structs.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
-import { ValidationLib } from "@libraries/ValidationLib.sol";
+import {StorageLib, Storage} from "@core/Storage.sol";
+import {ConvertibleActivePosition} from "@libraries/Structs.sol";
+import {TxHelper, TxType} from "@libraries/TxHelper.sol";
+import {ValidationLib} from "@libraries/ValidationLib.sol";
 
 contract ConvertiblesFacet {
     function issueConvertible(bytes16 stakeholder_id, uint256 investment_amount, bytes16 security_id) external {
@@ -14,10 +14,8 @@ contract ConvertiblesFacet {
         ValidationLib.validateAmount(investment_amount);
 
         // Create and store position
-        ds.convertibleActivePositions.securities[security_id] = ConvertibleActivePosition({
-            stakeholder_id: stakeholder_id,
-            investment_amount: investment_amount
-        });
+        ds.convertibleActivePositions.securities[security_id] =
+            ConvertibleActivePosition({stakeholder_id: stakeholder_id, investment_amount: investment_amount});
 
         // Track security IDs for this stakeholder
         ds.convertibleActivePositions.stakeholderToSecurities[stakeholder_id].push(security_id);

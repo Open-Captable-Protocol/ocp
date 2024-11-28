@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import { StorageLib } from "@core/Storage.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
-import { ValidationLib } from "@libraries/ValidationLib.sol";
-import { ConvertibleActivePosition } from "@libraries/Structs.sol";
+import {StorageLib} from "@core/Storage.sol";
+import {TxHelper, TxType} from "@libraries/TxHelper.sol";
+import {ValidationLib} from "@libraries/ValidationLib.sol";
+import {ConvertibleActivePosition} from "@libraries/Structs.sol";
 
 contract DiamondConvertibleIssuanceTest is DiamondTestBase {
     function testIssueConvertible() public {
@@ -19,7 +19,8 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
         ConvertiblesFacet(address(capTable)).issueConvertible(stakeholderId, investmentAmount, securityId);
 
         // Verify position was created correctly
-        ConvertibleActivePosition memory position = ConvertiblesFacet(address(capTable)).getConvertiblePosition(securityId);
+        ConvertibleActivePosition memory position =
+            ConvertiblesFacet(address(capTable)).getConvertiblePosition(securityId);
         assertEq(position.investment_amount, investmentAmount);
         assertEq(position.stakeholder_id, stakeholderId);
     }
