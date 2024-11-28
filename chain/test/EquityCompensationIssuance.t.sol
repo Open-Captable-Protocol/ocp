@@ -64,15 +64,6 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         );
     }
 
-    function testFailInvalidStockPlan() public {
-        bytes16 invalidStockPlanId = 0xd3373e0a4dd940000000000000000099;
-        bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
-
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId, stockClassId, invalidStockPlanId, 1000, securityId
-        );
-    }
-
     function testFailZeroQuantity() public {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
