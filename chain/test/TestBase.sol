@@ -17,7 +17,7 @@ import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 
 contract DiamondTestBase is Test {
-    uint256 public issuerInitialSharesAuthorized = 1000000;
+    uint256 public issuerInitialSharesAuthorized = 1_000_000;
     bytes16 public issuerId = 0xd3373e0a4dd9430f8a563281f2800e1e;
     address public contractOwner;
 
@@ -33,9 +33,13 @@ contract DiamondTestBase is Test {
     WarrantFacet public warrantFacet;
     StakeholderNFTFacet public stakeholderNFTFacet;
 
-    event StockIssued(bytes16 indexed stakeholderId, bytes16 indexed stockClassId, uint256 quantity, uint256 sharePrice);
+    event StockIssued(
+        bytes16 indexed stakeholderId, bytes16 indexed stockClassId, uint256 quantity, uint256 sharePrice
+    );
     event StakeholderCreated(bytes16 indexed id);
-    event StockClassCreated(bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized);
+    event StockClassCreated(
+        bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized
+    );
     event StockPlanCreated(bytes16 indexed id, uint256 shares_reserved);
     // TOOD: figure out if should use the facets' events?
     event IssuerAuthorizedSharesAdjusted(uint256 newSharesAuthorized);
@@ -190,12 +194,14 @@ contract DiamondTestBase is Test {
         bytes16 stockClassId = 0xd3373e0a4dd940000000000000000006;
         string memory classType = "COMMON";
         uint256 pricePerShare = 1e18;
-        uint256 initialSharesAuthorized = 1000000;
+        uint256 initialSharesAuthorized = 1_000_000;
 
         vm.expectEmit(true, true, true, true, address(capTable));
         emit StockClassCreated(stockClassId, classType, pricePerShare, initialSharesAuthorized);
 
-        StockClassFacet(payable(address(capTable))).createStockClass(stockClassId, classType, pricePerShare, initialSharesAuthorized);
+        StockClassFacet(payable(address(capTable))).createStockClass(
+            stockClassId, classType, pricePerShare, initialSharesAuthorized
+        );
 
         return stockClassId;
     }
@@ -203,7 +209,7 @@ contract DiamondTestBase is Test {
     // Helper function to create a stock plan for testing
     function createStockPlan(bytes16[] memory stockClassIds) public returns (bytes16) {
         bytes16 stockPlanId = 0xd3373e0a4dd940000000000000000007;
-        uint256 sharesReserved = 100000;
+        uint256 sharesReserved = 100_000;
 
         vm.expectEmit(true, false, false, true, address(capTable));
         emit StockPlanCreated(stockPlanId, sharesReserved);

@@ -7,14 +7,23 @@ import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
 
 contract StockClassFacet {
-    event StockClassCreated(bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized);
+    event StockClassCreated(
+        bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized
+    );
     event StockClassAuthorizedSharesAdjusted(bytes16 indexed stockClassId, uint256 newSharesAuthorized);
 
     error StockClassAlreadyExists(bytes16 stock_class_id);
     error StockClassNotFound(bytes16 stock_class_id);
     error InvalidSharesAuthorized();
 
-    function createStockClass(bytes16 _id, string memory _class_type, uint256 _price_per_share, uint256 _initial_share_authorized) external {
+    function createStockClass(
+        bytes16 _id,
+        string memory _class_type,
+        uint256 _price_per_share,
+        uint256 _initial_share_authorized
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         if (ds.stockClassIndex[_id] > 0) {

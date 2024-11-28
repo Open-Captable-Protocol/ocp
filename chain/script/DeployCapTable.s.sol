@@ -19,6 +19,7 @@ contract DeployDiamondCapTableScript is Script {
     function setUp() public {
         // Setup for Base Sepolia deployment
     }
+
     function checkEnv(
         address diamondCutFacet,
         address issuerFacet,
@@ -30,7 +31,11 @@ contract DeployDiamondCapTableScript is Script {
         address stockPlanFacet,
         address warrantFacet,
         address stakeholderNFTFacet
-    ) public view returns (bool) {
+    )
+        public
+        view
+        returns (bool)
+    {
         // check one by one
         if (diamondCutFacet == address(0)) {
             console.log("DIAMOND_CUT_FACET not set");

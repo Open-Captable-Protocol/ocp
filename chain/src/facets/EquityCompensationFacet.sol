@@ -13,7 +13,9 @@ contract EquityCompensationFacet {
         bytes16 stock_plan_id,
         uint256 quantity,
         bytes16 security_id
-    ) external {
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         ValidationLib.validateStakeholder(stakeholder_id);
@@ -40,11 +42,18 @@ contract EquityCompensationFacet {
         TxHelper.createTx(TxType.EQUITY_COMPENSATION_ISSUANCE, txData);
     }
 
-    function exerciseEquityCompensation(bytes16 equity_comp_security_id, bytes16 resulting_stock_security_id, uint256 quantity) external {
+    function exerciseEquityCompensation(
+        bytes16 equity_comp_security_id,
+        bytes16 resulting_stock_security_id,
+        uint256 quantity
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         // Validate equity compensation security exists and has sufficient quantity
-        EquityCompensationActivePosition memory equityPosition = ds.equityCompensationActivePositions.securities[equity_comp_security_id];
+        EquityCompensationActivePosition memory equityPosition =
+            ds.equityCompensationActivePositions.securities[equity_comp_security_id];
 
         if (quantity == 0) {
             revert ValidationLib.InvalidQuantity();
@@ -77,8 +86,9 @@ contract EquityCompensationFacet {
             delete ds.equityCompensationActivePositions.securityToStakeholder[equity_comp_security_id];
 
             // Find and remove the security ID from stakeholder's list
-            bytes16[] storage stakeholderSecurities = ds.equityCompensationActivePositions.stakeholderToSecurities[equityPosition.stakeholder_id];
-            for (uint i = 0; i < stakeholderSecurities.length; i++) {
+            bytes16[] storage stakeholderSecurities =
+                ds.equityCompensationActivePositions.stakeholderToSecurities[equityPosition.stakeholder_id];
+            for (uint256 i = 0; i < stakeholderSecurities.length; i++) {
                 if (stakeholderSecurities[i] == equity_comp_security_id) {
                     stakeholderSecurities[i] = stakeholderSecurities[stakeholderSecurities.length - 1];
                     stakeholderSecurities.pop();

@@ -2,7 +2,13 @@
 pragma solidity ^0.8.0;
 
 import { StorageLib, Storage } from "@core/Storage.sol";
-import { StockActivePosition, WarrantActivePosition, ConvertibleActivePosition, EquityCompensationActivePosition, StakeholderPositions } from "@libraries/Structs.sol";
+import {
+    StockActivePosition,
+    WarrantActivePosition,
+    ConvertibleActivePosition,
+    EquityCompensationActivePosition,
+    StakeholderPositions
+} from "@libraries/Structs.sol";
 
 contract StakeholderFacet {
     event StakeholderCreated(bytes16 indexed id);
@@ -46,28 +52,29 @@ contract StakeholderFacet {
         // Populate stocks
         bytes16[] storage stockSecurities = ds.stockActivePositions.stakeholderToSecurities[stakeholder_id];
         positions.stocks = new StockActivePosition[](stockSecurities.length);
-        for (uint i = 0; i < stockSecurities.length; i++) {
+        for (uint256 i = 0; i < stockSecurities.length; i++) {
             positions.stocks[i] = ds.stockActivePositions.securities[stockSecurities[i]];
         }
 
         // Populate warrants
         bytes16[] storage warrantSecurities = ds.warrantActivePositions.stakeholderToSecurities[stakeholder_id];
         positions.warrants = new WarrantActivePosition[](warrantSecurities.length);
-        for (uint i = 0; i < warrantSecurities.length; i++) {
+        for (uint256 i = 0; i < warrantSecurities.length; i++) {
             positions.warrants[i] = ds.warrantActivePositions.securities[warrantSecurities[i]];
         }
 
         // Populate convertibles
         bytes16[] storage convertibleSecurities = ds.convertibleActivePositions.stakeholderToSecurities[stakeholder_id];
         positions.convertibles = new ConvertibleActivePosition[](convertibleSecurities.length);
-        for (uint i = 0; i < convertibleSecurities.length; i++) {
+        for (uint256 i = 0; i < convertibleSecurities.length; i++) {
             positions.convertibles[i] = ds.convertibleActivePositions.securities[convertibleSecurities[i]];
         }
 
         // Populate equity compensations
-        bytes16[] storage equityCompSecurities = ds.equityCompensationActivePositions.stakeholderToSecurities[stakeholder_id];
+        bytes16[] storage equityCompSecurities =
+            ds.equityCompensationActivePositions.stakeholderToSecurities[stakeholder_id];
         positions.equityCompensations = new EquityCompensationActivePosition[](equityCompSecurities.length);
-        for (uint i = 0; i < equityCompSecurities.length; i++) {
+        for (uint256 i = 0; i < equityCompSecurities.length; i++) {
             positions.equityCompensations[i] = ds.equityCompensationActivePositions.securities[equityCompSecurities[i]];
         }
 

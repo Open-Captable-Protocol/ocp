@@ -7,7 +7,15 @@ import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 
 contract StockFacet {
-    function issueStock(bytes16 stock_class_id, uint256 share_price, uint256 quantity, bytes16 stakeholder_id, bytes16 security_id) external {
+    function issueStock(
+        bytes16 stock_class_id,
+        uint256 share_price,
+        uint256 quantity,
+        bytes16 stakeholder_id,
+        bytes16 security_id
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         ValidationLib.validateStakeholder(stakeholder_id);

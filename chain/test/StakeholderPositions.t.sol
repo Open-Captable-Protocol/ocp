@@ -2,7 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import { StockActivePosition, WarrantActivePosition, ConvertibleActivePosition, EquityCompensationActivePosition, StakeholderPositions } from "@libraries/Structs.sol";
+import {
+    StockActivePosition,
+    WarrantActivePosition,
+    ConvertibleActivePosition,
+    EquityCompensationActivePosition,
+    StakeholderPositions
+} from "@libraries/Structs.sol";
 
 contract DiamondStakeholderPositionsTest is DiamondTestBase {
     bytes16 stakeholderId;
@@ -27,15 +33,18 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue convertible
         convertibleSecurityId = 0xd3373e0a4dd940000000000000000002;
-        ConvertiblesFacet(address(capTable)).issueConvertible(stakeholderId, 1000000, convertibleSecurityId);
+        ConvertiblesFacet(address(capTable)).issueConvertible(stakeholderId, 1_000_000, convertibleSecurityId);
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000003;
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(stakeholderId, stockClassId, stockPlanId, 1000, equityCompSecurityId);
+        EquityCompensationFacet(address(capTable)).issueEquityCompensation(
+            stakeholderId, stockClassId, stockPlanId, 1000, equityCompSecurityId
+        );
     }
 
     function testGetStakeholderPositions() public {
-        StakeholderPositions memory positions = StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
+        StakeholderPositions memory positions =
+            StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
 
         // Verify stock position
         assertEq(positions.stocks.length, 1);
@@ -47,7 +56,7 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
         // Verify convertible position
         assertEq(positions.convertibles.length, 1);
         assertEq(positions.convertibles[0].stakeholder_id, stakeholderId);
-        assertEq(positions.convertibles[0].investment_amount, 1000000);
+        assertEq(positions.convertibles[0].investment_amount, 1_000_000);
 
         // Verify equity compensation position
         assertEq(positions.equityCompensations.length, 1);

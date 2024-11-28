@@ -78,12 +78,13 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         console.log("Token URI:", uri);
 
         // Let's also log the positions directly
-        StakeholderPositions memory positions = StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
+        StakeholderPositions memory positions =
+            StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
 
         console.log("\nActive Positions:");
         console.log("Stock Positions:", positions.stocks.length);
         if (positions.stocks.length > 0) {
-            for (uint i = 0; i < positions.stocks.length; i++) {
+            for (uint256 i = 0; i < positions.stocks.length; i++) {
                 console.log("  Stock Position", i);
                 console.log("    Quantity:", positions.stocks[i].quantity);
                 console.log("    Share Price:", positions.stocks[i].share_price);

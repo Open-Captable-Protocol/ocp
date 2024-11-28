@@ -14,10 +14,8 @@ contract ConvertiblesFacet {
         ValidationLib.validateAmount(investment_amount);
 
         // Create and store position
-        ds.convertibleActivePositions.securities[security_id] = ConvertibleActivePosition({
-            stakeholder_id: stakeholder_id,
-            investment_amount: investment_amount
-        });
+        ds.convertibleActivePositions.securities[security_id] =
+            ConvertibleActivePosition({ stakeholder_id: stakeholder_id, investment_amount: investment_amount });
 
         // Track security IDs for this stakeholder
         ds.convertibleActivePositions.stakeholderToSecurities[stakeholder_id].push(security_id);

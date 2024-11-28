@@ -75,7 +75,11 @@ contract CapTableFactory {
         bytes4[] memory issuerSelectors = new bytes4[](2);
         issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
         issuerSelectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
-        cuts[0] = IDiamondCut.FacetCut({ facetAddress: issuerFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: issuerSelectors });
+        cuts[0] = IDiamondCut.FacetCut({
+            facetAddress: issuerFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: issuerSelectors
+        });
 
         // StakeholderFacet
         bytes4[] memory stakeholderSelectors = new bytes4[](3);
@@ -101,7 +105,11 @@ contract CapTableFactory {
         // StockFacet
         bytes4[] memory stockSelectors = new bytes4[](1);
         stockSelectors[0] = StockFacet.issueStock.selector;
-        cuts[3] = IDiamondCut.FacetCut({ facetAddress: stockFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: stockSelectors });
+        cuts[3] = IDiamondCut.FacetCut({
+            facetAddress: stockFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: stockSelectors
+        });
 
         // ConvertiblesFacet
         bytes4[] memory convertibleSelectors = new bytes4[](2);
@@ -138,7 +146,11 @@ contract CapTableFactory {
         bytes4[] memory warrantSelectors = new bytes4[](2);
         warrantSelectors[0] = WarrantFacet.issueWarrant.selector;
         warrantSelectors[1] = WarrantFacet.getWarrantPosition.selector;
-        cuts[7] = IDiamondCut.FacetCut({ facetAddress: warrantFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: warrantSelectors });
+        cuts[7] = IDiamondCut.FacetCut({
+            facetAddress: warrantFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: warrantSelectors
+        });
 
         // StakeholderNFTFacet
         bytes4[] memory stakeholderNFTSelectors = new bytes4[](2);

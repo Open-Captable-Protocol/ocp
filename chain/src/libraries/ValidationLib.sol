@@ -48,7 +48,12 @@ library ValidationLib {
         uint256 stockClassIdx = ds.stockClassIndex[stock_class_id] - 1;
         StockClass storage stockClass = ds.stockClasses[stockClassIdx];
 
-        require(ds.issuer.shares_issued + quantity <= ds.issuer.shares_authorized, "Issuer: Insufficient shares authorized");
-        require(stockClass.shares_issued + quantity <= stockClass.shares_authorized, "StockClass: Insufficient shares authorized");
+        require(
+            ds.issuer.shares_issued + quantity <= ds.issuer.shares_authorized, "Issuer: Insufficient shares authorized"
+        );
+        require(
+            stockClass.shares_issued + quantity <= stockClass.shares_authorized,
+            "StockClass: Insufficient shares authorized"
+        );
     }
 }
