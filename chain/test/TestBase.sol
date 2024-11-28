@@ -5,19 +5,19 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "@core/CapTable.sol";
 import "@facets/IssuerFacet.sol";
-import {StakeholderFacet} from "@facets/StakeholderFacet.sol";
-import {StockClassFacet} from "@facets/StockClassFacet.sol";
-import {StockFacet} from "@facets/StockFacet.sol";
-import {ConvertiblesFacet} from "@facets/ConvertiblesFacet.sol";
-import {EquityCompensationFacet} from "@facets/EquityCompensationFacet.sol";
-import {StockPlanFacet} from "@facets/StockPlanFacet.sol";
+import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
+import { StockClassFacet } from "@facets/StockClassFacet.sol";
+import { StockFacet } from "@facets/StockFacet.sol";
+import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
+import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
+import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
 import "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import "diamond-3-hardhat/interfaces/IDiamondCut.sol";
-import {WarrantFacet} from "@facets/WarrantFacet.sol";
-import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
+import { WarrantFacet } from "@facets/WarrantFacet.sol";
+import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 
 contract DiamondTestBase is Test {
-    uint256 public issuerInitialSharesAuthorized = 1000000;
+    uint256 public issuerInitialSharesAuthorized = 1_000_000;
     bytes16 public issuerId = 0xd3373e0a4dd9430f8a563281f2800e1e;
     address public contractOwner;
 
@@ -194,7 +194,7 @@ contract DiamondTestBase is Test {
         bytes16 stockClassId = 0xd3373e0a4dd940000000000000000006;
         string memory classType = "COMMON";
         uint256 pricePerShare = 1e18;
-        uint256 initialSharesAuthorized = 1000000;
+        uint256 initialSharesAuthorized = 1_000_000;
 
         vm.expectEmit(true, true, true, true, address(capTable));
         emit StockClassCreated(stockClassId, classType, pricePerShare, initialSharesAuthorized);
@@ -209,7 +209,7 @@ contract DiamondTestBase is Test {
     // Helper function to create a stock plan for testing
     function createStockPlan(bytes16[] memory stockClassIds) public returns (bytes16) {
         bytes16 stockPlanId = 0xd3373e0a4dd940000000000000000007;
-        uint256 sharesReserved = 100000;
+        uint256 sharesReserved = 100_000;
 
         vm.expectEmit(true, false, false, true, address(capTable));
         emit StockPlanCreated(stockPlanId, sharesReserved);

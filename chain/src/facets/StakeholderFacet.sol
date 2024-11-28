@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {StorageLib, Storage} from "@core/Storage.sol";
+import { StorageLib, Storage } from "@core/Storage.sol";
 import {
     StockActivePosition,
     WarrantActivePosition,

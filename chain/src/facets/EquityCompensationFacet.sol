@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {StorageLib, Storage} from "@core/Storage.sol";
-import {EquityCompensationActivePosition, StockActivePosition} from "@libraries/Structs.sol";
-import {TxHelper, TxType} from "@libraries/TxHelper.sol";
-import {ValidationLib} from "@libraries/ValidationLib.sol";
+import { StorageLib, Storage } from "@core/Storage.sol";
+import { EquityCompensationActivePosition, StockActivePosition } from "@libraries/Structs.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
+import { ValidationLib } from "@libraries/ValidationLib.sol";
 
 contract EquityCompensationFacet {
     function issueEquityCompensation(
@@ -13,7 +13,9 @@ contract EquityCompensationFacet {
         bytes16 stock_plan_id,
         uint256 quantity,
         bytes16 security_id
-    ) external {
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         ValidationLib.validateStakeholder(stakeholder_id);
@@ -44,7 +46,9 @@ contract EquityCompensationFacet {
         bytes16 equity_comp_security_id,
         bytes16 resulting_stock_security_id,
         uint256 quantity
-    ) external {
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         // Validate equity compensation security exists and has sufficient quantity

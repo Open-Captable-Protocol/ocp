@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {CapTable} from "./CapTable.sol";
-import {DiamondCutFacet} from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
-import {IDiamondCut} from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
-import {IssuerFacet} from "@facets/IssuerFacet.sol";
-import {StakeholderFacet} from "@facets/StakeholderFacet.sol";
-import {StockClassFacet} from "@facets/StockClassFacet.sol";
-import {StockFacet} from "@facets/StockFacet.sol";
-import {ConvertiblesFacet} from "@facets/ConvertiblesFacet.sol";
-import {EquityCompensationFacet} from "@facets/EquityCompensationFacet.sol";
-import {StockPlanFacet} from "@facets/StockPlanFacet.sol";
-import {WarrantFacet} from "@facets/WarrantFacet.sol";
-import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
+import { CapTable } from "./CapTable.sol";
+import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
+import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
+import { IssuerFacet } from "@facets/IssuerFacet.sol";
+import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
+import { StockClassFacet } from "@facets/StockClassFacet.sol";
+import { StockFacet } from "@facets/StockFacet.sol";
+import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
+import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
+import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
+import { WarrantFacet } from "@facets/WarrantFacet.sol";
+import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import "forge-std/console.sol";
 
 contract CapTableFactory {
