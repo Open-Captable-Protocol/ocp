@@ -37,10 +37,10 @@ struct StockActivePositions {
 struct ConvertibleActivePosition {
     bytes16 stakeholder_id;
     uint256 investment_amount;
-    // uint256 valuation_cap; // unsure we want to store this
-    // uint256 discount_rate; // unsure we want to store this
-    // string convertible_type; // ["NOTE", "SAFE"] // do we even care?
 }
+// uint256 valuation_cap; // unsure we want to store this
+// uint256 discount_rate; // unsure we want to store this
+// string convertible_type; // ["NOTE", "SAFE"] // do we even care?
 
 struct ConvertibleActivePositions {
     mapping(bytes16 => bytes16[]) stakeholderToSecurities;

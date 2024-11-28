@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { StorageLib, Storage } from "@core/Storage.sol";
-import { StockPlan } from "@libraries/Structs.sol";
-import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
+import {StorageLib, Storage} from "@core/Storage.sol";
+import {StockPlan} from "@libraries/Structs.sol";
+import {LibDiamond} from "diamond-3-hardhat/libraries/LibDiamond.sol";
+import {TxHelper, TxType} from "@libraries/TxHelper.sol";
 
 contract StockPlanFacet {
     event StockPlanCreated(bytes16 indexed id, uint256 shares_reserved);
@@ -28,7 +28,7 @@ contract StockPlanFacet {
             }
         }
 
-        ds.stockPlans.push(StockPlan({ stock_class_ids: _stock_class_ids, shares_reserved: _shares_reserved }));
+        ds.stockPlans.push(StockPlan({stock_class_ids: _stock_class_ids, shares_reserved: _shares_reserved}));
         ds.stockPlanIndex[_id] = ds.stockPlans.length;
 
         emit StockPlanCreated(_id, _shares_reserved);
