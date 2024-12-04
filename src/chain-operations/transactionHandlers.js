@@ -492,22 +492,38 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
 
 export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
     console.log("WarrantIssuanceCreated Event Emitted!", warrant);
-    const { stakeholder_id, quantity, security_id } = warrant;
+    const { 
+        stakeholder_id, 
+        quantity, 
+        security_id,
+        purchase_price,
+        custom_id,
+        security_law_exemptions_mapping,
+        exercise_triggers_mapping
+    } = warrant;
 
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
-    console.log("Fairmint data:", fairmintData);
-
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
     const _stakeholder_id = convertBytes16ToUUID(stakeholder_id);
 
+    // If we have fairmint data, get historical date
+    const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
+
     const createdWarrantIssuance = await upsertWarrantIssuanceBySecurityId(_security_id, {
-        date: chainDate,
-        quantity: toDecimal(quantity).toString(),
+        date: dateToUse,
         stakeholder_id: _stakeholder_id,
+        quantity: toDecimal(quantity).toString(),
         security_id: _security_id,
         issuer: issuerId,
         is_onchain_synced: true,
+        custom_id,
+        purchase_price: purchase_price > 0 ? {
+            amount: toDecimal(purchase_price).toString(),
+            currency: "USD"
+        } : undefined,
+        security_law_exemptions: JSON.parse(security_law_exemptions_mapping || "[]"),
+        exercise_triggers: JSON.parse(exercise_triggers_mapping || "[]")
     });
 
     await createHistoricalTransaction({
@@ -524,7 +540,7 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
             series_id: fairmintData.series_id,
             series_name: get(fairmintData, "attributes.series_name"),
             series_type: SERIES_TYPE.WARRANT,
-            date: chainDate,
+            date: dateToUse,
         });
 
         console.log("Series created response:", seriesCreatedResp);
@@ -535,7 +551,7 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
             stakeholder_id: _stakeholder_id,
             series_id: fairmintData.series_id,
             amount: dollarAmount,
-            date: chainDate,
+            date: dateToUse,
         });
 
         console.log("Warrant investment response:", reflectedInvestmentResp);

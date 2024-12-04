@@ -7,7 +7,17 @@ import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 
 contract WarrantFacet {
-    function issueWarrant(bytes16 stakeholder_id, uint256 quantity, bytes16 security_id) external {
+    function issueWarrant(
+        bytes16 stakeholder_id,
+        uint256 quantity,
+        bytes16 security_id,
+        uint256 purchase_price,
+        string calldata custom_id,
+        string calldata security_law_exemptions_mapping,
+        string calldata exercise_triggers_mapping
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         ValidationLib.validateStakeholder(stakeholder_id);
@@ -24,7 +34,15 @@ contract WarrantFacet {
         ds.warrantActivePositions.securityToStakeholder[security_id] = stakeholder_id;
 
         // Store transaction
-        bytes memory txData = abi.encode(stakeholder_id, quantity, security_id);
+        bytes memory txData = abi.encode(
+            stakeholder_id,
+            quantity,
+            security_id,
+            purchase_price,
+            custom_id,
+            security_law_exemptions_mapping,
+            exercise_triggers_mapping
+        );
         TxHelper.createTx(TxType.WARRANT_ISSUANCE, txData);
     }
 

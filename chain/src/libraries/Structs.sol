@@ -12,6 +12,7 @@ struct StockClass {
     bytes16 id;
     string class_type; // ["COMMON", "PREFERRED"]
     uint256 shares_issued;
+    uint256 price_per_share;
     uint256 shares_authorized;
 }
 

@@ -92,6 +92,28 @@ export const convertAndCreateIssuanceWarrantOnchain = async (contract, { securit
     });
 };
 
+export const issueWarrant = async ({
+  stakeholderId,
+  quantity,
+  securityId,
+  purchasePrice,
+  customId = "",
+}) => {
+  const contract = await getContract();
+
+  const tx = await contract.issueWarrant(
+    stakeholderId,
+    quantity,
+    securityId,
+    purchasePrice,
+    customId,
+    "", // security_law_exemptions_mapping
+    "", // exercise_triggers_mapping
+  );
+
+  return tx;
+};
+
 // Equity Compensation Issuance
 export const convertAndCreateIssuanceEquityCompensationOnchain = async (
     contract,
