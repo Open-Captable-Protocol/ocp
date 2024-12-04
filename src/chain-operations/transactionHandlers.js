@@ -57,9 +57,20 @@ const options = {
     second: "2-digit",
 };
 
+// @dev, this file is where you would create the mapping for the "_mapping" fields.
+
 export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     console.log("StockIssuanceCreated Event Emitted!", stock);
-    const { stock_class_id, share_price, quantity, stakeholder_id, security_id } = stock;
+    const { 
+        stock_class_id, 
+        share_price, 
+        quantity, 
+        stakeholder_id, 
+        security_id, 
+        stock_legend_ids_mapping, 
+        custom_id,
+        security_law_exemptions_mapping 
+    } = stock;
 
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
@@ -81,6 +92,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         date: dateToUse,
         issuer: issuerId,
         is_onchain_synced: true,
+        custom_id,
     });
 
     await createHistoricalTransaction({
@@ -407,10 +419,19 @@ export const handleStockPlan = async (id, sharesReserved) => {
     console.log("✅ | StockPlan confirmation onchain ", stockPlan);
 };
 
+
 export const handleConvertibleIssuance = async (convertible, issuerId, timestamp) => {
     console.log("ConvertibleIssuanceCreated Event Emitted!", convertible);
-    const { security_id, stakeholder_id, investment_amount } = convertible;
-
+    const { 
+        security_id, 
+        stakeholder_id, 
+        investment_amount,
+        convertible_type,
+        conversion_triggers_mapping,
+        seniority,
+        security_law_exemptions_mapping,
+        custom_id 
+    } = convertible;
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
@@ -429,6 +450,9 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
         date: dateToUse,
         issuer: issuerId,
         is_onchain_synced: true,
+        convertible_type,
+        seniority,
+        custom_id
     });
 
     await createHistoricalTransaction({

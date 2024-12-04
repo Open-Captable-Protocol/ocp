@@ -7,7 +7,18 @@ import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 
 contract ConvertiblesFacet {
-    function issueConvertible(bytes16 stakeholder_id, uint256 investment_amount, bytes16 security_id) external {
+    function issueConvertible(
+        bytes16 stakeholder_id,
+        uint256 investment_amount,
+        bytes16 security_id,
+        string calldata convertible_type,
+        string calldata conversion_triggers_mapping,
+        uint256 seniority,
+        string calldata security_law_exemptions_mapping,
+        string calldata custom_id
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         ValidationLib.validateStakeholder(stakeholder_id);
@@ -24,7 +35,16 @@ contract ConvertiblesFacet {
         ds.convertibleActivePositions.securityToStakeholder[security_id] = stakeholder_id;
 
         // Store transaction
-        bytes memory txData = abi.encode(stakeholder_id, investment_amount, security_id);
+        bytes memory txData = abi.encode(
+            stakeholder_id,
+            investment_amount,
+            security_id,
+            convertible_type,
+            conversion_triggers_mapping,
+            seniority,
+            security_law_exemptions_mapping,
+            custom_id
+        );
         TxHelper.createTx(TxType.CONVERTIBLE_ISSUANCE, txData);
     }
 
