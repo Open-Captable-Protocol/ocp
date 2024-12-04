@@ -7,7 +7,8 @@
   "description": "Open Cap Table Protocol, fairmint.com fork",
   "type": "module",
   "scripts": {
-    "migrate": "npx tsx src/scripts/migrate.js",
+    "validate": "npx tsx src/scripts/main.js",
+    "fix": "npx tsx src/scripts/fix.js",
     "prod": "npx tsx src/app.js",
     "dev": "npx tsx watch src/app.js",
     "format": "prettier --write \"src/**/*.{js,mjs,ts,mts,json,md}\"",
@@ -60,6 +61,7 @@
     "@types/uuid": "^9.0.2",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
+    "chalk": "4",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",

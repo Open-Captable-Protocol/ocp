@@ -195,7 +195,7 @@ const processStockIssuance = (state, transaction, stakeholder, originalStockClas
 
     // Access state stock class directly from state
     const stateStockClass = state.stockClasses[stock_class_id];
-    console.log("stateStockClass", stateStockClass);
+    // console.log("stateStockClass", stateStockClass);
 
     // Validate using state data
     if (stateStockClass.sharesIssued + numShares > stateStockClass.sharesAuthorized) {
@@ -342,7 +342,7 @@ export const processEquityCompensationExercise = (state, transaction) => {
     const equityGrant = state.transactions.find((tx) => tx.security_id === security_id);
 
     if (!equityGrant) {
-        console.log("No equity grant found for:", security_id);
+        // console.log("No equity grant found for:", security_id);
         return {
             ...state,
             errors: [...state.errors, `Exercise references non-existent equity grant: ${security_id}`],
@@ -404,7 +404,7 @@ export const dashboardStats = async ({ issuer, stockClasses, stockPlans, stakeho
                 const stateWithoutTransactions = { ...state };
                 delete stateWithoutTransactions.transactions;
 
-                console.log("\nProcessed transaction. New state:", JSON.stringify(stateWithoutTransactions, null, 2));
+                // console.log("\nProcessed transaction. New state:", JSON.stringify(stateWithoutTransactions, null, 2));
             }),
             map((state) => {
                 // If there are errors, return the state as is
@@ -428,7 +428,7 @@ export const dashboardStats = async ({ issuer, stockClasses, stockPlans, stakeho
                     .filter((v) => v && v.amount)
                     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-                console.log("validValuations", validValuations);
+                // console.log("validValuations", validValuations);
 
                 return {
                     numOfStakeholders: state.numOfStakeholders,
@@ -448,7 +448,7 @@ export const dashboardStats = async ({ issuer, stockClasses, stockPlans, stakeho
         )
     );
 
-    console.log("finalState", finalState);
+    // console.log("finalState", finalState);
 
     return finalState;
 };
@@ -488,7 +488,7 @@ export const captableStats = async ({ issuer, stockClasses, stockPlans, stakehol
             tap((state) => {
                 const stateWithoutTransactions = { ...state };
                 delete stateWithoutTransactions.transactions;
-                console.log("\nProcessed transaction. New state:", JSON.stringify(stateWithoutTransactions, null, 2));
+                // console.log("\nProcessed transaction. New state:", JSON.stringify(stateWithoutTransactions, null, 2));
             }),
             map((state) => {
                 // If there are errors, return the state as is
@@ -641,14 +641,14 @@ export const captableStats = async ({ issuer, stockClasses, stockPlans, stakehol
         )
     );
 
-    console.log("finalState", finalState);
+    // console.log("finalState", finalState);
     return finalState;
 };
 
 export const verifyCapTable = async (captable) => {
     // Format manifest and get items for each object / transaction
     const { issuer, stockClasses, stockPlans, stakeholders, transactions } = captable;
-    console.log({ captable });
+    // console.log({ captable });
 
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
@@ -673,6 +673,6 @@ export const verifyCapTable = async (captable) => {
         )
     );
 
-    console.log("finalState", finalState);
+    // console.log("finalState", finalState);
     return finalState;
 };

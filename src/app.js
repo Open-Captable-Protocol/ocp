@@ -102,13 +102,18 @@ const startServer = async () => {
             const contractAddresses = issuers
                 .filter((issuer) => issuer?.deployed_to)
                 .reduce((acc, issuer) => {
-                    acc[issuer.id] = issuer.deployed_to;
+                    acc[issuer.id] = {
+                        address: issuer.deployed_to,
+                        name: issuer.legal_name,
+                    };
                     return acc;
                 }, {});
 
-            console.log(contractAddresses);
-            console.log("Issuer -> Contract Address");
-            const contractsToWatch = Object.values(contractAddresses);
+            console.log("Issuer Name -> Contract Address");
+            Object.entries(contractAddresses).forEach(([_ /*id*/, data]) => {
+                console.log(`${data.name.padEnd(32)} -> ${data.address}`);
+            });
+            const contractsToWatch = Object.values(contractAddresses).map((data) => data.address);
             console.log("Watching ", contractsToWatch.length, " Contracts");
             startListener(contractsToWatch);
         }

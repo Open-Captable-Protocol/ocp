@@ -1,6 +1,14 @@
 import get from "lodash/get.js";
 import { captableStats } from "../rxjs/index.js";
 
+/**
+ * Validates that all required fields are present and non-empty in an object
+ * @param {Object} object - The object to validate
+ * @param {string[]} fields - Array of field names that are required
+ * @param {string} objectType - Type of object being validated (e.g., "Transaction", "StockClass")
+ * @param {string} objectId - Identifier of the object being validated
+ * @returns {string[]} Array of error messages, empty if validation passes
+ */
 function validateRequiredFields(object, fields, objectType, objectId) {
     const errors = [];
     fields.forEach((field) => {
@@ -12,6 +20,13 @@ function validateRequiredFields(object, fields, objectType, objectId) {
     return errors;
 }
 
+/**
+ * Validates that referenced IDs exist in their respective reference sets
+ * @param {Object} object - The object containing references to validate
+ * @param {Object.<string, Set>} referenceMap - Map of field names to Sets of valid reference IDs
+ * @param {string} objectType - Type of object being validated
+ * @returns {string[]} Array of error messages, empty if validation passes
+ */
 function validateReferences(object, referenceMap, objectType) {
     const errors = [];
     Object.entries(referenceMap).forEach(([field, refSet]) => {
@@ -23,6 +38,16 @@ function validateReferences(object, referenceMap, objectType) {
     return errors;
 }
 
+/**
+ * Validates a transaction based on its type-specific requirements
+ * @param {Object} tx - Transaction object to validate
+ * @param {Object} referenceSets - Object containing Sets of valid IDs for different entity types
+ * @param {Set<string>} referenceSets.stakeholderIds - Valid stakeholder IDs
+ * @param {Set<string>} referenceSets.stockClassIds - Valid stock class IDs
+ * @param {Set<string>} referenceSets.stockPlanIds - Valid stock plan IDs
+ * @param {Array} referenceSets.transactions - Array of all transactions
+ * @returns {string[]} Array of error messages, empty if validation passes
+ */
 function validateTransactionByType(tx, referenceSets) {
     const errors = [];
     const { stakeholderIds, stockClassIds, stockPlanIds } = referenceSets;
@@ -44,7 +69,7 @@ function validateTransactionByType(tx, referenceSets) {
             references: { stock_class_id: stockClassIds, stakeholder_id: stakeholderIds },
         },
         TX_EQUITY_COMPENSATION_ISSUANCE: {
-            required: ["stock_plan_id", "stakeholder_id", "quantity", "stock_class_id"],
+            required: ["stakeholder_id", "quantity", "stock_class_id"],
             references: { stock_plan_id: stockPlanIds, stakeholder_id: stakeholderIds, stock_class_id: stockClassIds },
         },
         TX_CONVERTIBLE_ISSUANCE: {
@@ -52,8 +77,15 @@ function validateTransactionByType(tx, referenceSets) {
             references: { stakeholder_id: stakeholderIds },
         },
         TX_WARRANT_ISSUANCE: {
-            required: ["stock_plan_id", "stock_class_id", "quantity"],
+            required: ["stock_class_id", "quantity"],
             references: { stock_plan_id: stockPlanIds, stock_class_id: stockClassIds },
+            customValidation: (tx) => {
+                const errors = [];
+                if (tx.quantity === 0) {
+                    errors.push(`Transaction ${tx.id} quantity has to be greater than 0`);
+                }
+                return errors;
+            },
         },
         TX_EQUITY_COMPENSATION_EXERCISE: {
             required: ["quantity", "resulting_security_ids"],
@@ -68,20 +100,23 @@ function validateTransactionByType(tx, referenceSets) {
                 }
 
                 // Find the resulting stock issuance transaction
-                const resultingStockIssuance = transactions.find(
-                    (t) => t.security_id === tx.resulting_security_ids[0] && t.object_type === "TX_STOCK_ISSUANCE"
+                const resultingStockIssuances = tx.resulting_security_ids.map((securityId) =>
+                    transactions.find((t) => t.security_id === securityId && t.object_type === "TX_STOCK_ISSUANCE")
                 );
 
-                if (!resultingStockIssuance) {
+                if (resultingStockIssuances.length == 0) {
                     errors.push(`Transaction ${tx.id} references non-existent stock issuance with security_id: ${tx.resulting_security_ids[0]}`);
                     return errors;
                 }
 
-                // Validate quantities match
-                if (tx.quantity !== resultingStockIssuance.quantity) {
-                    errors.push(
-                        `${tx.object_type} - ${tx.id} quantity (${tx.quantity}) does not match resulting stock issuance quantity (${resultingStockIssuance.quantity})`
-                    );
+                // Validate quantities match if there is only one resulting stock issuance
+                if (resultingStockIssuances.length === 1) {
+                    const resultingStockIssuance = resultingStockIssuances[0];
+                    if (tx.quantity !== resultingStockIssuance.quantity) {
+                        errors.push(
+                            `${tx.object_type} - ${tx.id} quantity (${tx.quantity}) does not match resulting stock issuance quantity (${resultingStockIssuance.quantity}) resulting_security_id: ${resultingStockIssuance.security_id}`
+                        );
+                    }
                 }
 
                 return errors;
@@ -95,11 +130,11 @@ function validateTransactionByType(tx, referenceSets) {
     }
 
     if (validation.required) {
-        errors.push(...validateRequiredFields(tx, validation.required, "Transaction", tx.id));
+        errors.push(...validateRequiredFields(tx, validation.required, tx.object_type, tx.id));
     }
 
     if (validation.references) {
-        errors.push(...validateReferences(tx, validation.references, "Transaction"));
+        errors.push(...validateReferences(tx, validation.references, tx.object_type));
     }
 
     if (validation.customValidation) {
@@ -109,6 +144,16 @@ function validateTransactionByType(tx, referenceSets) {
     return errors;
 }
 
+/**
+ * Validates the entire cap table data structure
+ * @param {Object} issuerData - Complete cap table data
+ * @param {Object} issuerData.issuer - Issuer information
+ * @param {Array} issuerData.stakeholders - Array of stakeholder objects
+ * @param {Array} issuerData.stockClasses - Array of stock class objects
+ * @param {Array} issuerData.stockPlans - Array of stock plan objects
+ * @param {Array} issuerData.transactions - Array of transaction objects
+ * @returns {Promise<string[]>} Promise resolving to array of error messages
+ */
 async function validateCapTableData(issuerData) {
     const errors = [];
     const { stakeholders, stockClasses, stockPlans, transactions } = issuerData;
@@ -135,6 +180,11 @@ async function validateCapTableData(issuerData) {
     return errors;
 }
 
+/**
+ * Validates issuer data for migration, combining RXJS validation with cap table validation
+ * @param {Object} issuerData - Complete issuer data to validate
+ * @returns {Promise<string[]>} Promise resolving to array of error messages
+ */
 export async function validateIssuerForMigration(issuerData) {
     const rxjsData = await captableStats(issuerData);
     if (rxjsData?.errors?.size > 0) {
