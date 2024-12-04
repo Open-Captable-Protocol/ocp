@@ -13,8 +13,8 @@ contract StockFacet {
         uint256 quantity,
         bytes16 stakeholder_id,
         bytes16 security_id,
-        string calldata stock_legend_ids_mapping,
         string calldata custom_id,
+        string calldata stock_legend_ids_mapping,
         string calldata security_law_exemptions_mapping
     )
         external

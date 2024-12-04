@@ -12,10 +12,10 @@ contract ConvertiblesFacet {
         uint256 investment_amount,
         bytes16 security_id,
         string calldata convertible_type,
-        string calldata conversion_triggers_mapping,
         uint256 seniority,
+        string calldata custom_id,
         string calldata security_law_exemptions_mapping,
-        string calldata custom_id
+        string calldata conversion_triggers_mapping
     )
         external
     {

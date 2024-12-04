@@ -12,7 +12,13 @@ contract EquityCompensationFacet {
         bytes16 stock_class_id,
         bytes16 stock_plan_id,
         uint256 quantity,
-        bytes16 security_id
+        bytes16 security_id,
+        string calldata compensation_type,
+        uint256 exercise_price,
+        string calldata expiration_date,
+        string calldata custom_id,
+        string calldata termination_exercise_windows_mapping,
+        string calldata security_law_exemptions_mapping
     )
         external
     {
@@ -38,7 +44,19 @@ contract EquityCompensationFacet {
         ds.equityCompensationActivePositions.securityToStakeholder[security_id] = stakeholder_id;
 
         // Store transaction
-        bytes memory txData = abi.encode(stakeholder_id, stock_class_id, stock_plan_id, quantity, security_id);
+        bytes memory txData = abi.encode(
+            stakeholder_id,
+            stock_class_id,
+            stock_plan_id,
+            quantity,
+            security_id,
+            compensation_type,
+            exercise_price,
+            expiration_date,
+            termination_exercise_windows_mapping,
+            security_law_exemptions_mapping,
+            custom_id
+        );
         TxHelper.createTx(TxType.EQUITY_COMPENSATION_ISSUANCE, txData);
     }
 

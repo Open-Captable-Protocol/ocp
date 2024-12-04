@@ -8,9 +8,7 @@ export const convertAndCreateIssuanceStockOnchain = async (contract, {
     stakeholder_id, 
     quantity, 
     share_price,
-    stock_legend_ids_mapping = "",
-    custom_id = "",
-    security_law_exemptions_mapping = ""
+    custom_id = ""
 }) => {
     const stockClassIdBytes16 = convertUUIDToBytes16(stock_class_id);
     const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
@@ -24,9 +22,9 @@ export const convertAndCreateIssuanceStockOnchain = async (contract, {
         quantityScaled, 
         stakeholderIdBytes16, 
         securityIdBytes16,
-        stock_legend_ids_mapping,
-        custom_id ,
-        security_law_exemptions_mapping 
+        custom_id,
+        "", // stock_legend_ids_mapping
+        "" // security_law_exemptions_mapping 
     );
     await tx.wait();
     console.log("Transaction hash:", tx.hash);
@@ -37,9 +35,7 @@ export const convertAndCreateIssuanceStockOnchain = async (contract, {
         stakeholder_id,
         quantity,
         share_price,
-        stock_legend_ids_mapping,
         custom_id,
-        security_law_exemptions_mapping
     });
 };
 
@@ -48,10 +44,8 @@ export const convertAndCreateIssuanceConvertibleOnchain = async (contract, {
     security_id, 
     stakeholder_id, 
     investment_amount,
-    convertible_type,  // "NOTE" | "SAFE" | "CONVERTIBLE_SECURITY"
-    conversion_triggers_mapping = "",
+    convertible_type,
     seniority,
-    security_law_exemptions_mapping = "",
     custom_id = ""
 }) => {
     const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
@@ -63,10 +57,10 @@ export const convertAndCreateIssuanceConvertibleOnchain = async (contract, {
         investmentAmountScaled, 
         securityIdBytes16,
         convertible_type,
-        conversion_triggers_mapping ,
         seniority,
-        security_law_exemptions_mapping ,
-        custom_id
+        custom_id,
+        "", //  security_law_exemptions_mapping
+        "" // conversion_triggers_mapping
     );
     await tx.wait();
     console.log("Transaction hash:", tx.hash);
@@ -76,9 +70,7 @@ export const convertAndCreateIssuanceConvertibleOnchain = async (contract, {
         stakeholder_id,
         investment_amount,
         convertible_type,
-        conversion_triggers_mapping,
         seniority,
-        security_law_exemptions_mapping,
         custom_id
     });
 };
@@ -103,20 +95,37 @@ export const convertAndCreateIssuanceWarrantOnchain = async (contract, { securit
 // Equity Compensation Issuance
 export const convertAndCreateIssuanceEquityCompensationOnchain = async (
     contract,
-    { security_id, stakeholder_id, stock_class_id, stock_plan_id, quantity }
+    { 
+        security_id, 
+        stakeholder_id, 
+        stock_class_id, 
+        stock_plan_id, 
+        quantity,
+        compensation_type, 
+        exercise_price,
+        expiration_date,
+        custom_id = ""
+    }
 ) => {
     const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
     const securityIdBytes16 = convertUUIDToBytes16(security_id);
     const stockClassIdBytes16 = convertUUIDToBytes16(stock_class_id);
     const stockPlanIdBytes16 = convertUUIDToBytes16(stock_plan_id);
     const quantityScaled = toScaledBigNumber(quantity);
+    const exercisePriceScaled = toScaledBigNumber(exercise_price?.amount || 0);
 
     const tx = await contract.issueEquityCompensation(
         stakeholderIdBytes16,
         stockClassIdBytes16,
         stockPlanIdBytes16,
         quantityScaled,
-        securityIdBytes16
+        securityIdBytes16,
+        compensation_type,
+        exercisePriceScaled,
+        expiration_date,
+        custom_id,
+        "", // termination_exercise_windows_mapping
+        "", // security_law_exemptions_mapping
     );
     await tx.wait();
     console.log("Transaction hash:", tx.hash);
@@ -127,5 +136,9 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
         stock_class_id,
         stock_plan_id,
         quantity,
+        compensation_type,
+        exercise_price,
+        expiration_date,
+        custom_id
     });
 };
