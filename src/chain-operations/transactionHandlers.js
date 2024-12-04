@@ -549,7 +549,20 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
 
 export const handleEquityCompensationIssuance = async (equity, issuerId, timestamp) => {
     console.log("EquityCompensationIssuanceCreated Event Emitted!", equity);
-    const { stakeholder_id, stock_class_id, stock_plan_id, quantity, security_id } = equity;
+    const { 
+        stakeholder_id, 
+        stock_class_id, 
+        stock_plan_id, 
+        quantity, 
+        security_id, 
+        compensation_type, 
+        exercise_price, 
+        base_price, 
+        expiration_date, 
+        custom_id, 
+        termination_exercise_windows_mapping, 
+        security_law_exemptions_mapping 
+    } = equity;
 
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
@@ -568,6 +581,19 @@ export const handleEquityCompensationIssuance = async (equity, issuerId, timesta
         security_id: _security_id,
         issuer: issuerId,
         is_onchain_synced: true,
+        compensation_type,
+        exercise_price: exercise_price > 0 ? {
+            amount: toDecimal(exercise_price).toString(),
+            currency: "USD"  // Default to USD, can be made configurable if needed
+        } : undefined,
+        base_price: base_price > 0 ? {
+            amount: toDecimal(base_price).toString(),
+            currency: "USD"  // Default to USD, can be made configurable if needed
+        } : undefined,
+        expiration_date,
+        termination_exercise_windows_mapping,
+        security_law_exemptions_mapping,
+        custom_id,
     });
 
     await createHistoricalTransaction({

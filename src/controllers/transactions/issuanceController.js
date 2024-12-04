@@ -101,8 +101,9 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
         stock_class_id, 
         stock_plan_id, 
         quantity,
-        compensation_type, 
+        compensation_type,
         exercise_price,
+        base_price,
         expiration_date,
         custom_id = ""
     }
@@ -113,6 +114,7 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
     const stockPlanIdBytes16 = convertUUIDToBytes16(stock_plan_id);
     const quantityScaled = toScaledBigNumber(quantity);
     const exercisePriceScaled = toScaledBigNumber(exercise_price?.amount || 0);
+    const basePriceScaled = toScaledBigNumber(base_price?.amount || 0);
 
     const tx = await contract.issueEquityCompensation(
         stakeholderIdBytes16,
@@ -122,10 +124,11 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
         securityIdBytes16,
         compensation_type,
         exercisePriceScaled,
+        basePriceScaled,
         expiration_date,
         custom_id,
         "", // termination_exercise_windows_mapping
-        "", // security_law_exemptions_mapping
+        "" // security_law_exemptions_mapping
     );
     await tx.wait();
     console.log("Transaction hash:", tx.hash);
@@ -138,6 +141,7 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
         quantity,
         compensation_type,
         exercise_price,
+        base_price,
         expiration_date,
         custom_id
     });

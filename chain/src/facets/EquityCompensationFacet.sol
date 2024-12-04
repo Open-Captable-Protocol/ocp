@@ -15,6 +15,7 @@ contract EquityCompensationFacet {
         bytes16 security_id,
         string calldata compensation_type,
         uint256 exercise_price,
+        uint256 base_price,
         string calldata expiration_date,
         string calldata custom_id,
         string calldata termination_exercise_windows_mapping,
@@ -52,10 +53,11 @@ contract EquityCompensationFacet {
             security_id,
             compensation_type,
             exercise_price,
+            base_price,
             expiration_date,
+            custom_id,
             termination_exercise_windows_mapping,
-            security_law_exemptions_mapping,
-            custom_id
+            security_law_exemptions_mapping
         );
         TxHelper.createTx(TxType.EQUITY_COMPENSATION_ISSUANCE, txData);
     }
