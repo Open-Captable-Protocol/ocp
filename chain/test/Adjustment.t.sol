@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import {TxHelper, TxType} from "@libraries/TxHelper.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 
 contract DiamondAdjustmentTest is DiamondTestBase {
     bytes16 public stockClassId;
@@ -19,7 +19,6 @@ contract DiamondAdjustmentTest is DiamondTestBase {
     function test_AdjustIssuerAuthorizedShares() public {
         uint256 newSharesAuthorized = 2_000_000;
 
-        // Expect both events in order
         vm.expectEmit(true, false, false, true, address(capTable));
         emit IssuerAuthorizedSharesAdjusted(newSharesAuthorized);
 
@@ -32,7 +31,11 @@ contract DiamondAdjustmentTest is DiamondTestBase {
     function test_AdjustStockClassAuthorizedShares() public {
         uint256 newSharesAuthorized = 2_000_000;
 
-        StockClassFacet(payable(address(capTable))).adjustAuthorizedShares(stockClassId, newSharesAuthorized);
+        IssuerFacet(payable(address(capTable))).adjustIssuerAuthorizedShares(newSharesAuthorized);
+
+        uint256 newStockClassSharesAuthorized = 1_999_999;
+
+        StockClassFacet(payable(address(capTable))).adjustAuthorizedShares(stockClassId, newStockClassSharesAuthorized);
     }
 
     function test_AdjustStockPlanPool() public {
