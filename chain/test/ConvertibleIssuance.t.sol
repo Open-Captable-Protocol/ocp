@@ -10,7 +10,7 @@ import {ConvertibleActivePosition} from "@libraries/Structs.sol";
 contract DiamondConvertibleIssuanceTest is DiamondTestBase {
     function testIssueConvertible() public {
         bytes16 stakeholderId = createStakeholder();
-        uint256 investmentAmount = 1000000;
+        uint256 investmentAmount = 1_000_000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
         vm.expectEmit(true, true, false, true, address(capTable));
@@ -29,7 +29,7 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        ConvertiblesFacet(address(capTable)).issueConvertible(invalidStakeholderId, 1000000, securityId);
+        ConvertiblesFacet(address(capTable)).issueConvertible(invalidStakeholderId, 1_000_000, securityId);
     }
 
     function testFailZeroAmount() public {

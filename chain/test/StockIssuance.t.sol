@@ -22,10 +22,10 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
     }
 
     function testIssueStock() public {
-        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100000);
+        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
 
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
-        uint256 sharePrice = 10000000000;
+        uint256 sharePrice = 10_000_000_000;
         uint256 quantity = 1000;
 
         vm.expectEmit(true, true, false, true, address(capTable));
@@ -41,28 +41,28 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         bytes16 stockClassId = 0xd3373e0a4dd940000000000000000000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        StockFacet(address(capTable)).issueStock(stockClassId, 10000000000, 1000, invalidStakeholderId, securityId);
+        StockFacet(address(capTable)).issueStock(stockClassId, 10_000_000_000, 1000, invalidStakeholderId, securityId);
     }
 
     function testFailInvalidStockClass() public {
-        (, bytes16 stakeholderId) = createStockClassAndStakeholder(100000);
+        (, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
         bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        StockFacet(address(capTable)).issueStock(invalidStockClassId, 10000000000, 1000, stakeholderId, securityId);
+        StockFacet(address(capTable)).issueStock(invalidStockClassId, 10_000_000_000, 1000, stakeholderId, securityId);
     }
 
     function testFailInsufficientIssuerShares() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100);
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        StockFacet(address(capTable)).issueStock(stockClassId, 10000000000, 1000, stakeholderId, securityId);
+        StockFacet(address(capTable)).issueStock(stockClassId, 10_000_000_000, 1000, stakeholderId, securityId);
     }
 
     function testFailInsufficientStockClassShares() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100);
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        StockFacet(address(capTable)).issueStock(stockClassId, 10000000000, 101, stakeholderId, securityId);
+        StockFacet(address(capTable)).issueStock(stockClassId, 10_000_000_000, 101, stakeholderId, securityId);
     }
 }

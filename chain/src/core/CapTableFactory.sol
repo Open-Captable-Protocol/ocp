@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {CapTable} from "./CapTable.sol";
-import {DiamondCutFacet} from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
-import {IDiamondCut} from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
-import {IssuerFacet} from "@facets/IssuerFacet.sol";
-import {StakeholderFacet} from "@facets/StakeholderFacet.sol";
-import {StockClassFacet} from "@facets/StockClassFacet.sol";
-import {StockFacet} from "@facets/StockFacet.sol";
-import {ConvertiblesFacet} from "@facets/ConvertiblesFacet.sol";
-import {EquityCompensationFacet} from "@facets/EquityCompensationFacet.sol";
-import {StockPlanFacet} from "@facets/StockPlanFacet.sol";
-import {WarrantFacet} from "@facets/WarrantFacet.sol";
-import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
-import {AccessControlFacet} from "@facets/AccessControlFacet.sol";
+import { CapTable } from "./CapTable.sol";
+import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
+import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
+import { IssuerFacet } from "@facets/IssuerFacet.sol";
+import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
+import { StockClassFacet } from "@facets/StockClassFacet.sol";
+import { StockFacet } from "@facets/StockFacet.sol";
+import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
+import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
+import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
+import { WarrantFacet } from "@facets/WarrantFacet.sol";
+import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
+import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 import "forge-std/console.sol";
 
 contract CapTableFactory {
@@ -76,18 +76,17 @@ contract CapTableFactory {
         IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](10);
 
         // AccessControlFacet (add first so other initializations can use roles)
-        bytes4[] memory accessControlSelectors = new bytes4[](11);
+        bytes4[] memory accessControlSelectors = new bytes4[](10);
         accessControlSelectors[0] = AccessControlFacet.initializeAccessControl.selector;
         accessControlSelectors[1] = AccessControlFacet.hasRole.selector;
         accessControlSelectors[2] = AccessControlFacet.getRoleAdmin.selector;
         accessControlSelectors[3] = AccessControlFacet.grantRole.selector;
         accessControlSelectors[4] = AccessControlFacet.revokeRole.selector;
         accessControlSelectors[5] = AccessControlFacet.renounceRole.selector;
-        accessControlSelectors[6] = AccessControlFacet.setRoleAdmin.selector;
-        accessControlSelectors[7] = AccessControlFacet.transferAdmin.selector;
-        accessControlSelectors[8] = AccessControlFacet.acceptAdmin.selector;
-        accessControlSelectors[9] = AccessControlFacet.getAdmin.selector;
-        accessControlSelectors[10] = AccessControlFacet.getPendingAdmin.selector;
+        accessControlSelectors[6] = AccessControlFacet.transferAdmin.selector;
+        accessControlSelectors[7] = AccessControlFacet.acceptAdmin.selector;
+        accessControlSelectors[8] = AccessControlFacet.getAdmin.selector;
+        accessControlSelectors[9] = AccessControlFacet.getPendingAdmin.selector;
         cuts[0] = IDiamondCut.FacetCut({
             facetAddress: accessControlFacet,
             action: IDiamondCut.FacetCutAction.Add,

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {StorageLib, Storage} from "@core/Storage.sol";
-import {StockClass} from "@libraries/Structs.sol";
-import {TxHelper, TxType} from "@libraries/TxHelper.sol";
-import {LibDiamond} from "diamond-3-hardhat/libraries/LibDiamond.sol";
-import {AccessControl} from "@libraries/AccessControl.sol";
+import { StorageLib, Storage } from "@core/Storage.sol";
+import { StockClass } from "@libraries/Structs.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
+import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract StockClassFacet {
     event StockClassCreated(
@@ -24,7 +24,9 @@ contract StockClassFacet {
         string memory _class_type,
         uint256 _price_per_share,
         uint256 _initial_share_authorized
-    ) external {
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         // Check that caller has admin role

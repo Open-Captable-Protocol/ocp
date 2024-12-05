@@ -4,16 +4,16 @@ pragma solidity ^0.8.20;
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import "../src/core/CapTableFactory.sol";
-import {DiamondCutFacet} from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
-import {IssuerFacet} from "@facets/IssuerFacet.sol";
-import {StakeholderFacet} from "@facets/StakeholderFacet.sol";
-import {StockClassFacet} from "@facets/StockClassFacet.sol";
-import {StockFacet} from "@facets/StockFacet.sol";
-import {ConvertiblesFacet} from "@facets/ConvertiblesFacet.sol";
-import {EquityCompensationFacet} from "@facets/EquityCompensationFacet.sol";
-import {StockPlanFacet} from "@facets/StockPlanFacet.sol";
-import {WarrantFacet} from "@facets/WarrantFacet.sol";
-import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
+import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
+import { IssuerFacet } from "@facets/IssuerFacet.sol";
+import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
+import { StockClassFacet } from "@facets/StockClassFacet.sol";
+import { StockFacet } from "@facets/StockFacet.sol";
+import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
+import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
+import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
+import { WarrantFacet } from "@facets/WarrantFacet.sol";
+import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 
 contract DeployDiamondCapTableScript is Script {
     function setUp() public {
@@ -32,7 +32,11 @@ contract DeployDiamondCapTableScript is Script {
         address warrantFacet,
         address stakeholderNFTFacet,
         address accessControlFacet
-    ) public view returns (bool) {
+    )
+        public
+        view
+        returns (bool)
+    {
         // check one by one
         if (diamondCutFacet == address(0)) {
             console.log("DIAMOND_CUT_FACET not set");

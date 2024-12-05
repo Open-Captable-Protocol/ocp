@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import "openzeppelin-contracts/contracts/utils/Base64.sol";
-import {StorageLib, Storage} from "@core/Storage.sol";
+import { StorageLib, Storage } from "@core/Storage.sol";
 import {
     StakeholderPositions,
     StockActivePosition,
@@ -11,16 +11,16 @@ import {
     ConvertibleActivePosition,
     EquityCompensationActivePosition
 } from "@libraries/Structs.sol";
-import {ValidationLib} from "@libraries/ValidationLib.sol";
-import {StakeholderFacet} from "@facets/StakeholderFacet.sol";
-import {AccessControl} from "@libraries/AccessControl.sol";
+import { ValidationLib } from "@libraries/ValidationLib.sol";
+import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract StakeholderNFTFacet is ERC721 {
     error NotStakeholder();
     error AlreadyMinted();
     error URIQueryForNonexistentToken();
 
-    constructor() ERC721("Stakeholder Position", "STKPOS") {}
+    constructor() ERC721("Stakeholder Position", "STKPOS") { }
 
     /// @notice Mint an NFT representing a stakeholder's position
     /// @dev Only stakeholders with INVESTOR_ROLE can mint their own NFT

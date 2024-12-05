@@ -17,7 +17,7 @@ contract DiamondAdjustmentTest is DiamondTestBase {
     }
 
     function test_AdjustIssuerAuthorizedShares() public {
-        uint256 newSharesAuthorized = 2000000;
+        uint256 newSharesAuthorized = 2_000_000;
 
         // Expect both events in order
         vm.expectEmit(true, false, false, true, address(capTable));
@@ -30,13 +30,13 @@ contract DiamondAdjustmentTest is DiamondTestBase {
     }
 
     function test_AdjustStockClassAuthorizedShares() public {
-        uint256 newSharesAuthorized = 2000000;
+        uint256 newSharesAuthorized = 2_000_000;
 
         StockClassFacet(payable(address(capTable))).adjustAuthorizedShares(stockClassId, newSharesAuthorized);
     }
 
     function test_AdjustStockPlanPool() public {
-        uint256 newSharesReserved = 200000;
+        uint256 newSharesReserved = 200_000;
 
         vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(TxType.STOCK_PLAN_POOL_ADJUSTMENT, abi.encode(newSharesReserved));
@@ -46,7 +46,7 @@ contract DiamondAdjustmentTest is DiamondTestBase {
 
     function test_RevertWhen_AdjustingNonExistentStockClass() public {
         bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
-        uint256 newSharesAuthorized = 2000000;
+        uint256 newSharesAuthorized = 2_000_000;
 
         vm.expectRevert(abi.encodeWithSelector(StockClassFacet.StockClassNotFound.selector, invalidStockClassId));
         StockClassFacet(payable(address(capTable))).adjustAuthorizedShares(invalidStockClassId, newSharesAuthorized);
@@ -54,7 +54,7 @@ contract DiamondAdjustmentTest is DiamondTestBase {
 
     function test_RevertWhen_AdjustingNonExistentStockPlan() public {
         bytes16 invalidStockPlanId = 0xd3373e0a4dd940000000000000000099;
-        uint256 newSharesReserved = 200000;
+        uint256 newSharesReserved = 200_000;
 
         vm.expectRevert(abi.encodeWithSelector(StockPlanFacet.StockPlanNotFound.selector, invalidStockPlanId));
         StockPlanFacet(payable(address(capTable))).adjustStockPlanPool(invalidStockPlanId, newSharesReserved);

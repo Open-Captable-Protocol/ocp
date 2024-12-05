@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {StorageLib, Storage} from "@core/Storage.sol";
-import {StockActivePosition, StockClass} from "@libraries/Structs.sol";
-import {TxHelper, TxType} from "@libraries/TxHelper.sol";
-import {ValidationLib} from "@libraries/ValidationLib.sol";
-import {AccessControl} from "@libraries/AccessControl.sol";
+import { StorageLib, Storage } from "@core/Storage.sol";
+import { StockActivePosition, StockClass } from "@libraries/Structs.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
+import { ValidationLib } from "@libraries/ValidationLib.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract StockFacet {
     /// @notice Issue new stock to a stakeholder
@@ -16,7 +16,9 @@ contract StockFacet {
         uint256 quantity,
         bytes16 stakeholder_id,
         bytes16 security_id
-    ) external {
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         if (!AccessControl.hasOperatorRole(msg.sender)) {
