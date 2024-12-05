@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import {StorageLib} from "@core/Storage.sol";
-import {TxHelper, TxType} from "@libraries/TxHelper.sol";
+import { StorageLib } from "@core/Storage.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 
 contract DiamondStockIssuanceTest is DiamondTestBase {
     function createStockClassAndStakeholder(uint256 sharesAuthorized) public returns (bytes16, bytes16) {

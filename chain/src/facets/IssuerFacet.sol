@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {LibDiamond} from "diamond-3-hardhat/libraries/LibDiamond.sol";
-import {StorageLib, Storage} from "@core/Storage.sol";
-import {Issuer} from "@libraries/Structs.sol";
-import {TxHelper, TxType} from "@libraries/TxHelper.sol";
-import {AccessControl} from "@libraries/AccessControl.sol";
+import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
+import { StorageLib, Storage } from "@core/Storage.sol";
+import { Issuer } from "@libraries/Structs.sol";
+import { TxHelper, TxType } from "@libraries/TxHelper.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract IssuerFacet {
     error IssuerAlreadyInitialized();
@@ -22,7 +22,7 @@ contract IssuerFacet {
             revert IssuerAlreadyInitialized();
         }
 
-        ds.issuer = Issuer({id: id, shares_issued: 0, shares_authorized: initial_shares_authorized});
+        ds.issuer = Issuer({ id: id, shares_issued: 0, shares_authorized: initial_shares_authorized });
     }
 
     /// @notice Adjust the total number of authorized shares for the issuer
