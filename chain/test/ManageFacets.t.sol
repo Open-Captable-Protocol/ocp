@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "./TestBase.sol";
 import "./mocks/MockFacet.sol";
-import { ManageFacetsScript } from "../script/ManageFacets.s.sol";
+import { ManagerFacetScript } from "../script/ManageFacets.s.sol";
 import { SyncDiamondsScript } from "../script/SyncDiamonds.s.sol";
 import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
 import "../script/DeployCapTable.s.sol";
@@ -13,12 +13,13 @@ import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
 contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     MockFacet public mockFacet;
     MockFacet public mockFacetV2;
-    ManageFacetsScript public manager;
+    ManagerFacetScript public manager;
     SyncDiamondsScript public syncer;
     address public contractOwner;
     address public referenceDiamond;
     CapTableFactory public factory;
     address public capTable;
+    address public capTable2;
 
     function setUp() public {
         console.log("starting setUp");
@@ -36,15 +37,21 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
         console.log("capTable: ", capTable);
         console.log("referenceDiamond: ", referenceDiamond);
 
+        // Create a second cap table for testing
+        capTable2 = factory.createCapTable(bytes16(uint128(2)), 1_000_000);
+        console.log("capTable2: ", capTable2);
+
         // Transfer ownership of capTable to the test contract
         vm.startPrank(contractOwner);
-        LibDiamond.setContractOwner(address(referenceDiamond));
-        // LibDiamond.setContractOwner(address(capTable));
+        // The contract owner should be this test contract, not the diamond itself
+        LibDiamond.setContractOwner(referenceDiamond);
+        LibDiamond.setContractOwner(capTable);
+        LibDiamond.setContractOwner(capTable2);
         vm.stopPrank();
 
         mockFacet = new MockFacet();
         mockFacetV2 = new MockFacet();
-        upgrader = new UpgradeFacetScript();
+        manager = new ManagerFacetScript();
         syncer = new SyncDiamondsScript();
         console.log("done setUp");
     }
@@ -58,7 +65,7 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     //     // Add the facet
     //     console.log("referenceDiamond: ", referenceDiamond);
     //     console.log("address(capTable): ", address(capTable));
-    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    //     // upgrader.addFacet(address(capTable), address(mockFacet), selectors);
 
     //     // Verify facet was added
     //     IDiamondLoupe.Facet[] memory facets = IDiamondLoupe(address(capTable)).facets();
@@ -82,14 +89,14 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     //     bytes4[] memory selectors = new bytes4[](2);
     //     selectors[0] = MockFacet.setValue.selector;
     //     selectors[1] = MockFacet.getValue.selector;
-    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    //     // upgrader.addFacet(address(capTable), address(mockFacet), selectors);
 
     //     // Set initial value
     //     MockFacet(address(capTable)).setValue(42);
     //     assertEq(MockFacet(address(capTable)).getValue(), 42);
 
     //     // Replace with V2
-    //     upgrader.replaceFacet(address(capTable), address(mockFacetV2), selectors);
+    //     // upgrader.replaceFacet(address(capTable), address(mockFacetV2), selectors);
 
     //     // Verify value persists after upgrade (storage remains unchanged)
     //     assertEq(MockFacet(address(capTable)).getValue(), 42);
@@ -100,10 +107,10 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     //     bytes4[] memory selectors = new bytes4[](2);
     //     selectors[0] = MockFacet.setValue.selector;
     //     selectors[1] = MockFacet.getValue.selector;
-    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    //     // upgrader.addFacet(address(capTable), address(mockFacet), selectors);
 
     //     // Remove the facet
-    //     upgrader.removeFacet(address(capTable), selectors);
+    //     // upgrader.removeFacet(address(capTable), selectors);
 
     //     // Verify facet was removed
     //     IDiamondLoupe.Facet[] memory facets = IDiamondLoupe(address(capTable)).facets();
@@ -122,7 +129,7 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     //     bytes4[] memory selectors = new bytes4[](2);
     //     selectors[0] = MockFacet.setValue.selector;
     //     selectors[1] = MockFacet.getValue.selector;
-    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    //     // upgrader.addFacet(address(capTable), address(mockFacet), selectors);
 
     //     // Set initial value
     //     MockFacet(address(capTable)).setValue(42);
@@ -130,7 +137,7 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     //     // Add new function from V2
     //     bytes4[] memory newSelectors = new bytes4[](1);
     //     newSelectors[0] = MockFacet.getValuePlusOne.selector;
-    //     upgrader.addFacet(address(capTable), address(mockFacetV2), newSelectors);
+    //     // upgrader.addFacet(address(capTable), address(mockFacetV2), newSelectors);
 
     //     // Test old and new functionality
     //     assertEq(MockFacet(address(capTable)).getValue(), 42);
@@ -138,7 +145,7 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     // }
 
     function testSyncDiamonds() public {
-        // Add mock facet to reference diamond
+        // Create selectors for mock facet
         bytes4[] memory selectors = new bytes4[](2);
         selectors[0] = MockFacet.setValue.selector;
         selectors[1] = MockFacet.getValue.selector;
@@ -148,12 +155,17 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
 
         // Store the mock facet address for later comparison
         address mockFacetAddr = address(new MockFacet());
-        upgrader.addFacet(referenceDiamond, mockFacetAddr, selectors);
+
+        // Need to be the owner to add facets
+        vm.startPrank(contractOwner);
+        // Add facet to reference diamond
+        manager.addFacet(referenceDiamond, mockFacetAddr, selectors);
 
         // Sync the new cap table with reference
         console.log("syncing newCapTable: ", newCapTable);
         syncer.syncDiamond(newCapTable, referenceDiamond);
         console.log("done syncing");
+        vm.stopPrank();
 
         // Verify mock facet was added to new cap table by checking selectors
         IDiamondLoupe.Facet[] memory facets = IDiamondLoupe(newCapTable).facets();
