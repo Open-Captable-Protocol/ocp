@@ -25,15 +25,35 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
 
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+
         uint256 sharePrice = 10_000_000_000;
         uint256 quantity = 1000;
 
         vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(
-            TxType.STOCK_ISSUANCE, abi.encode(stockClassId, sharePrice, quantity, stakeholderId, securityId)
+            TxType.STOCK_ISSUANCE,
+            abi.encode(
+                stockClassId,
+                sharePrice,
+                quantity,
+                stakeholderId,
+                securityId,
+                "LEGEND_1", // stock_legend_ids_mapping
+                "STOCK_001", // custom_id
+                "REG_D" // security_law_exemptions_mapping
+            )
         );
 
-        StockFacet(address(capTable)).issueStock(stockClassId, sharePrice, quantity, stakeholderId, securityId);
+        StockFacet(address(capTable)).issueStock(
+            stockClassId,
+            sharePrice,
+            quantity,
+            stakeholderId,
+            securityId,
+            "STOCK_001", // custom_id
+            "LEGEND_1", // stock_legend_ids_mapping
+            "REG_D" // security_law_exemptions_mapping
+        );
     }
 
     function testFailInvalidStakeholder() public {
@@ -41,7 +61,9 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         bytes16 stockClassId = 0xd3373e0a4dd940000000000000000000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        StockFacet(address(capTable)).issueStock(stockClassId, 10_000_000_000, 1000, invalidStakeholderId, securityId);
+        StockFacet(address(capTable)).issueStock(
+            stockClassId, 10_000_000_000, 1000, invalidStakeholderId, securityId, "STOCK_002", "LEGEND_1", "REG_D"
+        );
     }
 
     function testFailInvalidStockClass() public {
@@ -49,20 +71,26 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        StockFacet(address(capTable)).issueStock(invalidStockClassId, 10_000_000_000, 1000, stakeholderId, securityId);
+        StockFacet(address(capTable)).issueStock(
+            invalidStockClassId, 10_000_000_000, 1000, stakeholderId, securityId, "STOCK_003", "LEGEND_1", "REG_D"
+        );
     }
 
     function testFailInsufficientIssuerShares() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100);
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        StockFacet(address(capTable)).issueStock(stockClassId, 10_000_000_000, 1000, stakeholderId, securityId);
+        StockFacet(address(capTable)).issueStock(
+            stockClassId, 10_000_000_000, 1000, stakeholderId, securityId, "STOCK_004", "LEGEND_1", "REG_D"
+        );
     }
 
     function testFailInsufficientStockClassShares() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100);
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        StockFacet(address(capTable)).issueStock(stockClassId, 10_000_000_000, 101, stakeholderId, securityId);
+        StockFacet(address(capTable)).issueStock(
+            stockClassId, 10_000_000_000, 101, stakeholderId, securityId, "STOCK_005", "LEGEND_1", "REG_D"
+        );
     }
 }

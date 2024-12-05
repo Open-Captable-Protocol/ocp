@@ -111,6 +111,7 @@ contract AccessControlFacet is AccessControlUpgradeable {
     /// @notice Initiates transfer of admin role to a new account
     /// @dev Only current admin can initiate transfer
     function transferAdmin(address newAdmin) public virtual {
+        console.log("Transferring admin t: ", newAdmin);
         Storage storage ds = StorageLib.get();
 
         // Check zero address first
@@ -123,7 +124,11 @@ contract AccessControlFacet is AccessControlUpgradeable {
             revert AccessControlUnauthorized(msg.sender, DEFAULT_ADMIN_ROLE);
         }
 
+        // Grant new admin the default admin role
+        _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
+
         ds.pendingAdmin = newAdmin;
+        console.log("Pending admin set to: ", newAdmin);
     }
 
     /// @notice Accepts admin role transfer

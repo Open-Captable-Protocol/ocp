@@ -15,7 +15,10 @@ contract StockFacet {
         uint256 share_price,
         uint256 quantity,
         bytes16 stakeholder_id,
-        bytes16 security_id
+        bytes16 security_id,
+        string calldata custom_id,
+        string calldata stock_legend_ids_mapping,
+        string calldata security_law_exemptions_mapping
     )
         external
     {
@@ -53,8 +56,17 @@ contract StockFacet {
         stockClass.shares_issued += quantity;
         ds.issuer.shares_issued += quantity;
 
-        // Store transaction - Match test order: stockClassId, sharePrice, quantity, stakeholderId, securityId
-        bytes memory txData = abi.encode(stock_class_id, share_price, quantity, stakeholder_id, security_id);
+        // Store transaction - Include mapping fields in transaction data
+        bytes memory txData = abi.encode(
+            stock_class_id,
+            share_price,
+            quantity,
+            stakeholder_id,
+            security_id,
+            stock_legend_ids_mapping,
+            custom_id,
+            security_law_exemptions_mapping
+        );
         TxHelper.createTx(TxType.STOCK_ISSUANCE, txData);
     }
 

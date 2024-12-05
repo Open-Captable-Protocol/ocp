@@ -8,9 +8,18 @@ import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract ConvertiblesFacet {
-    /// @notice Issue a convertible note to a stakeholder
-    /// @dev Only OPERATOR_ROLE can issue convertibles
-    function issueConvertible(bytes16 stakeholder_id, uint256 investment_amount, bytes16 security_id) external {
+    function issueConvertible(
+        bytes16 stakeholder_id,
+        uint256 investment_amount,
+        bytes16 security_id,
+        string calldata convertible_type,
+        uint256 seniority,
+        string calldata custom_id,
+        string calldata security_law_exemptions_mapping,
+        string calldata conversion_triggers_mapping
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         if (!AccessControl.hasOperatorRole(msg.sender)) {
@@ -31,7 +40,16 @@ contract ConvertiblesFacet {
         ds.convertibleActivePositions.securityToStakeholder[security_id] = stakeholder_id;
 
         // Store transaction
-        bytes memory txData = abi.encode(stakeholder_id, investment_amount, security_id);
+        bytes memory txData = abi.encode(
+            stakeholder_id,
+            investment_amount,
+            security_id,
+            convertible_type,
+            conversion_triggers_mapping,
+            seniority,
+            security_law_exemptions_mapping,
+            custom_id
+        );
         TxHelper.createTx(TxType.CONVERTIBLE_ISSUANCE, txData);
     }
 

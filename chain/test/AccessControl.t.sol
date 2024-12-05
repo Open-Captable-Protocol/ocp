@@ -26,7 +26,6 @@ contract AccessControlTest is DiamondTestBase {
         investor = address(0x3);
         unauthorized = address(0x4);
 
-        // Grant roles
         // contract owner is the FACTORY
         vm.startPrank(contractOwner);
         AccessControlFacet(address(capTable)).grantRole(AccessControl.DEFAULT_ADMIN_ROLE, admin);
@@ -70,7 +69,10 @@ contract AccessControlTest is DiamondTestBase {
             1, // share_price
             100, // quantity
             stakeholderId, // stakeholder_id
-            bytes16(keccak256("security1")) // security_id
+            bytes16(keccak256("security1")), // security_id
+            "custom_id", // custom_id
+            "stock_legend_ids_mapping", // stock_legend_ids_mapping
+            "security_law_exemptions_mapping" // security_law_exemptions_mapping
         );
         vm.stopPrank();
 
@@ -86,7 +88,10 @@ contract AccessControlTest is DiamondTestBase {
             1, // share_price
             100, // quantity
             stakeholderId, // stakeholder_id
-            bytes16(keccak256("security2")) // security_id
+            bytes16(keccak256("security2")), // security_id
+            "custom_id", // custom_id
+            "stock_legend_ids_mapping", // stock_legend_ids_mapping
+            "security_law_exemptions_mapping" // security_law_exemptions_mapping
         );
         vm.stopPrank();
     }
@@ -115,7 +120,18 @@ contract AccessControlTest is DiamondTestBase {
         // Test issueEquityCompensation
         vm.startPrank(operator);
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId, stockClassId, stockPlanId, 100, bytes16(keccak256("security1"))
+            stakeholderId,
+            stockClassId,
+            stockPlanId,
+            100,
+            bytes16(keccak256("security1")),
+            "OPTION",
+            100,
+            100,
+            "2025-01-01",
+            "custom_id",
+            "termination_exercise_windows_mapping",
+            "security_law_exemptions_mapping"
         );
         vm.stopPrank();
 
@@ -127,7 +143,18 @@ contract AccessControlTest is DiamondTestBase {
             )
         );
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId, stockClassId, stockPlanId, 100, bytes16(keccak256("security2"))
+            stakeholderId,
+            stockClassId,
+            stockPlanId,
+            100,
+            bytes16(keccak256("security2")),
+            "OPTION",
+            100,
+            100,
+            "2025-01-01",
+            "custom_id",
+            "termination_exercise_windows_mapping",
+            "security_law_exemptions_mapping"
         );
         vm.stopPrank();
     }

@@ -29,7 +29,16 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         // Create a stock class and issue some stock for the NFT metadata
         bytes16 stockClassId = createStockClass();
         bytes16 stockSecurityId = 0xd3373e0a4dd940000000000000000001;
-        StockFacet(address(capTable)).issueStock(stockClassId, 1e18, 1000, stakeholderId, stockSecurityId);
+        StockFacet(address(capTable)).issueStock(
+            stockClassId,
+            1e18,
+            1000,
+            stakeholderId,
+            stockSecurityId,
+            "custom_id", // custom_id
+            "stock_legend_ids_mapping", // stock_legend_ids_mapping
+            "security_law_exemptions_mapping" // security_law_exemptions_mapping
+        );
     }
 
     function testLinkStakeholderAddress() public {
@@ -76,27 +85,27 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         // Link address and mint NFT
         linkStakeholderAddress(stakeholderId, stakeholderWallet);
 
+        vm.startPrank(stakeholderWallet);
+
         // Mint NFT
-        vm.prank(stakeholderWallet);
         StakeholderNFTFacet(address(capTable)).mint();
+
+        vm.stopPrank();
 
         // Get tokenId from stakeholderId
         uint256 tokenId = uint256(bytes32(stakeholderId));
 
         // Get URI as stakeholderWallet (token owner)
-        vm.startPrank(stakeholderWallet);
         string memory uri = StakeholderNFTFacet(address(capTable)).tokenURI(tokenId);
-        vm.stopPrank();
 
         // Basic validation of URI format
         assertTrue(bytes(uri).length > 0, "URI should not be empty");
 
         // Also check positions exist
-        vm.startPrank(stakeholderWallet);
 
         StakeholderPositions memory positions =
             StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
-        vm.stopPrank();
+
         assertTrue(positions.stocks.length > 0, "Should have stock positions");
     }
 }

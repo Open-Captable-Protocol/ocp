@@ -14,9 +14,20 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
         vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(TxType.WARRANT_ISSUANCE, abi.encode(stakeholderId, quantity, securityId));
+        emit TxHelper.TxCreated(
+            TxType.WARRANT_ISSUANCE,
+            abi.encode(stakeholderId, quantity, securityId, 1e18, "WARRANT_001", "REG_D", "TIME_BASED")
+        );
 
-        WarrantFacet(address(capTable)).issueWarrant(stakeholderId, quantity, securityId);
+        WarrantFacet(address(capTable)).issueWarrant(
+            stakeholderId,
+            quantity,
+            securityId,
+            1e18, // purchase_price
+            "WARRANT_001", // custom_id
+            "REG_D", // security_law_exemptions_mapping
+            "TIME_BASED" // exercise_triggers_mapping
+        );
 
         // Verify position was created correctly
         WarrantActivePosition memory position = WarrantFacet(address(capTable)).getWarrantPosition(securityId);
@@ -29,7 +40,9 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
         // Just let it fail without expectRevert
-        WarrantFacet(address(capTable)).issueWarrant(invalidStakeholderId, 1000, securityId);
+        WarrantFacet(address(capTable)).issueWarrant(
+            invalidStakeholderId, 1000, securityId, 1e18, "WARRANT_002", "REG_D", "TIME_BASED"
+        );
     }
 
     function testFailZeroQuantity() public {
@@ -37,6 +50,8 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
         // Just let it fail without expectRevert
-        WarrantFacet(address(capTable)).issueWarrant(stakeholderId, 0, securityId);
+        WarrantFacet(address(capTable)).issueWarrant(
+            stakeholderId, 0, securityId, 1e18, "WARRANT_003", "REG_D", "TIME_BASED"
+        );
     }
 }

@@ -8,9 +8,17 @@ import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract WarrantFacet {
-    /// @notice Issue a warrant to a stakeholder
-    /// @dev Only OPERATOR_ROLE can issue warrants
-    function issueWarrant(bytes16 stakeholder_id, uint256 quantity, bytes16 security_id) external {
+    function issueWarrant(
+        bytes16 stakeholder_id,
+        uint256 quantity,
+        bytes16 security_id,
+        uint256 purchase_price,
+        string calldata custom_id,
+        string calldata security_law_exemptions_mapping,
+        string calldata exercise_triggers_mapping
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         if (!AccessControl.hasOperatorRole(msg.sender)) {
@@ -31,7 +39,15 @@ contract WarrantFacet {
         ds.warrantActivePositions.securityToStakeholder[security_id] = stakeholder_id;
 
         // Store transaction
-        bytes memory txData = abi.encode(stakeholder_id, quantity, security_id);
+        bytes memory txData = abi.encode(
+            stakeholder_id,
+            quantity,
+            security_id,
+            purchase_price,
+            custom_id,
+            security_law_exemptions_mapping,
+            exercise_triggers_mapping
+        );
         TxHelper.createTx(TxType.WARRANT_ISSUANCE, txData);
     }
 

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import { CapTable } from "./CapTable.sol";
+import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { IssuerFacet } from "@facets/IssuerFacet.sol";
@@ -14,6 +15,7 @@ import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
 import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 import "forge-std/console.sol";
 
 contract CapTableFactory {
@@ -23,186 +25,87 @@ contract CapTableFactory {
 
     address[] public capTables;
 
-    // Store facet addresses
-    address public immutable diamondCutFacet;
-    address public immutable issuerFacet;
-    address public immutable stakeholderFacet;
-    address public immutable stockClassFacet;
-    address public immutable stockFacet;
-    address public immutable convertiblesFacet;
-    address public immutable equityCompensationFacet;
-    address public immutable stockPlanFacet;
-    address public immutable warrantFacet;
-    address public immutable stakeholderNFTFacet;
-    address public immutable accessControlFacet;
+    // Reference diamond to copy facets from
+    address public immutable referenceDiamond;
 
-    constructor(
-        address _newAdmin,
-        address _diamondCutFacet,
-        address _issuerFacet,
-        address _stakeholderFacet,
-        address _stockClassFacet,
-        address _stockFacet,
-        address _convertiblesFacet,
-        address _equityCompensationFacet,
-        address _stockPlanFacet,
-        address _warrantFacet,
-        address _stakeholderNFTFacet,
-        address _accessControlFacet
-    ) {
+    constructor(address _newAdmin, address _referenceDiamond) {
         require(_newAdmin != address(0), "Invalid new admin");
-        require(_diamondCutFacet != address(0), "Invalid diamondCutFacet");
+        require(_referenceDiamond != address(0), "Invalid referenceDiamond");
+        referenceDiamond = _referenceDiamond;
         newAdmin = _newAdmin;
-        diamondCutFacet = _diamondCutFacet;
-        issuerFacet = _issuerFacet;
-        stakeholderFacet = _stakeholderFacet;
-        stockClassFacet = _stockClassFacet;
-        stockFacet = _stockFacet;
-        convertiblesFacet = _convertiblesFacet;
-        equityCompensationFacet = _equityCompensationFacet;
-        stockPlanFacet = _stockPlanFacet;
-        warrantFacet = _warrantFacet;
-        stakeholderNFTFacet = _stakeholderNFTFacet;
-        accessControlFacet = _accessControlFacet;
     }
 
     function createCapTable(bytes16 id, uint256 initialSharesAuthorized) external returns (address) {
         require(id != bytes16(0) && initialSharesAuthorized != 0, "Invalid issuer params");
 
-        // Deploy Diamond with factory as the owner
-        console.log("inside createCapTable");
+        console.log("createCapTable");
         console.log("msg.sender: ", msg.sender);
-        console.log("factory address (this): ", address(this));
+        console.log("address(this): ", address(this));
 
-        // Make the factory the owner, not msg.sender
-        CapTable diamond = new CapTable(address(this), diamondCutFacet);
+        // Deploy new DiamondCutFacet
+        DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
 
-        // Create facet cuts in memory
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](10);
+        // Make the factory the owner
+        CapTable diamond = new CapTable(address(this), address(diamondCutFacet));
 
-        // AccessControlFacet (add first so other initializations can use roles)
-        bytes4[] memory accessControlSelectors = new bytes4[](10);
-        accessControlSelectors[0] = AccessControlFacet.initializeAccessControl.selector;
-        accessControlSelectors[1] = AccessControlFacet.hasRole.selector;
-        accessControlSelectors[2] = AccessControlFacet.getRoleAdmin.selector;
-        accessControlSelectors[3] = AccessControlFacet.grantRole.selector;
-        accessControlSelectors[4] = AccessControlFacet.revokeRole.selector;
-        accessControlSelectors[5] = AccessControlFacet.renounceRole.selector;
-        accessControlSelectors[6] = AccessControlFacet.transferAdmin.selector;
-        accessControlSelectors[7] = AccessControlFacet.acceptAdmin.selector;
-        accessControlSelectors[8] = AccessControlFacet.getAdmin.selector;
-        accessControlSelectors[9] = AccessControlFacet.getPendingAdmin.selector;
-        cuts[0] = IDiamondCut.FacetCut({
-            facetAddress: accessControlFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: accessControlSelectors
-        });
+        // Get facet information from reference diamond
+        IDiamondLoupe loupe = IDiamondLoupe(referenceDiamond);
+        IDiamondLoupe.Facet[] memory existingFacets = loupe.facets();
+        console.log("Reference diamond facets:", existingFacets.length);
 
-        // IssuerFacet
-        bytes4[] memory issuerSelectors = new bytes4[](2);
-        issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
-        issuerSelectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
-        cuts[1] = IDiamondCut.FacetCut({
-            facetAddress: issuerFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: issuerSelectors
-        });
+        // Count valid facets (excluding DiamondCut)
+        uint256 validFacetCount = 0;
+        for (uint256 i = 0; i < existingFacets.length; i++) {
+            bytes4 firstSelector = existingFacets[i].functionSelectors[0];
+            // Skip if this is the DiamondCut facet
+            if (firstSelector != DiamondCutFacet.diamondCut.selector) {
+                validFacetCount++;
+            }
+        }
 
-        // StakeholderFacet
-        bytes4[] memory stakeholderSelectors = new bytes4[](3);
-        stakeholderSelectors[0] = StakeholderFacet.createStakeholder.selector;
-        stakeholderSelectors[1] = StakeholderFacet.linkStakeholderAddress.selector;
-        stakeholderSelectors[2] = StakeholderFacet.getStakeholderPositions.selector;
-        cuts[2] = IDiamondCut.FacetCut({
-            facetAddress: stakeholderFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stakeholderSelectors
-        });
+        // Create cuts array for valid facets
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](validFacetCount);
+        uint256 cutIndex = 0;
 
-        // StockClassFacet
-        bytes4[] memory stockClassSelectors = new bytes4[](2);
-        stockClassSelectors[0] = StockClassFacet.createStockClass.selector;
-        stockClassSelectors[1] = StockClassFacet.adjustAuthorizedShares.selector;
-        cuts[3] = IDiamondCut.FacetCut({
-            facetAddress: stockClassFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stockClassSelectors
-        });
+        for (uint256 i = 0; i < existingFacets.length; i++) {
+            bytes4 firstSelector = existingFacets[i].functionSelectors[0];
+            // Skip if this is the DiamondCut facet
+            if (firstSelector != DiamondCutFacet.diamondCut.selector) {
+                cuts[cutIndex] = IDiamondCut.FacetCut({
+                    facetAddress: existingFacets[i].facetAddress,
+                    action: IDiamondCut.FacetCutAction.Add,
+                    functionSelectors: existingFacets[i].functionSelectors
+                });
+                cutIndex++;
+            }
+        }
 
-        // StockFacet
-        bytes4[] memory stockSelectors = new bytes4[](1);
-        stockSelectors[0] = StockFacet.issueStock.selector;
-        cuts[4] = IDiamondCut.FacetCut({
-            facetAddress: stockFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stockSelectors
-        });
+        // Perform the cuts
+        console.log("Performing cuts with", validFacetCount, "facets");
+        DiamondCutFacet(address(diamond)).diamondCut(cuts, address(0), "");
 
-        // ConvertiblesFacet
-        bytes4[] memory convertibleSelectors = new bytes4[](2);
-        convertibleSelectors[0] = ConvertiblesFacet.issueConvertible.selector;
-        convertibleSelectors[1] = ConvertiblesFacet.getConvertiblePosition.selector;
-        cuts[5] = IDiamondCut.FacetCut({
-            facetAddress: convertiblesFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: convertibleSelectors
-        });
+        console.log("Starting access control initialization");
+        // Initialize access control first - this makes the factory the admin
+        AccessControlFacet(address(diamond)).initializeAccessControl();
 
-        // EquityCompensationFacet
-        bytes4[] memory equityCompensationSelectors = new bytes4[](3);
-        equityCompensationSelectors[0] = EquityCompensationFacet.issueEquityCompensation.selector;
-        equityCompensationSelectors[1] = EquityCompensationFacet.getPosition.selector;
-        equityCompensationSelectors[2] = EquityCompensationFacet.exerciseEquityCompensation.selector;
-        cuts[6] = IDiamondCut.FacetCut({
-            facetAddress: equityCompensationFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: equityCompensationSelectors
-        });
-
-        // StockPlanFacet
-        bytes4[] memory stockPlanSelectors = new bytes4[](2);
-        stockPlanSelectors[0] = StockPlanFacet.createStockPlan.selector;
-        stockPlanSelectors[1] = StockPlanFacet.adjustStockPlanPool.selector;
-        cuts[7] = IDiamondCut.FacetCut({
-            facetAddress: stockPlanFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stockPlanSelectors
-        });
-
-        // WarrantFacet
-        bytes4[] memory warrantSelectors = new bytes4[](2);
-        warrantSelectors[0] = WarrantFacet.issueWarrant.selector;
-        warrantSelectors[1] = WarrantFacet.getWarrantPosition.selector;
-        cuts[8] = IDiamondCut.FacetCut({
-            facetAddress: warrantFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: warrantSelectors
-        });
-
-        // StakeholderNFTFacet
-        bytes4[] memory stakeholderNFTSelectors = new bytes4[](2);
-        stakeholderNFTSelectors[0] = StakeholderNFTFacet.mint.selector;
-        stakeholderNFTSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
-        cuts[9] = IDiamondCut.FacetCut({
-            facetAddress: stakeholderNFTFacet,
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stakeholderNFTSelectors
-        });
-
-        // Get the encoded initialization data
-        bytes memory initData = abi.encodeWithSelector(AccessControlFacet.initializeAccessControl.selector);
-
-        // Execute the diamond cut
-        DiamondCutFacet(address(diamond)).diamondCut(cuts, address(accessControlFacet), initData);
+        // Since factory is now admin, it can grant roles to newAdmin and diamond
+        // console.log("Granting newAdmin DEFAULT_ADMIN_ROLE");
+        // console.log("newAdmin: ", newAdmin);
+        AccessControlFacet(address(diamond)).grantRole(AccessControl.OPERATOR_ROLE, address(diamond));
 
         // Initialize the issuer
+        console.log("Initializing issuer");
         IssuerFacet(address(diamond)).initializeIssuer(id, initialSharesAuthorized);
 
         // Store the new cap table
         capTables.push(address(diamond));
 
         emit CapTableCreated(address(diamond), id);
-        // transfer ownership to new admin
+        console.log("newAdmin: ", newAdmin);
+        console.log("msg.sender: ", msg.sender);
+        console.log("address(this): ", address(this));
+
+        // Only transfer admin if newAdmin is not the same as msg.sender
         AccessControlFacet(address(diamond)).transferAdmin(newAdmin);
         return address(diamond);
     }
