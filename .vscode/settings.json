@@ -1,10 +1,10 @@
 {
     "solidity.packageDefaultDependenciesDirectory": "chain/lib",
     "solidity.packageDefaultDependenciesContractsDirectory": "chain/src",
-    "solidity.formatter": "prettier",
+    "solidity.formatter": "forge",
     "solidity.compileUsingRemoteVersion": "v0.8.20",
     "solidity.remappings": ["@openzeppelin/=chain/lib/openzeppelin-contracts/", "@diamond/=chain/src/lib/diamond/"],
-    "solidity.linter": "solium",
+    "solidity.linter": "solhint",
     "solidity.enabledAsYouTypeCompilationErrorCheck": true,
     "editor.formatOnSave": true,
     "[solidity]": {
