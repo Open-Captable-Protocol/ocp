@@ -29,16 +29,38 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue stock
         stockSecurityId = 0xd3373e0a4dd940000000000000000001;
-        StockFacet(address(capTable)).issueStock(stockClassId, 1e18, 1000, stakeholderId, stockSecurityId);
+        StockFacet(address(capTable)).issueStock(
+            stockClassId, 1e18, 1000, stakeholderId, stockSecurityId, "STOCK_POS_001", "LEGEND_1", "REG_D"
+        );
 
         // Issue convertible
         convertibleSecurityId = 0xd3373e0a4dd940000000000000000002;
-        ConvertiblesFacet(address(capTable)).issueConvertible(stakeholderId, 1_000_000, convertibleSecurityId);
+        ConvertiblesFacet(address(capTable)).issueConvertible(
+            stakeholderId,
+            1_000_000,
+            convertibleSecurityId,
+            "SAFE",
+            1,
+            "CONV_POS_001",
+            "REG_D",
+            "CONVERSION_ON_NEXT_EQUITY"
+        );
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000003;
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId, stockClassId, stockPlanId, 1000, equityCompSecurityId
+            stakeholderId,
+            stockClassId,
+            stockPlanId,
+            1000,
+            equityCompSecurityId,
+            "ISO",
+            1e18,
+            1e18,
+            "2025-12-31",
+            "EQCOMP_POS_001",
+            "90_DAYS",
+            "REG_D"
         );
     }
 

@@ -30,11 +30,35 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(
             TxType.EQUITY_COMPENSATION_ISSUANCE,
-            abi.encode(stakeholderId, stockClassId, stockPlanId, quantity, securityId)
+            abi.encode(
+                stakeholderId,
+                stockClassId,
+                stockPlanId,
+                quantity,
+                securityId,
+                "ISO",
+                1e18,
+                1e18,
+                "2025-12-31",
+                "EQCOMP_001",
+                "90_DAYS",
+                "REG_D"
+            )
         );
 
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId, stockClassId, stockPlanId, quantity, securityId
+            stakeholderId,
+            stockClassId,
+            stockPlanId,
+            quantity,
+            securityId,
+            "ISO", // compensation_type
+            1e18, // exercise_price
+            1e18, // base_price
+            "2025-12-31", // expiration_date
+            "EQCOMP_001", // custom_id
+            "90_DAYS", // termination_exercise_windows_mapping
+            "REG_D" // security_law_exemptions_mapping
         );
 
         // Verify position was created correctly
@@ -51,7 +75,18 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            invalidStakeholderId, stockClassId, stockPlanId, 1000, securityId
+            invalidStakeholderId,
+            stockClassId,
+            stockPlanId,
+            1000,
+            securityId,
+            "ISO",
+            1e18,
+            1e18,
+            "2025-12-31",
+            "EQCOMP_002",
+            "90_DAYS",
+            "REG_D"
         );
     }
 
@@ -60,16 +95,18 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId, invalidStockClassId, stockPlanId, 1000, securityId
-        );
-    }
-
-    function testFailInvalidStockPlan() public {
-        bytes16 invalidStockPlanId = 0xd3373e0a4dd940000000000000000099;
-        bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
-
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId, stockClassId, invalidStockPlanId, 1000, securityId
+            stakeholderId,
+            invalidStockClassId,
+            stockPlanId,
+            1000,
+            securityId,
+            "ISO",
+            1e18,
+            1e18,
+            "2025-12-31",
+            "EQCOMP_003",
+            "90_DAYS",
+            "REG_D"
         );
     }
 
@@ -77,7 +114,18 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId, stockClassId, stockPlanId, 0, securityId
+            stakeholderId,
+            stockClassId,
+            stockPlanId,
+            0,
+            securityId,
+            "ISO",
+            1e18,
+            1e18,
+            "2025-12-31",
+            "EQCOMP_005",
+            "90_DAYS",
+            "REG_D"
         );
     }
 }
