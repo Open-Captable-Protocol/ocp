@@ -14,9 +14,27 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
         vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(TxType.CONVERTIBLE_ISSUANCE, abi.encode(stakeholderId, investmentAmount, securityId));
+        emit TxHelper.TxCreated(TxType.CONVERTIBLE_ISSUANCE, abi.encode(
+            stakeholderId,
+            investmentAmount,
+            securityId,
+            "SAFE",
+            "CONVERSION_ON_NEXT_EQUITY",
+            1,
+            "REG_D",
+            "CONV_001"
+        ));
 
-        ConvertiblesFacet(address(capTable)).issueConvertible(stakeholderId, investmentAmount, securityId);
+        ConvertiblesFacet(address(capTable)).issueConvertible(
+            stakeholderId,
+            investmentAmount,
+            securityId,
+            "SAFE",  // convertible_type
+            1,  // seniority
+            "CONV_001",  // custom_id
+            "REG_D",  // security_law_exemptions_mapping
+            "CONVERSION_ON_NEXT_EQUITY"  // conversion_triggers_mapping
+        );
 
         // Verify position was created correctly
         ConvertibleActivePosition memory position =
@@ -29,13 +47,31 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        ConvertiblesFacet(address(capTable)).issueConvertible(invalidStakeholderId, 1_000_000, securityId);
+        ConvertiblesFacet(address(capTable)).issueConvertible(
+            invalidStakeholderId,
+            1_000_000,
+            securityId,
+            "SAFE",
+            1,
+            "CONV_002",
+            "REG_D",
+            "CONVERSION_ON_NEXT_EQUITY"
+        );
     }
 
     function testFailZeroAmount() public {
         bytes16 stakeholderId = createStakeholder();
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        ConvertiblesFacet(address(capTable)).issueConvertible(stakeholderId, 0, securityId);
+        ConvertiblesFacet(address(capTable)).issueConvertible(
+            stakeholderId,
+            0,
+            securityId,
+            "SAFE",
+            1,
+            "CONV_003",
+            "REG_D",
+            "CONVERSION_ON_NEXT_EQUITY"
+        );
     }
 }

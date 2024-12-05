@@ -29,7 +29,18 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000001;
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId, stockClassId, stockPlanId, EQUITY_COMP_QUANTITY, equityCompSecurityId
+            stakeholderId,
+            stockClassId,
+            stockPlanId,
+            EQUITY_COMP_QUANTITY,
+            equityCompSecurityId,
+            "ISO", // compensation_type
+            1e18, // exercise_price
+            1e18, // base_price
+            "2025-12-31", // expiration_date
+            "EQCOMP_EX_001", // custom_id
+            "90_DAYS", // termination_exercise_windows_mapping
+            "REG_D" // security_law_exemptions_mapping
         );
 
         // Issue resulting stock
@@ -39,7 +50,10 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             1e18, // share price
             EQUITY_COMP_QUANTITY,
             stakeholderId,
-            stockSecurityId
+            stockSecurityId,
+            "STOCK_EX_001", // custom_id
+            "LEGEND_1", // stock_legend_ids_mapping
+            "REG_D" // security_law_exemptions_mapping
         );
     }
 
@@ -53,7 +67,10 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             1e18, // share price
             exerciseQuantity, // Must match exercise quantity
             stakeholderId,
-            newStockSecurityId
+            newStockSecurityId,
+            "STOCK_EX_002",
+            "LEGEND_1",
+            "REG_D"
         );
 
         vm.expectEmit(true, true, false, true, address(capTable));
@@ -116,7 +133,10 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             1e18, // share price
             500,
             otherStakeholderId,
-            otherStockSecurityId
+            otherStockSecurityId,
+            "STOCK_EX_003",
+            "LEGEND_1",
+            "REG_D"
         );
 
         vm.expectRevert(

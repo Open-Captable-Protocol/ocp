@@ -20,7 +20,16 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         // Issue some positions to the stakeholder
         bytes16 stockClassId = createStockClass();
         bytes16 stockSecurityId = 0xd3373e0a4dd940000000000000000001;
-        StockFacet(address(capTable)).issueStock(stockClassId, 1e18, 1000, stakeholderId, stockSecurityId);
+        StockFacet(address(capTable)).issueStock(
+            stockClassId,
+            1e18,
+            1000,
+            stakeholderId,
+            stockSecurityId,
+            "STOCK_NFT_001", // custom_id
+            "LEGEND_1", // stock_legend_ids_mapping
+            "REG_D" // security_law_exemptions_mapping
+        );
     }
 
     function testLinkStakeholderAddress() public {

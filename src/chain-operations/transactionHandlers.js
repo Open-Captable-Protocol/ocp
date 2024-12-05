@@ -57,9 +57,20 @@ const options = {
     second: "2-digit",
 };
 
+// @dev, this file is where you would create the mapping for the "_mapping" fields.
+
 export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     console.log("StockIssuanceCreated Event Emitted!", stock);
-    const { stock_class_id, share_price, quantity, stakeholder_id, security_id } = stock;
+    const { 
+        stock_class_id, 
+        share_price, 
+        quantity, 
+        stakeholder_id, 
+        security_id, 
+        stock_legend_ids_mapping, 
+        custom_id,
+        security_law_exemptions_mapping 
+    } = stock;
 
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
@@ -81,6 +92,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         date: dateToUse,
         issuer: issuerId,
         is_onchain_synced: true,
+        custom_id,
     });
 
     await createHistoricalTransaction({
@@ -407,10 +419,19 @@ export const handleStockPlan = async (id, sharesReserved) => {
     console.log("✅ | StockPlan confirmation onchain ", stockPlan);
 };
 
+
 export const handleConvertibleIssuance = async (convertible, issuerId, timestamp) => {
     console.log("ConvertibleIssuanceCreated Event Emitted!", convertible);
-    const { security_id, stakeholder_id, investment_amount } = convertible;
-
+    const { 
+        security_id, 
+        stakeholder_id, 
+        investment_amount,
+        convertible_type,
+        conversion_triggers_mapping,
+        seniority,
+        security_law_exemptions_mapping,
+        custom_id 
+    } = convertible;
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
@@ -429,6 +450,9 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
         date: dateToUse,
         issuer: issuerId,
         is_onchain_synced: true,
+        convertible_type,
+        seniority,
+        custom_id
     });
 
     await createHistoricalTransaction({
@@ -468,22 +492,38 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
 
 export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
     console.log("WarrantIssuanceCreated Event Emitted!", warrant);
-    const { stakeholder_id, quantity, security_id } = warrant;
+    const { 
+        stakeholder_id, 
+        quantity, 
+        security_id,
+        purchase_price,
+        custom_id,
+        security_law_exemptions_mapping,
+        exercise_triggers_mapping
+    } = warrant;
 
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
-    console.log("Fairmint data:", fairmintData);
-
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
     const _stakeholder_id = convertBytes16ToUUID(stakeholder_id);
 
+    // If we have fairmint data, get historical date
+    const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
+
     const createdWarrantIssuance = await upsertWarrantIssuanceBySecurityId(_security_id, {
-        date: chainDate,
-        quantity: toDecimal(quantity).toString(),
+        date: dateToUse,
         stakeholder_id: _stakeholder_id,
+        quantity: toDecimal(quantity).toString(),
         security_id: _security_id,
         issuer: issuerId,
         is_onchain_synced: true,
+        custom_id,
+        purchase_price: purchase_price > 0 ? {
+            amount: toDecimal(purchase_price).toString(),
+            currency: "USD"
+        } : undefined,
+        security_law_exemptions: JSON.parse(security_law_exemptions_mapping || "[]"),
+        exercise_triggers: JSON.parse(exercise_triggers_mapping || "[]")
     });
 
     await createHistoricalTransaction({
@@ -500,7 +540,7 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
             series_id: fairmintData.series_id,
             series_name: get(fairmintData, "attributes.series_name"),
             series_type: SERIES_TYPE.WARRANT,
-            date: chainDate,
+            date: dateToUse,
         });
 
         console.log("Series created response:", seriesCreatedResp);
@@ -511,7 +551,7 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
             stakeholder_id: _stakeholder_id,
             series_id: fairmintData.series_id,
             amount: dollarAmount,
-            date: chainDate,
+            date: dateToUse,
         });
 
         console.log("Warrant investment response:", reflectedInvestmentResp);
@@ -525,7 +565,20 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
 
 export const handleEquityCompensationIssuance = async (equity, issuerId, timestamp) => {
     console.log("EquityCompensationIssuanceCreated Event Emitted!", equity);
-    const { stakeholder_id, stock_class_id, stock_plan_id, quantity, security_id } = equity;
+    const { 
+        stakeholder_id, 
+        stock_class_id, 
+        stock_plan_id, 
+        quantity, 
+        security_id, 
+        compensation_type, 
+        exercise_price, 
+        base_price, 
+        expiration_date, 
+        custom_id, 
+        termination_exercise_windows_mapping, 
+        security_law_exemptions_mapping 
+    } = equity;
 
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
@@ -544,6 +597,19 @@ export const handleEquityCompensationIssuance = async (equity, issuerId, timesta
         security_id: _security_id,
         issuer: issuerId,
         is_onchain_synced: true,
+        compensation_type,
+        exercise_price: exercise_price > 0 ? {
+            amount: toDecimal(exercise_price).toString(),
+            currency: "USD"  // Default to USD, can be made configurable if needed
+        } : undefined,
+        base_price: base_price > 0 ? {
+            amount: toDecimal(base_price).toString(),
+            currency: "USD"  // Default to USD, can be made configurable if needed
+        } : undefined,
+        expiration_date,
+        termination_exercise_windows_mapping,
+        security_law_exemptions_mapping,
+        custom_id,
     });
 
     await createHistoricalTransaction({
