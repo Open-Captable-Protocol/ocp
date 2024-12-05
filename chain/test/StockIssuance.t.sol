@@ -25,6 +25,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
 
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+
         uint256 sharePrice = 10_000_000_000;
         uint256 quantity = 1000;
 
