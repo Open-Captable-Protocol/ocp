@@ -70,15 +70,6 @@ contract AccessControlFacet is AccessControlUpgradeable {
         _revokeRole(role, account);
     }
 
-    /// @notice Sets `adminRole` as `role`'s admin role
-    /// @dev Caller must have admin role
-    function setRoleAdmin(bytes32 role, bytes32 adminRole) public virtual {
-        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
-            revert AccessControlUnauthorized(msg.sender, DEFAULT_ADMIN_ROLE);
-        }
-        _setRoleAdmin(role, adminRole);
-    }
-
     /// @dev Override _grantRole to use diamond storage
     function _grantRole(bytes32 role, address account) internal virtual override {
         Storage storage ds = StorageLib.get();

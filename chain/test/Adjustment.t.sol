@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
+import {TxHelper, TxType} from "@libraries/TxHelper.sol";
 
 contract DiamondAdjustmentTest is DiamondTestBase {
     bytes16 public stockClassId;

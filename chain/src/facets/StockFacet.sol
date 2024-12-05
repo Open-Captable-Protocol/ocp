@@ -1,16 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { StorageLib, Storage } from "@core/Storage.sol";
-import { StockActivePosition, StockClass } from "@libraries/Structs.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
-import { ValidationLib } from "@libraries/ValidationLib.sol";
-import { AccessControl } from "@libraries/AccessControl.sol";
+import {StorageLib, Storage} from "@core/Storage.sol";
+import {StockActivePosition, StockClass} from "@libraries/Structs.sol";
+import {TxHelper, TxType} from "@libraries/TxHelper.sol";
+import {ValidationLib} from "@libraries/ValidationLib.sol";
+import {AccessControl} from "@libraries/AccessControl.sol";
 
 contract StockFacet {
     /// @notice Issue new stock to a stakeholder
     /// @dev Only OPERATOR_ROLE can issue stock
-    function issueStock(bytes16 stock_class_id, uint256 share_price, uint256 quantity, bytes16 stakeholder_id, bytes16 security_id) external {
+    function issueStock(
+        bytes16 stock_class_id,
+        uint256 share_price,
+        uint256 quantity,
+        bytes16 stakeholder_id,
+        bytes16 security_id
+    ) external {
         Storage storage ds = StorageLib.get();
 
         if (!AccessControl.hasOperatorRole(msg.sender)) {
@@ -56,12 +62,18 @@ contract StockFacet {
         Storage storage ds = StorageLib.get();
 
         // Check that caller has at least investor role
-        if (!AccessControl.hasAdminRole(msg.sender) && !AccessControl.hasOperatorRole(msg.sender) && !AccessControl.hasInvestorRole(msg.sender)) {
+        if (
+            !AccessControl.hasAdminRole(msg.sender) && !AccessControl.hasOperatorRole(msg.sender)
+                && !AccessControl.hasInvestorRole(msg.sender)
+        ) {
             revert AccessControl.AccessControlUnauthorizedOrInvestor(msg.sender);
         }
 
         // If caller is an investor, they can only view their own positions
-        if (AccessControl.hasInvestorRole(msg.sender) && !AccessControl.hasOperatorRole(msg.sender) && !AccessControl.hasAdminRole(msg.sender)) {
+        if (
+            AccessControl.hasInvestorRole(msg.sender) && !AccessControl.hasOperatorRole(msg.sender)
+                && !AccessControl.hasAdminRole(msg.sender)
+        ) {
             bytes16 stakeholderId = ds.stockActivePositions.securityToStakeholder[securityId];
             require(ds.addressToStakeholderId[msg.sender] == stakeholderId, "Can only view own positions");
         }

@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import { StorageLib } from "@core/Storage.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
-import { ValidationLib } from "@libraries/ValidationLib.sol";
-import { StakeholderPositions } from "@libraries/Structs.sol";
-import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
+import {StorageLib} from "@core/Storage.sol";
+import {TxHelper, TxType} from "@libraries/TxHelper.sol";
+import {ValidationLib} from "@libraries/ValidationLib.sol";
+import {StakeholderPositions} from "@libraries/Structs.sol";
+import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
 
 contract DiamondStakeholderNFTTest is DiamondTestBase {
     bytes16 stakeholderId;
@@ -92,7 +93,9 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
 
         // Also check positions exist
         vm.startPrank(stakeholderWallet);
-        StakeholderPositions memory positions = StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
+
+        StakeholderPositions memory positions =
+            StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
         vm.stopPrank();
         assertTrue(positions.stocks.length > 0, "Should have stock positions");
     }

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { StorageLib, Storage } from "@core/Storage.sol";
-import { EquityCompensationActivePosition, StockActivePosition } from "@libraries/Structs.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
-import { ValidationLib } from "@libraries/ValidationLib.sol";
-import { AccessControl } from "@libraries/AccessControl.sol";
+import {StorageLib, Storage} from "@core/Storage.sol";
+import {EquityCompensationActivePosition, StockActivePosition} from "@libraries/Structs.sol";
+import {TxHelper, TxType} from "@libraries/TxHelper.sol";
+import {ValidationLib} from "@libraries/ValidationLib.sol";
+import {AccessControl} from "@libraries/AccessControl.sol";
 
 contract EquityCompensationFacet {
     /// @notice Issue equity compensation to a stakeholder
@@ -49,11 +49,16 @@ contract EquityCompensationFacet {
 
     /// @notice Exercise equity compensation to convert it into stock
     /// @dev Only the stakeholder who owns the equity compensation can exercise it
-    function exerciseEquityCompensation(bytes16 equity_comp_security_id, bytes16 resulting_stock_security_id, uint256 quantity) external {
+    function exerciseEquityCompensation(
+        bytes16 equity_comp_security_id,
+        bytes16 resulting_stock_security_id,
+        uint256 quantity
+    ) external {
         Storage storage ds = StorageLib.get();
 
         // Validate equity compensation security exists and has sufficient quantity
-        EquityCompensationActivePosition memory equityPosition = ds.equityCompensationActivePositions.securities[equity_comp_security_id];
+        EquityCompensationActivePosition memory equityPosition =
+            ds.equityCompensationActivePositions.securities[equity_comp_security_id];
 
         // Verify caller is the stakeholder who owns this equity compensation
         bytes16 stakeholderId = ds.addressToStakeholderId[msg.sender];
@@ -92,8 +97,9 @@ contract EquityCompensationFacet {
             delete ds.equityCompensationActivePositions.securityToStakeholder[equity_comp_security_id];
 
             // Find and remove the security ID from stakeholder's list
-            bytes16[] storage stakeholderSecurities = ds.equityCompensationActivePositions.stakeholderToSecurities[equityPosition.stakeholder_id];
-            for (uint i = 0; i < stakeholderSecurities.length; i++) {
+            bytes16[] storage stakeholderSecurities =
+                ds.equityCompensationActivePositions.stakeholderToSecurities[equityPosition.stakeholder_id];
+            for (uint256 i = 0; i < stakeholderSecurities.length; i++) {
                 if (stakeholderSecurities[i] == equity_comp_security_id) {
                     stakeholderSecurities[i] = stakeholderSecurities[stakeholderSecurities.length - 1];
                     stakeholderSecurities.pop();

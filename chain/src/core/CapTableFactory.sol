@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { CapTable } from "./CapTable.sol";
-import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
-import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
-import { IssuerFacet } from "@facets/IssuerFacet.sol";
-import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
-import { StockClassFacet } from "@facets/StockClassFacet.sol";
-import { StockFacet } from "@facets/StockFacet.sol";
-import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
-import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
-import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
-import { WarrantFacet } from "@facets/WarrantFacet.sol";
-import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
-import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
+import {CapTable} from "./CapTable.sol";
+import {DiamondCutFacet} from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
+import {IDiamondCut} from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
+import {IssuerFacet} from "@facets/IssuerFacet.sol";
+import {StakeholderFacet} from "@facets/StakeholderFacet.sol";
+import {StockClassFacet} from "@facets/StockClassFacet.sol";
+import {StockFacet} from "@facets/StockFacet.sol";
+import {ConvertiblesFacet} from "@facets/ConvertiblesFacet.sol";
+import {EquityCompensationFacet} from "@facets/EquityCompensationFacet.sol";
+import {StockPlanFacet} from "@facets/StockPlanFacet.sol";
+import {WarrantFacet} from "@facets/WarrantFacet.sol";
+import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
+import {AccessControlFacet} from "@facets/AccessControlFacet.sol";
 import "forge-std/console.sol";
 
 contract CapTableFactory {
@@ -98,7 +98,11 @@ contract CapTableFactory {
         bytes4[] memory issuerSelectors = new bytes4[](2);
         issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
         issuerSelectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
-        cuts[1] = IDiamondCut.FacetCut({ facetAddress: issuerFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: issuerSelectors });
+        cuts[1] = IDiamondCut.FacetCut({
+            facetAddress: issuerFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: issuerSelectors
+        });
 
         // StakeholderFacet
         bytes4[] memory stakeholderSelectors = new bytes4[](3);
@@ -124,7 +128,11 @@ contract CapTableFactory {
         // StockFacet
         bytes4[] memory stockSelectors = new bytes4[](1);
         stockSelectors[0] = StockFacet.issueStock.selector;
-        cuts[4] = IDiamondCut.FacetCut({ facetAddress: stockFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: stockSelectors });
+        cuts[4] = IDiamondCut.FacetCut({
+            facetAddress: stockFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: stockSelectors
+        });
 
         // ConvertiblesFacet
         bytes4[] memory convertibleSelectors = new bytes4[](2);
@@ -161,7 +169,11 @@ contract CapTableFactory {
         bytes4[] memory warrantSelectors = new bytes4[](2);
         warrantSelectors[0] = WarrantFacet.issueWarrant.selector;
         warrantSelectors[1] = WarrantFacet.getWarrantPosition.selector;
-        cuts[8] = IDiamondCut.FacetCut({ facetAddress: warrantFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: warrantSelectors });
+        cuts[8] = IDiamondCut.FacetCut({
+            facetAddress: warrantFacet,
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: warrantSelectors
+        });
 
         // StakeholderNFTFacet
         bytes4[] memory stakeholderNFTSelectors = new bytes4[](2);

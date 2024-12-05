@@ -2,7 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import { StockActivePosition, WarrantActivePosition, ConvertibleActivePosition, EquityCompensationActivePosition, StakeholderPositions } from "@libraries/Structs.sol";
+import {
+    StockActivePosition,
+    WarrantActivePosition,
+    ConvertibleActivePosition,
+    EquityCompensationActivePosition,
+    StakeholderPositions
+} from "@libraries/Structs.sol";
 
 contract DiamondStakeholderPositionsTest is DiamondTestBase {
     bytes16 stakeholderId;
@@ -31,11 +37,14 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000003;
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(stakeholderId, stockClassId, stockPlanId, 1000, equityCompSecurityId);
+        EquityCompensationFacet(address(capTable)).issueEquityCompensation(
+            stakeholderId, stockClassId, stockPlanId, 1000, equityCompSecurityId
+        );
     }
 
     function testGetStakeholderPositions() public {
-        StakeholderPositions memory positions = StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
+        StakeholderPositions memory positions =
+            StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
 
         // Verify stock position
         assertEq(positions.stocks.length, 1);

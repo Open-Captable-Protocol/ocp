@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { StorageLib, Storage } from "@core/Storage.sol";
-import { WarrantActivePosition } from "@libraries/Structs.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
-import { ValidationLib } from "@libraries/ValidationLib.sol";
-import { AccessControl } from "@libraries/AccessControl.sol";
+import {StorageLib, Storage} from "@core/Storage.sol";
+import {WarrantActivePosition} from "@libraries/Structs.sol";
+import {TxHelper, TxType} from "@libraries/TxHelper.sol";
+import {ValidationLib} from "@libraries/ValidationLib.sol";
+import {AccessControl} from "@libraries/AccessControl.sol";
 
 contract WarrantFacet {
     /// @notice Issue a warrant to a stakeholder
@@ -21,7 +21,8 @@ contract WarrantFacet {
         ValidationLib.validateQuantity(quantity);
 
         // Create and store position
-        ds.warrantActivePositions.securities[security_id] = WarrantActivePosition({ stakeholder_id: stakeholder_id, quantity: quantity });
+        ds.warrantActivePositions.securities[security_id] =
+            WarrantActivePosition({stakeholder_id: stakeholder_id, quantity: quantity});
 
         // Track security IDs for this stakeholder
         ds.warrantActivePositions.stakeholderToSecurities[stakeholder_id].push(security_id);

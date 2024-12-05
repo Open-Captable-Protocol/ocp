@@ -1,8 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { StockActivePositions, ConvertibleActivePositions, EquityCompensationActivePositions, WarrantActivePositions, Issuer, StockClass, StockPlan } from "@libraries/Structs.sol";
-import { AccessControlUpgradeable } from "openzeppelin/access/AccessControlUpgradeable.sol";
+import {
+    StockActivePositions,
+    ConvertibleActivePositions,
+    EquityCompensationActivePositions,
+    WarrantActivePositions,
+    Issuer,
+    StockClass,
+    StockPlan
+} from "@libraries/Structs.sol";
+import {AccessControlUpgradeable} from "openzeppelin/access/AccessControlUpgradeable.sol";
 
 struct Storage {
     // Access Control storage
