@@ -19,6 +19,8 @@ import "forge-std/console.sol";
 contract CapTableFactory {
     event CapTableCreated(address indexed capTable, bytes16 indexed issuerId);
 
+    address public newAdmin; // new admin to transfer ownership to
+
     address[] public capTables;
 
     // Store facet addresses
@@ -35,6 +37,7 @@ contract CapTableFactory {
     address public immutable accessControlFacet;
 
     constructor(
+        address _newAdmin,
         address _diamondCutFacet,
         address _issuerFacet,
         address _stakeholderFacet,
@@ -47,7 +50,9 @@ contract CapTableFactory {
         address _stakeholderNFTFacet,
         address _accessControlFacet
     ) {
+        require(_newAdmin != address(0), "Invalid new admin");
         require(_diamondCutFacet != address(0), "Invalid diamondCutFacet");
+        newAdmin = _newAdmin;
         diamondCutFacet = _diamondCutFacet;
         issuerFacet = _issuerFacet;
         stakeholderFacet = _stakeholderFacet;
@@ -197,10 +202,19 @@ contract CapTableFactory {
         capTables.push(address(diamond));
 
         emit CapTableCreated(address(diamond), id);
+        // transfer ownership to new admin
+        AccessControlFacet(address(diamond)).transferAdmin(newAdmin);
         return address(diamond);
     }
 
     function getCapTableCount() external view returns (uint256) {
         return capTables.length;
+    }
+
+    // Only factory admin can change the new admin address
+    function setNewAdmin(address _newAdmin) external {
+        require(_newAdmin != address(0), "Invalid new admin");
+        // Add access control if needed
+        newAdmin = _newAdmin;
     }
 }

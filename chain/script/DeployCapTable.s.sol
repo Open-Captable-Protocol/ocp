@@ -14,144 +14,52 @@ import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
 import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
 import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
+import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 
 contract DeployDiamondCapTableScript is Script {
-    function setUp() public {
-        // Setup for Base Sepolia deployment
-    }
-
-    function checkEnv(
-        address diamondCutFacet,
-        address issuerFacet,
-        address stakeholderFacet,
-        address stockClassFacet,
-        address stockFacet,
-        address convertiblesFacet,
-        address equityCompensationFacet,
-        address stockPlanFacet,
-        address warrantFacet,
-        address stakeholderNFTFacet,
-        address accessControlFacet
-    )
-        public
-        view
-        returns (bool)
-    {
-        // check one by one
-        if (diamondCutFacet == address(0)) {
-            console.log("DIAMOND_CUT_FACET not set");
-            return false;
-        }
-        if (issuerFacet == address(0)) {
-            console.log("ISSUER_FACET not set");
-            return false;
-        }
-        if (stakeholderFacet == address(0)) {
-            console.log("STAKEHOLDER_FACET not set");
-            return false;
-        }
-        if (stockClassFacet == address(0)) {
-            console.log("STOCK_CLASS_FACET not set");
-            return false;
-        }
-        if (stockFacet == address(0)) {
-            console.log("STOCK_FACET not set");
-            return false;
-        }
-        if (convertiblesFacet == address(0)) {
-            console.log("CONVERTIBLES_FACET not set");
-            return false;
-        }
-        if (equityCompensationFacet == address(0)) {
-            console.log("EQUITY_COMPENSATION_FACET not set");
-            return false;
-        }
-        if (stockPlanFacet == address(0)) {
-            console.log("STOCK_PLAN_FACET not set");
-            return false;
-        }
-        if (warrantFacet == address(0)) {
-            console.log("WARRANT_FACET not set");
-            return false;
-        }
-        if (stakeholderNFTFacet == address(0)) {
-            console.log("STAKEHOLDER_NFT_FACET not set");
-            return false;
-        }
-        if (accessControlFacet == address(0)) {
-            console.log("ACCESS_CONTROL_FACET not set");
-            return false;
-        }
-        return true;
-    }
-
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        console.log("Deploying DiamondCapTable system to Base Sepolia");
+        uint256 fairmintPrivateKey = vm.envUint("PRIVATE_KEY");
+        address fairmintWallet = vm.addr(fairmintPrivateKey);
+        if (fairmintWallet == address(0)) {
+            revert("Invalid fairmint wallet");
+        }
 
-        vm.startBroadcast(deployerPrivateKey);
+        console.log("Fairmint wallet:", fairmintWallet);
 
-        // Try to get addresses from env
-        address diamondCutFacet = vm.envOr("DIAMOND_CUT_FACET", address(0));
-        address issuerFacet = vm.envOr("ISSUER_FACET", address(0));
-        address stakeholderFacet = vm.envOr("STAKEHOLDER_FACET", address(0));
-        address stockClassFacet = vm.envOr("STOCK_CLASS_FACET", address(0));
-        address stockFacet = vm.envOr("STOCK_FACET", address(0));
-        address convertiblesFacet = vm.envOr("CONVERTIBLES_FACET", address(0));
-        address equityCompensationFacet = vm.envOr("EQUITY_COMPENSATION_FACET", address(0));
-        address stockPlanFacet = vm.envOr("STOCK_PLAN_FACET", address(0));
-        address warrantFacet = vm.envOr("WARRANT_FACET", address(0));
-        address stakeholderNFTFacet = vm.envOr("STAKEHOLDER_NFT_FACET", address(0));
-        address accessControlFacet = vm.envOr("ACCESS_CONTROL_FACET", address(0));
-
-        bool allSet = checkEnv(
-            diamondCutFacet,
-            issuerFacet,
-            stakeholderFacet,
-            stockClassFacet,
-            stockFacet,
-            convertiblesFacet,
-            equityCompensationFacet,
-            stockPlanFacet,
-            warrantFacet,
-            stakeholderNFTFacet,
-            accessControlFacet
-        );
+        vm.startBroadcast(fairmintWallet);
 
         // Deploy new facets if addresses not in env
-        if (!allSet) {
-            revert("One or more required addresses are not set in the .env file");
-            // console.log("Deploying new facets...");
-            // diamondCutFacet = address(new DiamondCutFacet());
-            // issuerFacet = address(new IssuerFacet());
-            // stakeholderFacet = address(new StakeholderFacet());
-            // stockClassFacet = address(new StockClassFacet());
-            // stockFacet = address(new StockFacet());
-            // convertiblesFacet = address(new ConvertiblesFacet());
-            // equityCompensationFacet = address(new EquityCompensationFacet());
-            // stockPlanFacet = address(new StockPlanFacet());
-            // warrantFacet = address(new WarrantFacet());
-            // stakeholderNFTFacet = address(new StakeholderNFTFacet());
+        console.log("Deploying new facets...");
+        address diamondCutFacet = address(new DiamondCutFacet());
+        address issuerFacet = address(new IssuerFacet());
+        address stakeholderFacet = address(new StakeholderFacet());
+        address stockClassFacet = address(new StockClassFacet());
+        address stockFacet = address(new StockFacet());
+        address convertiblesFacet = address(new ConvertiblesFacet());
+        address equityCompensationFacet = address(new EquityCompensationFacet());
+        address stockPlanFacet = address(new StockPlanFacet());
+        address warrantFacet = address(new WarrantFacet());
+        address stakeholderNFTFacet = address(new StakeholderNFTFacet());
+        address accessControlFacet = address(new AccessControlFacet());
 
-            console.log("------- New Facet Addresses (Add to .env) -------");
-            console.log("DIAMOND_CUT_FACET=", diamondCutFacet);
-            console.log("ISSUER_FACET=", issuerFacet);
-            console.log("STAKEHOLDER_FACET=", stakeholderFacet);
-            console.log("STOCK_CLASS_FACET=", stockClassFacet);
-            console.log("STOCK_FACET=", stockFacet);
-            console.log("CONVERTIBLES_FACET=", convertiblesFacet);
-            console.log("EQUITY_COMPENSATION_FACET=", equityCompensationFacet);
-            console.log("STOCK_PLAN_FACET=", stockPlanFacet);
-            console.log("WARRANT_FACET=", warrantFacet);
-            console.log("STAKEHOLDER_NFT_FACET=", stakeholderNFTFacet);
-            console.log("ACCESS_CONTROL_FACET=", accessControlFacet);
-            console.log("-------------------------------------------------");
-        } else {
-            console.log("Using existing facets from .env");
-        }
+        console.log("-------------------------------------------------");
+        console.log("DIAMOND_CUT_FACET=", diamondCutFacet);
+        console.log("ISSUER_FACET=", issuerFacet);
+        console.log("STAKEHOLDER_FACET=", stakeholderFacet);
+        console.log("STOCK_CLASS_FACET=", stockClassFacet);
+        console.log("STOCK_FACET=", stockFacet);
+        console.log("CONVERTIBLES_FACET=", convertiblesFacet);
+        console.log("EQUITY_COMPENSATION_FACET=", equityCompensationFacet);
+        console.log("STOCK_PLAN_FACET=", stockPlanFacet);
+        console.log("WARRANT_FACET=", warrantFacet);
+        console.log("STAKEHOLDER_NFT_FACET=", stakeholderNFTFacet);
+        console.log("ACCESS_CONTROL_FACET=", accessControlFacet);
+        console.log("-------------------------------------------------\n");
 
         // Deploy factory with facet addresses
         CapTableFactory factory = new CapTableFactory(
+            fairmintWallet,
             diamondCutFacet,
             issuerFacet,
             stakeholderFacet,
@@ -165,7 +73,15 @@ contract DeployDiamondCapTableScript is Script {
             accessControlFacet
         );
 
-        console.log("\nDiamondCapTableFactory deployed at:", address(factory));
+        console.log("\nFactory address:", address(factory));
+
+        // Create cap table - factory will automatically transfer admin to fairmintWallet
+        address diamond = factory.createCapTable("Test Cap Table", 1_000_000_000_000_000_000_000_000);
+
+        // Just log the final state
+        console.log("Diamond address:", diamond);
+        console.log("Pending admin:", AccessControlFacet(diamond).getPendingAdmin());
+        console.log("Current admin:", AccessControlFacet(diamond).getAdmin());
 
         vm.stopBroadcast();
     }

@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import CAP_TABLE_FACTORY from "../../chain/out/DiamondCapTableFactory.sol/DiamondCapTableFactory.json";
+import CAP_TABLE_FACTORY from "../../chain/out/CapTableFactory.sol/CapTableFactory.json";
 import { setupEnv } from "../utils/env.js";
 import getProvider from "./getProvider.js";
 import STAKEHOLDER_FACET from "../../chain/out/StakeholderFacet.sol/StakeholderFacet.json";
