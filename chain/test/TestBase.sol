@@ -5,18 +5,18 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "@core/CapTable.sol";
 import "@facets/IssuerFacet.sol";
-import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
-import { StockClassFacet } from "@facets/StockClassFacet.sol";
-import { StockFacet } from "@facets/StockFacet.sol";
-import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
-import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
-import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
+import {StakeholderFacet} from "@facets/StakeholderFacet.sol";
+import {StockClassFacet} from "@facets/StockClassFacet.sol";
+import {StockFacet} from "@facets/StockFacet.sol";
+import {ConvertiblesFacet} from "@facets/ConvertiblesFacet.sol";
+import {EquityCompensationFacet} from "@facets/EquityCompensationFacet.sol";
+import {StockPlanFacet} from "@facets/StockPlanFacet.sol";
 import "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import "diamond-3-hardhat/interfaces/IDiamondCut.sol";
-import { WarrantFacet } from "@facets/WarrantFacet.sol";
-import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
-import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
-import { AccessControl } from "@libraries/AccessControl.sol";
+import {WarrantFacet} from "@facets/WarrantFacet.sol";
+import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
+import {AccessControlFacet} from "@facets/AccessControlFacet.sol";
+import {AccessControl} from "@libraries/AccessControl.sol";
 
 contract DiamondTestBase is Test {
     uint256 public issuerInitialSharesAuthorized = 10000000;
@@ -36,9 +36,13 @@ contract DiamondTestBase is Test {
     StakeholderNFTFacet public stakeholderNFTFacet;
     AccessControlFacet public accessControlFacet;
 
-    event StockIssued(bytes16 indexed stakeholderId, bytes16 indexed stockClassId, uint256 quantity, uint256 sharePrice);
+    event StockIssued(
+        bytes16 indexed stakeholderId, bytes16 indexed stockClassId, uint256 quantity, uint256 sharePrice
+    );
     event StakeholderCreated(bytes16 indexed id);
-    event StockClassCreated(bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized);
+    event StockClassCreated(
+        bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized
+    );
     event StockPlanCreated(bytes16 indexed id, uint256 shares_reserved);
     // TOOD: figure out if should use the facets' events?
     event IssuerAuthorizedSharesAdjusted(uint256 newSharesAuthorized);
@@ -102,11 +106,15 @@ contract DiamondTestBase is Test {
         nftSelectors[0] = StakeholderNFTFacet.mint.selector;
         nftSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
 
-        bytes4[] memory accessControlSelectors = new bytes4[](4);
+        bytes4[] memory accessControlSelectors = new bytes4[](8);
         accessControlSelectors[0] = AccessControlFacet.grantRole.selector;
         accessControlSelectors[1] = AccessControlFacet.revokeRole.selector;
         accessControlSelectors[2] = AccessControlFacet.hasRole.selector;
         accessControlSelectors[3] = AccessControlFacet.initializeAccessControl.selector;
+        accessControlSelectors[4] = AccessControlFacet.transferAdmin.selector;
+        accessControlSelectors[5] = AccessControlFacet.acceptAdmin.selector;
+        accessControlSelectors[6] = AccessControlFacet.getAdmin.selector;
+        accessControlSelectors[7] = AccessControlFacet.getPendingAdmin.selector;
 
         // issuer facet
         cut[0] = IDiamondCut.FacetCut({
@@ -219,7 +227,9 @@ contract DiamondTestBase is Test {
         vm.expectEmit(true, true, true, true, address(capTable));
         emit StockClassCreated(stockClassId, classType, pricePerShare, initialSharesAuthorized);
 
-        StockClassFacet(payable(address(capTable))).createStockClass(stockClassId, classType, pricePerShare, initialSharesAuthorized);
+        StockClassFacet(payable(address(capTable))).createStockClass(
+            stockClassId, classType, pricePerShare, initialSharesAuthorized
+        );
 
         return stockClassId;
     }

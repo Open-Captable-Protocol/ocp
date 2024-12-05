@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { Storage, StorageLib } from "@core/Storage.sol";
-import { AccessControlUpgradeable } from "openzeppelin/access/AccessControlUpgradeable.sol";
+import {Storage, StorageLib} from "@core/Storage.sol";
+import {AccessControlUpgradeable} from "openzeppelin/access/AccessControlUpgradeable.sol";
+import "forge-std/console.sol";
 
 contract AccessControlFacet is AccessControlUpgradeable {
     // Role definitions
@@ -10,8 +11,9 @@ contract AccessControlFacet is AccessControlUpgradeable {
     bytes32 public constant INVESTOR_ROLE = keccak256("INVESTOR_ROLE"); // For shareholders/stakeholders
 
     // Error definitions from AccessControl
-    error AccessControlUnauthorizedAccount(address account, bytes32 role);
+    error AccessControlUnauthorized(address account, bytes32 role);
     error AccessControlBadConfirmation();
+    error AccessControlInvalidTransfer();
 
     /// @notice Initialize the access control system
     /// @dev Sets up initial roles. The deployer (CapTableFactory) gets admin role
@@ -20,14 +22,15 @@ contract AccessControlFacet is AccessControlUpgradeable {
 
         // Set up admin role for the deployer (factory)
         ds.roles[DEFAULT_ADMIN_ROLE][msg.sender] = true;
+        ds.currentAdmin = msg.sender; // Set initial admin
         emit RoleGranted(DEFAULT_ADMIN_ROLE, msg.sender, msg.sender);
 
-        // Set up role admins
-        ds.roleAdmin[OPERATOR_ROLE] = DEFAULT_ADMIN_ROLE;
-        emit RoleAdminChanged(OPERATOR_ROLE, bytes32(0), DEFAULT_ADMIN_ROLE);
+        // Set up role admins using helper function
+        _setRoleAdmin(OPERATOR_ROLE, DEFAULT_ADMIN_ROLE);
+        _setRoleAdmin(INVESTOR_ROLE, DEFAULT_ADMIN_ROLE);
 
-        ds.roleAdmin[INVESTOR_ROLE] = DEFAULT_ADMIN_ROLE;
-        emit RoleAdminChanged(INVESTOR_ROLE, bytes32(0), DEFAULT_ADMIN_ROLE);
+        // Note: We don't need to explicitly grant OPERATOR and INVESTOR roles
+        // because _grantRole automatically grants them when granting DEFAULT_ADMIN_ROLE
     }
 
     /// @dev Override hasRole to use diamond storage
@@ -44,7 +47,7 @@ contract AccessControlFacet is AccessControlUpgradeable {
     /// @dev Caller must have admin role for `role`
     function grantRole(bytes32 role, address account) public virtual override {
         if (!hasRole(getRoleAdmin(role), msg.sender)) {
-            revert AccessControlUnauthorizedAccount(msg.sender, getRoleAdmin(role));
+            revert AccessControlUnauthorized(msg.sender, getRoleAdmin(role));
         }
         _grantRole(role, account);
     }
@@ -53,7 +56,7 @@ contract AccessControlFacet is AccessControlUpgradeable {
     /// @dev Caller must have admin role for `role`
     function revokeRole(bytes32 role, address account) public virtual override {
         if (!hasRole(getRoleAdmin(role), msg.sender)) {
-            revert AccessControlUnauthorizedAccount(msg.sender, getRoleAdmin(role));
+            revert AccessControlUnauthorized(msg.sender, getRoleAdmin(role));
         }
         _revokeRole(role, account);
     }
@@ -71,7 +74,7 @@ contract AccessControlFacet is AccessControlUpgradeable {
     /// @dev Caller must have admin role
     function setRoleAdmin(bytes32 role, bytes32 adminRole) public virtual {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
-            revert AccessControlUnauthorizedAccount(msg.sender, DEFAULT_ADMIN_ROLE);
+            revert AccessControlUnauthorized(msg.sender, DEFAULT_ADMIN_ROLE);
         }
         _setRoleAdmin(role, adminRole);
     }
@@ -82,6 +85,18 @@ contract AccessControlFacet is AccessControlUpgradeable {
         if (!ds.roles[role][account]) {
             ds.roles[role][account] = true;
             emit RoleGranted(role, account, msg.sender);
+
+            // If granting admin role, also grant operator and investor roles
+            if (role == DEFAULT_ADMIN_ROLE) {
+                if (!ds.roles[OPERATOR_ROLE][account]) {
+                    ds.roles[OPERATOR_ROLE][account] = true;
+                    emit RoleGranted(OPERATOR_ROLE, account, msg.sender);
+                }
+                if (!ds.roles[INVESTOR_ROLE][account]) {
+                    ds.roles[INVESTOR_ROLE][account] = true;
+                    emit RoleGranted(INVESTOR_ROLE, account, msg.sender);
+                }
+            }
         }
     }
 
@@ -100,5 +115,58 @@ contract AccessControlFacet is AccessControlUpgradeable {
         bytes32 previousAdminRole = ds.roleAdmin[role];
         ds.roleAdmin[role] = adminRole;
         emit RoleAdminChanged(role, previousAdminRole, adminRole);
+    }
+
+    /// @notice Initiates transfer of admin role to a new account
+    /// @dev Only current admin can initiate transfer
+    function transferAdmin(address newAdmin) public virtual {
+        Storage storage ds = StorageLib.get();
+
+        // Check zero address first
+        if (newAdmin == address(0)) {
+            revert AccessControlInvalidTransfer();
+        }
+
+        // Then check admin rights
+        if (msg.sender != ds.currentAdmin) {
+            revert AccessControlUnauthorized(msg.sender, DEFAULT_ADMIN_ROLE);
+        }
+
+        ds.pendingAdmin = newAdmin;
+    }
+
+    /// @notice Accepts admin role transfer
+    /// @dev Must be called by the pending admin
+    function acceptAdmin() public virtual {
+        console.log("Accepting admin...");
+        Storage storage ds = StorageLib.get();
+        if (msg.sender != ds.pendingAdmin) {
+            revert AccessControlInvalidTransfer();
+        }
+
+        address oldAdmin = ds.currentAdmin;
+
+        // Grant role to new admin first
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        ds.currentAdmin = msg.sender;
+
+        // Revoke from old admin
+        _revokeRole(DEFAULT_ADMIN_ROLE, oldAdmin);
+
+        // Clear pending state
+        ds.pendingAdmin = address(0);
+        console.log("Accepted admin...");
+    }
+
+    /// @notice Returns the current admin address
+    /// @return The address of the current admin
+    function getAdmin() public view returns (address) {
+        return StorageLib.get().currentAdmin;
+    }
+
+    /// @notice Returns the pending admin address
+    /// @return The address of the pending admin
+    function getPendingAdmin() public view returns (address) {
+        return StorageLib.get().pendingAdmin;
     }
 }

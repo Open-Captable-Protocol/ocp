@@ -2,14 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
-import { AccessControl } from "@libraries/AccessControl.sol";
-import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
-import { StockClassFacet } from "@facets/StockClassFacet.sol";
-import { StockFacet } from "@facets/StockFacet.sol";
-import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
-import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
-import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
-import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
+import {AccessControl} from "@libraries/AccessControl.sol";
+import {AccessControlFacet} from "@facets/AccessControlFacet.sol";
+import {StockClassFacet} from "@facets/StockClassFacet.sol";
+import {StockFacet} from "@facets/StockFacet.sol";
+import {EquityCompensationFacet} from "@facets/EquityCompensationFacet.sol";
+import {StakeholderNFTFacet} from "@facets/StakeholderNFTFacet.sol";
+import {StakeholderFacet} from "@facets/StakeholderFacet.sol";
+import {StockPlanFacet} from "@facets/StockPlanFacet.sol";
 
 contract AccessControlTest is DiamondTestBase {
     address admin;
@@ -27,14 +27,15 @@ contract AccessControlTest is DiamondTestBase {
         unauthorized = address(0x4);
 
         // Grant roles
-        // Note: contractOwner already has DEFAULT_ADMIN_ROLE from TestBase.setUp()
+        // contract owner is the FACTORY
         vm.startPrank(contractOwner);
         AccessControlFacet(address(capTable)).grantRole(AccessControl.DEFAULT_ADMIN_ROLE, admin);
-        AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, admin); // Admin needs OPERATOR_ROLE too
+        AccessControlFacet(address(capTable)).transferAdmin(admin);
         vm.stopPrank();
 
-        // Now use admin to grant other roles
+        // Now have admin accept the role
         vm.startPrank(admin);
+        AccessControlFacet(address(capTable)).acceptAdmin();
         AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, operator);
         AccessControlFacet(address(capTable)).grantRole(AccessControl.INVESTOR_ROLE, investor);
         vm.stopPrank();
@@ -48,7 +49,11 @@ contract AccessControlTest is DiamondTestBase {
 
         // Test unauthorized access
         vm.startPrank(operator);
-        vm.expectRevert(abi.encodeWithSelector(AccessControl.AccessControlUnauthorized.selector, operator, AccessControl.DEFAULT_ADMIN_ROLE));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccessControl.AccessControlUnauthorized.selector, operator, AccessControl.DEFAULT_ADMIN_ROLE
+            )
+        );
         StockClassFacet(address(capTable)).createStockClass(bytes16(keccak256("stockClass2")), "Preferred", 100, 1000);
         vm.stopPrank();
     }
@@ -71,7 +76,11 @@ contract AccessControlTest is DiamondTestBase {
 
         // Test unauthorized access
         vm.startPrank(investor);
-        vm.expectRevert(abi.encodeWithSelector(AccessControl.AccessControlUnauthorized.selector, investor, AccessControl.OPERATOR_ROLE));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccessControl.AccessControlUnauthorized.selector, investor, AccessControl.OPERATOR_ROLE
+            )
+        );
         StockFacet(address(capTable)).issueStock(
             stockClassId, // stock_class_id
             1, // share_price
@@ -106,23 +115,19 @@ contract AccessControlTest is DiamondTestBase {
         // Test issueEquityCompensation
         vm.startPrank(operator);
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId,
-            stockClassId,
-            stockPlanId,
-            100,
-            bytes16(keccak256("security1"))
+            stakeholderId, stockClassId, stockPlanId, 100, bytes16(keccak256("security1"))
         );
         vm.stopPrank();
 
         // Test unauthorized access
         vm.startPrank(investor);
-        vm.expectRevert(abi.encodeWithSelector(AccessControl.AccessControlUnauthorized.selector, investor, AccessControl.OPERATOR_ROLE));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccessControl.AccessControlUnauthorized.selector, investor, AccessControl.OPERATOR_ROLE
+            )
+        );
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId,
-            stockClassId,
-            stockPlanId,
-            100,
-            bytes16(keccak256("security2"))
+            stakeholderId, stockClassId, stockPlanId, 100, bytes16(keccak256("security2"))
         );
         vm.stopPrank();
     }
@@ -142,7 +147,11 @@ contract AccessControlTest is DiamondTestBase {
 
         // Test unauthorized access
         vm.startPrank(unauthorized);
-        vm.expectRevert(abi.encodeWithSelector(AccessControl.AccessControlUnauthorized.selector, unauthorized, AccessControl.INVESTOR_ROLE));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccessControl.AccessControlUnauthorized.selector, unauthorized, AccessControl.INVESTOR_ROLE
+            )
+        );
         StakeholderNFTFacet(address(capTable)).mint();
         vm.stopPrank();
     }
@@ -161,5 +170,96 @@ contract AccessControlTest is DiamondTestBase {
         StockClassFacet(address(capTable)).createStockClass(stockClassId, "Common", 100, 1000);
         vm.stopPrank();
         return stockClassId;
+    }
+
+    function testAdminTransfer() public {
+        address newAdmin = address(0x123);
+
+        // Try transfer from non-admin (should fail)
+        vm.startPrank(unauthorized);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AccessControl.AccessControlUnauthorized.selector, unauthorized, AccessControl.DEFAULT_ADMIN_ROLE
+            )
+        );
+        AccessControlFacet(address(capTable)).transferAdmin(newAdmin);
+        vm.stopPrank();
+
+        // Start admin transfer from current admin
+        vm.startPrank(admin);
+        AccessControlFacet(address(capTable)).transferAdmin(newAdmin);
+
+        // Verify pending admin is set
+        assertEq(AccessControlFacet(address(capTable)).getPendingAdmin(), newAdmin);
+        vm.stopPrank();
+
+        // Try accept from wrong address (should fail)
+        vm.startPrank(unauthorized);
+        vm.expectRevert(AccessControlFacet.AccessControlInvalidTransfer.selector);
+        AccessControlFacet(address(capTable)).acceptAdmin();
+        vm.stopPrank();
+
+        // Accept transfer with new admin
+        vm.startPrank(newAdmin);
+        AccessControlFacet(address(capTable)).acceptAdmin();
+
+        // Verify new admin is set
+        assertEq(AccessControlFacet(address(capTable)).getAdmin(), newAdmin);
+
+        // Verify old admin lost admin role
+        assertFalse(AccessControlFacet(address(capTable)).hasRole(AccessControl.DEFAULT_ADMIN_ROLE, admin));
+
+        // Verify new admin has admin role
+        assertTrue(AccessControlFacet(address(capTable)).hasRole(AccessControl.DEFAULT_ADMIN_ROLE, newAdmin));
+
+        // Verify new admin has operator and investor roles
+        assertTrue(AccessControlFacet(address(capTable)).hasRole(AccessControl.OPERATOR_ROLE, newAdmin));
+        assertTrue(AccessControlFacet(address(capTable)).hasRole(AccessControl.INVESTOR_ROLE, newAdmin));
+        vm.stopPrank();
+    }
+
+    function testCannotTransferToZeroAddress() public {
+        vm.startPrank(admin);
+        vm.expectRevert(AccessControlFacet.AccessControlInvalidTransfer.selector);
+        AccessControlFacet(address(capTable)).transferAdmin(address(0));
+        vm.stopPrank();
+    }
+
+    function testPendingAdminClearedAfterTransfer() public {
+        address newAdmin = address(0x123);
+
+        // Start transfer
+        vm.startPrank(admin);
+        AccessControlFacet(address(capTable)).transferAdmin(newAdmin);
+        assertEq(AccessControlFacet(address(capTable)).getPendingAdmin(), newAdmin);
+        vm.stopPrank();
+
+        // Complete transfer
+        vm.startPrank(newAdmin);
+        AccessControlFacet(address(capTable)).acceptAdmin();
+
+        // Verify pending admin is cleared
+        assertEq(AccessControlFacet(address(capTable)).getPendingAdmin(), address(0));
+        vm.stopPrank();
+    }
+
+    function testOnlyOneAdminAtATime() public {
+        address newAdmin = address(0x123);
+
+        // Verify initial state
+        assertTrue(AccessControlFacet(address(capTable)).hasRole(AccessControl.DEFAULT_ADMIN_ROLE, admin));
+        assertEq(AccessControlFacet(address(capTable)).getAdmin(), admin);
+
+        // Complete transfer
+        vm.prank(admin);
+        AccessControlFacet(address(capTable)).transferAdmin(newAdmin);
+
+        vm.prank(newAdmin);
+        AccessControlFacet(address(capTable)).acceptAdmin();
+
+        // Verify only new admin has admin role
+        assertFalse(AccessControlFacet(address(capTable)).hasRole(AccessControl.DEFAULT_ADMIN_ROLE, admin));
+        assertTrue(AccessControlFacet(address(capTable)).hasRole(AccessControl.DEFAULT_ADMIN_ROLE, newAdmin));
+        assertEq(AccessControlFacet(address(capTable)).getAdmin(), newAdmin);
     }
 }
