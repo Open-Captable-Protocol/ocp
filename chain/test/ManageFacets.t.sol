@@ -19,6 +19,7 @@ contract ManageFacetTest is Test, DeployFactoryScript {
     address public referenceDiamond;
     CapTableFactory public factory;
     address public capTable;
+    address public capTable2;
 
     function setUp() public {
         console.log("starting setUp");
@@ -36,10 +37,16 @@ contract ManageFacetTest is Test, DeployFactoryScript {
         console.log("capTable: ", capTable);
         console.log("referenceDiamond: ", referenceDiamond);
 
+        // Create a second cap table for testing
+        capTable2 = factory.createCapTable(bytes16(uint128(2)), 1_000_000);
+        console.log("capTable2: ", capTable2);
+
         // Transfer ownership of capTable to the test contract
         vm.startPrank(contractOwner);
-        LibDiamond.setContractOwner(address(referenceDiamond));
-        // LibDiamond.setContractOwner(address(capTable));
+        // The contract owner should be this test contract, not the diamond itself
+        LibDiamond.setContractOwner(referenceDiamond);
+        LibDiamond.setContractOwner(capTable);
+        LibDiamond.setContractOwner(capTable2);
         vm.stopPrank();
 
         mockFacet = new MockFacet();

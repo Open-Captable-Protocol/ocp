@@ -28,9 +28,6 @@ contract DiamondTestBase is Test, DeployFactoryScript {
     address public contractOwner;
     address public referenceDiamond;
     CapTable public capTable;
-    WarrantFacet public warrantFacet;
-    StakeholderNFTFacet public stakeholderNFTFacet;
-    AccessControlFacet public accessControlFacet;
     CapTableFactory public factory;
 
     event StockIssued(

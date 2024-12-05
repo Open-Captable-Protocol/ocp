@@ -7,6 +7,9 @@ export const StockIssuance = {
         { type: "uint256", baseType: "uint256", name: "quantity" },
         { type: "bytes16", baseType: "bytes16", name: "stakeholder_id" },
         { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        { type: "string", baseType: "string", name: "stock_legend_ids_mapping" },
+        { type: "string", baseType: "string", name: "custom_id" },
+        { type: "string", baseType: "string", name: "security_law_exemptions_mapping" }
     ],
 };
 
@@ -180,6 +183,11 @@ export const ConvertibleIssuance = {
         { type: "bytes16", baseType: "bytes16", name: "stakeholder_id" },
         { type: "uint256", baseType: "uint256", name: "investment_amount" },
         { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        { type: "string", baseType: "string", name: "convertible_type" },
+        { type: "string", baseType: "string", name: "custom_id" },
+        { type: "string", baseType: "string", name: "security_law_exemptions_mapping" },
+        { type: "string", baseType: "string", name: "conversion_triggers_mapping" },
+        { type: "uint256", baseType: "uint256", name: "seniority" }
     ],
 };
 
@@ -190,6 +198,10 @@ export const WarrantIssuance = {
         { type: "bytes16", baseType: "bytes16", name: "stakeholder_id" },
         { type: "uint256", baseType: "uint256", name: "quantity" },
         { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        { type: "uint256", baseType: "uint256", name: "purchase_price" },
+        { type: "string", baseType: "string", name: "custom_id" },
+        { type: "string", baseType: "string", name: "security_law_exemptions_mapping" },
+        { type: "string", baseType: "string", name: "exercise_triggers_mapping" }
     ],
 };
 
@@ -202,6 +214,13 @@ export const EquityCompensationIssuance = {
         { type: "bytes16", baseType: "bytes16", name: "stock_plan_id" },
         { type: "uint256", baseType: "uint256", name: "quantity" },
         { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        { type: "string", baseType: "string", name: "compensation_type" },
+        { type: "uint256", baseType: "uint256", name: "exercise_price" },
+        { type: "uint256", baseType: "uint256", name: "base_price" },
+        { type: "string", baseType: "string", name: "expiration_date" },
+        { type: "string", baseType: "string", name: "custom_id" },
+        { type: "string", baseType: "string", name: "termination_exercise_windows_mapping" },
+        { type: "string", baseType: "string", name: "security_law_exemptions_mapping" }
     ],
 };
 
