@@ -3,7 +3,8 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../src/core/CapTableFactory.sol";
+import { CapTableFactory } from "@core/CapTableFactory.sol";
+import { CapTable } from "@core/CapTable.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import { IssuerFacet } from "@facets/IssuerFacet.sol";
 import { DiamondLoupeFacet } from "diamond-3-hardhat/facets/DiamondLoupeFacet.sol";
@@ -16,8 +17,10 @@ import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
 import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
 import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
+import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 
-contract DeployDiamondCapTableScript is Script {
+contract DeployFactoryScript is Script {
     function deployInitialFacets(address _contractOwner) internal returns (address) {
         // Deploy all facets
         console.log("Deploying facets...");
@@ -32,6 +35,7 @@ contract DeployDiamondCapTableScript is Script {
         StockPlanFacet stockPlanFacet = new StockPlanFacet();
         WarrantFacet warrantFacet = new WarrantFacet();
         StakeholderNFTFacet stakeholderNFTFacet = new StakeholderNFTFacet();
+        AccessControlFacet accessControlFacet = new AccessControlFacet();
 
         // Create reference diamond with deployer as owner
         // address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
@@ -42,7 +46,7 @@ contract DeployDiamondCapTableScript is Script {
         console.log("Reference diamond created at:", address(referenceDiamond));
 
         // Create cuts array for all facets
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](10);
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](11);
 
         // Add DiamondLoupe functions
         bytes4[] memory loupeSelectors = new bytes4[](5);
@@ -97,6 +101,17 @@ contract DeployDiamondCapTableScript is Script {
         bytes4[] memory nftSelectors = new bytes4[](2);
         nftSelectors[0] = StakeholderNFTFacet.mint.selector;
         nftSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
+
+        // Add access control functions
+        bytes4[] memory accessControlSelectors = new bytes4[](8);
+        accessControlSelectors[0] = AccessControlFacet.grantRole.selector;
+        accessControlSelectors[1] = AccessControlFacet.revokeRole.selector;
+        accessControlSelectors[2] = AccessControlFacet.hasRole.selector;
+        accessControlSelectors[3] = AccessControlFacet.initializeAccessControl.selector;
+        accessControlSelectors[4] = AccessControlFacet.transferAdmin.selector;
+        accessControlSelectors[5] = AccessControlFacet.acceptAdmin.selector;
+        accessControlSelectors[6] = AccessControlFacet.getAdmin.selector;
+        accessControlSelectors[7] = AccessControlFacet.getPendingAdmin.selector;
 
         // Create the cuts
         cuts[0] = IDiamondCut.FacetCut({
@@ -159,6 +174,12 @@ contract DeployDiamondCapTableScript is Script {
             functionSelectors: nftSelectors
         });
 
+        cuts[10] = IDiamondCut.FacetCut({
+            facetAddress: address(accessControlFacet),
+            action: IDiamondCut.FacetCutAction.Add,
+            functionSelectors: accessControlSelectors
+        });
+
         // Perform the cuts
         DiamondCutFacet(address(referenceDiamond)).diamondCut(cuts, address(0), "");
 
@@ -170,8 +191,6 @@ contract DeployDiamondCapTableScript is Script {
         if (deployerPrivateKey == 0) {
             revert("Missing PRIVATE_KEY in .env");
         }
-        console.log("Deploying DiamondCapTable system to Base Sepolia");
-
         vm.startBroadcast(deployerPrivateKey);
 
         // Try to get addresses from env
@@ -188,16 +207,28 @@ contract DeployDiamondCapTableScript is Script {
         console.log("-------------------------------------------------");
 
         // Deploy factory with facet addresses
-        CapTableFactory factory = new CapTableFactory(referenceDiamond);
+        CapTableFactory factory = new CapTableFactory(deployer, referenceDiamond);
 
-        factory.createCapTable(bytes16("TEST"), 1_000_000);
+        address capTable = factory.createCapTable(bytes16("TEST"), 1_000_000);
         console.log("\nCapTableFactory deployed at:", address(factory));
+        console.log("CapTable deployed at:", capTable);
+        vm.stopPrank();
+        console.log("Diamond admin after accepting:", AccessControlFacet(capTable).getAdmin());
+        // Verify factory is no longer admin
+        console.log(
+            "Factory is admin:",
+            AccessControlFacet(capTable).hasRole(AccessControl.DEFAULT_ADMIN_ROLE, address(factory))
+        );
 
         vm.stopBroadcast();
     }
 
     function runProduction() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        if (deployerPrivateKey == 0) {
+            revert("Missing PRIVATE_KEY in .env");
+        }
+        address deployer = vm.addr(deployerPrivateKey);
         console.log("Deploying DiamondCapTable system to Base Sepolia");
 
         vm.startBroadcast(deployerPrivateKey);
@@ -210,10 +241,17 @@ contract DeployDiamondCapTableScript is Script {
             revert("Missing REFERENCE_DIAMOND in .env");
         }
         // Deploy factory with facet addresses
-        CapTableFactory factory = new CapTableFactory(referenceDiamond);
+        CapTableFactory factory = new CapTableFactory(deployer, referenceDiamond);
 
         console.log("\nCapTableFactory deployed at:", address(factory));
 
+        vm.stopPrank();
+        // console.log("Diamond admin after accepting:", AccessControlFacet(diamond).getAdmin());
+        // Verify factory is no longer admin
+        // console.log(
+        //     "Factory is admin:", AccessControlFacet(diamond).hasRole(AccessControl.DEFAULT_ADMIN_ROLE, address(factory))
+        // );
+        vm.stopPrank();
         vm.stopBroadcast();
     }
 }

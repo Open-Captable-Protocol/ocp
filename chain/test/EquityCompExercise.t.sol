@@ -14,12 +14,25 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
     bytes16 equityCompSecurityId;
     bytes16 stockSecurityId;
     uint256 constant EQUITY_COMP_QUANTITY = 1000;
+    address stakeholderWallet;
 
     function setUp() public override {
         super.setUp();
 
+        // Grant necessary roles
+        vm.startPrank(contractOwner);
+        AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, address(this));
+        vm.stopPrank();
+
         // Create prerequisites
         stakeholderId = createStakeholder();
+        stakeholderWallet = address(0xF62849F9A0B5Bf2913b396098F7c7019b51A820a);
+        linkStakeholderAddress(stakeholderId, stakeholderWallet);
+
+        // Grant investor role to stakeholder
+        vm.prank(contractOwner);
+        AccessControlFacet(address(capTable)).grantRole(AccessControl.INVESTOR_ROLE, stakeholderWallet);
+
         stockClassId = createStockClass();
 
         bytes16[] memory stockClassIds = new bytes16[](1);
@@ -78,6 +91,8 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             TxType.EQUITY_COMPENSATION_EXERCISE, abi.encode(equityCompSecurityId, newStockSecurityId, exerciseQuantity)
         );
 
+        // Exercise as stakeholder
+        vm.prank(stakeholderWallet);
         EquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             equityCompSecurityId, newStockSecurityId, exerciseQuantity
         );
@@ -94,6 +109,8 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             TxType.EQUITY_COMPENSATION_EXERCISE, abi.encode(equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY)
         );
 
+        // Exercise as stakeholder
+        vm.prank(stakeholderWallet);
         EquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY
         );

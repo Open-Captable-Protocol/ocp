@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "@core/CapTable.sol";
-import "@core/CapTableFactory.sol";
+import { CapTableFactory } from "@core/CapTableFactory.sol";
 import "@facets/IssuerFacet.sol";
 import { CapTable } from "@core/CapTable.sol";
 import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
@@ -18,9 +18,11 @@ import "diamond-3-hardhat/facets/DiamondLoupeFacet.sol";
 import "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
-import "../script/DeployCapTable.s.sol";
+import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
+import "../script/DeployFactory.s.sol";
 
-contract DiamondTestBase is Test, DeployDiamondCapTableScript {
+contract DiamondTestBase is Test, DeployFactoryScript {
     uint256 public issuerInitialSharesAuthorized = 1_000_000;
     bytes16 public issuerId = 0xd3373e0a4dd9430f8a563281f2800e1e;
     address public contractOwner;
@@ -49,14 +51,16 @@ contract DiamondTestBase is Test, DeployDiamondCapTableScript {
         referenceDiamond = deployInitialFacets(contractOwner);
 
         // Create factory using reference diamond
-        factory = new CapTableFactory(referenceDiamond);
+        factory = new CapTableFactory(contractOwner, referenceDiamond);
 
         // Create a new cap table for testing
         capTable = CapTable(payable(factory.createCapTable(issuerId, issuerInitialSharesAuthorized)));
+        console.log("capTable: ", address(capTable));
+        AccessControlFacet(address(capTable)).acceptAdmin();
     }
 
     // Common helper functions
-    function createStakeholder() public returns (bytes16) {
+    function createStakeholder() public virtual returns (bytes16) {
         bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
 
         // Debug log before creation
@@ -75,7 +79,7 @@ contract DiamondTestBase is Test, DeployDiamondCapTableScript {
     }
 
     // Helper function to create a stock class for testing
-    function createStockClass() public returns (bytes16) {
+    function createStockClass() public virtual returns (bytes16) {
         bytes16 stockClassId = 0xd3373e0a4dd940000000000000000006;
         string memory classType = "COMMON";
         uint256 pricePerShare = 1e18;

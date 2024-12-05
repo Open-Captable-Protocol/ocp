@@ -4,16 +4,16 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "./TestBase.sol";
 import "./mocks/MockFacet.sol";
-import { ManagerFacetScript } from "../script/ManageFacets.s.sol";
+import { ManageFacetScript } from "../script/ManageFacets.s.sol";
 import { SyncDiamondsScript } from "../script/SyncDiamonds.s.sol";
 import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
-import "../script/DeployCapTable.s.sol";
+import "../script/DeployFactory.s.sol";
 import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
 
-contract ManageFacetTest is Test, DeployDiamondCapTableScript {
+contract ManageFacetTest is Test, DeployFactoryScript {
     MockFacet public mockFacet;
     MockFacet public mockFacetV2;
-    ManagerFacetScript public manager;
+    ManageFacetScript public manager;
     SyncDiamondsScript public syncer;
     address public contractOwner;
     address public referenceDiamond;
@@ -30,7 +30,7 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
         referenceDiamond = deployInitialFacets(contractOwner);
 
         // Create factory using reference diamond
-        factory = new CapTableFactory(referenceDiamond);
+        factory = new CapTableFactory(contractOwner, referenceDiamond);
 
         // Create a new cap table for testing
         capTable = factory.createCapTable(bytes16(uint128(1)), 1_000_000);
@@ -51,7 +51,7 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
 
         mockFacet = new MockFacet();
         mockFacetV2 = new MockFacet();
-        manager = new ManagerFacetScript();
+        manager = new ManageFacetScript();
         syncer = new SyncDiamondsScript();
         console.log("done setUp");
     }
@@ -65,7 +65,7 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     //     // Add the facet
     //     console.log("referenceDiamond: ", referenceDiamond);
     //     console.log("address(capTable): ", address(capTable));
-    //     // upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
 
     //     // Verify facet was added
     //     IDiamondLoupe.Facet[] memory facets = IDiamondLoupe(address(capTable)).facets();
@@ -89,14 +89,14 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     //     bytes4[] memory selectors = new bytes4[](2);
     //     selectors[0] = MockFacet.setValue.selector;
     //     selectors[1] = MockFacet.getValue.selector;
-    //     // upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
 
     //     // Set initial value
     //     MockFacet(address(capTable)).setValue(42);
     //     assertEq(MockFacet(address(capTable)).getValue(), 42);
 
     //     // Replace with V2
-    //     // upgrader.replaceFacet(address(capTable), address(mockFacetV2), selectors);
+    //     upgrader.replaceFacet(address(capTable), address(mockFacetV2), selectors);
 
     //     // Verify value persists after upgrade (storage remains unchanged)
     //     assertEq(MockFacet(address(capTable)).getValue(), 42);
@@ -107,10 +107,10 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     //     bytes4[] memory selectors = new bytes4[](2);
     //     selectors[0] = MockFacet.setValue.selector;
     //     selectors[1] = MockFacet.getValue.selector;
-    //     // upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
 
     //     // Remove the facet
-    //     // upgrader.removeFacet(address(capTable), selectors);
+    //     upgrader.removeFacet(address(capTable), selectors);
 
     //     // Verify facet was removed
     //     IDiamondLoupe.Facet[] memory facets = IDiamondLoupe(address(capTable)).facets();
@@ -129,7 +129,7 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     //     bytes4[] memory selectors = new bytes4[](2);
     //     selectors[0] = MockFacet.setValue.selector;
     //     selectors[1] = MockFacet.getValue.selector;
-    //     // upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
 
     //     // Set initial value
     //     MockFacet(address(capTable)).setValue(42);
@@ -137,7 +137,7 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     //     // Add new function from V2
     //     bytes4[] memory newSelectors = new bytes4[](1);
     //     newSelectors[0] = MockFacet.getValuePlusOne.selector;
-    //     // upgrader.addFacet(address(capTable), address(mockFacetV2), newSelectors);
+    //     upgrader.addFacet(address(capTable), address(mockFacetV2), newSelectors);
 
     //     // Test old and new functionality
     //     assertEq(MockFacet(address(capTable)).getValue(), 42);
@@ -145,7 +145,7 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
     // }
 
     function testSyncDiamonds() public {
-        // Create selectors for mock facet
+        // Add mock facet to reference diamond
         bytes4[] memory selectors = new bytes4[](2);
         selectors[0] = MockFacet.setValue.selector;
         selectors[1] = MockFacet.getValue.selector;
@@ -155,17 +155,12 @@ contract ManageFacetTest is Test, DeployDiamondCapTableScript {
 
         // Store the mock facet address for later comparison
         address mockFacetAddr = address(new MockFacet());
-
-        // Need to be the owner to add facets
-        vm.startPrank(contractOwner);
-        // Add facet to reference diamond
         manager.addFacet(referenceDiamond, mockFacetAddr, selectors);
 
         // Sync the new cap table with reference
         console.log("syncing newCapTable: ", newCapTable);
         syncer.syncDiamond(newCapTable, referenceDiamond);
         console.log("done syncing");
-        vm.stopPrank();
 
         // Verify mock facet was added to new cap table by checking selectors
         IDiamondLoupe.Facet[] memory facets = IDiamondLoupe(newCapTable).facets();

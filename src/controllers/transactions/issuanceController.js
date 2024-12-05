@@ -1,15 +1,15 @@
 import { convertUUIDToBytes16 } from "../../utils/convertUUID.js";
 import { toScaledBigNumber } from "../../utils/convertToFixedPointDecimals.js";
 
+const getContract = async () => {
+    // return getContractInstance(process.env.CAP_TABLE_ADDRESS);
+    return {};
+};
 // Stock Issuance
-export const convertAndCreateIssuanceStockOnchain = async (contract, { 
-    security_id, 
-    stock_class_id, 
-    stakeholder_id, 
-    quantity, 
-    share_price,
-    custom_id = ""
-}) => {
+export const convertAndCreateIssuanceStockOnchain = async (
+    contract,
+    { security_id, stock_class_id, stakeholder_id, quantity, share_price, custom_id = "" }
+) => {
     const stockClassIdBytes16 = convertUUIDToBytes16(stock_class_id);
     const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
     const securityIdBytes16 = convertUUIDToBytes16(security_id);
@@ -17,14 +17,14 @@ export const convertAndCreateIssuanceStockOnchain = async (contract, {
     const sharePriceScaled = toScaledBigNumber(share_price.amount);
 
     const tx = await contract.issueStock(
-        stockClassIdBytes16, 
-        sharePriceScaled, 
-        quantityScaled, 
-        stakeholderIdBytes16, 
+        stockClassIdBytes16,
+        sharePriceScaled,
+        quantityScaled,
+        stakeholderIdBytes16,
         securityIdBytes16,
         custom_id,
         "", // stock_legend_ids_mapping
-        "" // security_law_exemptions_mapping 
+        "" // security_law_exemptions_mapping
     );
     await tx.wait();
     console.log("Transaction hash:", tx.hash);
@@ -40,21 +40,17 @@ export const convertAndCreateIssuanceStockOnchain = async (contract, {
 };
 
 // Convertible Issuance
-export const convertAndCreateIssuanceConvertibleOnchain = async (contract, { 
-    security_id, 
-    stakeholder_id, 
-    investment_amount,
-    convertible_type,
-    seniority,
-    custom_id = ""
-}) => {
+export const convertAndCreateIssuanceConvertibleOnchain = async (
+    contract,
+    { security_id, stakeholder_id, investment_amount, convertible_type, seniority, custom_id = "" }
+) => {
     const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
     const securityIdBytes16 = convertUUIDToBytes16(security_id);
     const investmentAmountScaled = toScaledBigNumber(investment_amount);
 
     const tx = await contract.issueConvertible(
-        stakeholderIdBytes16, 
-        investmentAmountScaled, 
+        stakeholderIdBytes16,
+        investmentAmountScaled,
         securityIdBytes16,
         convertible_type,
         seniority,
@@ -71,7 +67,7 @@ export const convertAndCreateIssuanceConvertibleOnchain = async (contract, {
         investment_amount,
         convertible_type,
         seniority,
-        custom_id
+        custom_id,
     });
 };
 
@@ -92,42 +88,36 @@ export const convertAndCreateIssuanceWarrantOnchain = async (contract, { securit
     });
 };
 
-export const issueWarrant = async ({
-  stakeholderId,
-  quantity,
-  securityId,
-  purchasePrice,
-  customId = "",
-}) => {
-  const contract = await getContract();
+export const issueWarrant = async ({ stakeholderId, quantity, securityId, purchasePrice, customId = "" }) => {
+    const contract = await getContract();
 
-  const tx = await contract.issueWarrant(
-    stakeholderId,
-    quantity,
-    securityId,
-    purchasePrice,
-    customId,
-    "", // security_law_exemptions_mapping
-    "", // exercise_triggers_mapping
-  );
+    const tx = await contract.issueWarrant(
+        stakeholderId,
+        quantity,
+        securityId,
+        purchasePrice,
+        customId,
+        "", // security_law_exemptions_mapping
+        "" // exercise_triggers_mapping
+    );
 
-  return tx;
+    return tx;
 };
 
 // Equity Compensation Issuance
 export const convertAndCreateIssuanceEquityCompensationOnchain = async (
     contract,
-    { 
-        security_id, 
-        stakeholder_id, 
-        stock_class_id, 
-        stock_plan_id, 
+    {
+        security_id,
+        stakeholder_id,
+        stock_class_id,
+        stock_plan_id,
         quantity,
         compensation_type,
         exercise_price,
         base_price,
         expiration_date,
-        custom_id = ""
+        custom_id = "",
     }
 ) => {
     const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
@@ -165,6 +155,6 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
         exercise_price,
         base_price,
         expiration_date,
-        custom_id
+        custom_id,
     });
 };

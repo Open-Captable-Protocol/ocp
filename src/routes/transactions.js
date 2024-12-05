@@ -92,7 +92,7 @@ transactions.post("/issuance/stock", async (req, res) => {
             quantity: incomingStockIssuance.quantity,
             share_price: incomingStockIssuance.share_price,
             stock_legend_ids_mapping: incomingStockIssuance.stock_legend_ids_mapping,
-            custom_id: incomingStockIssuance.custom_id || ""
+            custom_id: incomingStockIssuance.custom_id || "",
         });
 
         res.status(200).send({ stockIssuance });

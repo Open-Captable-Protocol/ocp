@@ -14,6 +14,12 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
 
     function setUp() public override {
         super.setUp();
+
+        // Grant necessary roles
+        vm.startPrank(contractOwner);
+        AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, address(this));
+        vm.stopPrank();
+
         stakeholderId = createStakeholder();
         stockClassId = createStockClass();
 

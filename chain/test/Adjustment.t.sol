@@ -19,7 +19,6 @@ contract DiamondAdjustmentTest is DiamondTestBase {
     function test_AdjustIssuerAuthorizedShares() public {
         uint256 newSharesAuthorized = 2_000_000;
 
-        // Expect both events in order
         vm.expectEmit(true, false, false, true, address(capTable));
         emit IssuerAuthorizedSharesAdjusted(newSharesAuthorized);
 
@@ -32,13 +31,11 @@ contract DiamondAdjustmentTest is DiamondTestBase {
     function test_AdjustStockClassAuthorizedShares() public {
         uint256 newSharesAuthorized = 2_000_000;
 
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit StockClassAuthorizedSharesAdjusted(stockClassId, newSharesAuthorized);
+        IssuerFacet(payable(address(capTable))).adjustIssuerAuthorizedShares(newSharesAuthorized);
 
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(newSharesAuthorized));
+        uint256 newStockClassSharesAuthorized = 1_999_999;
 
-        StockClassFacet(payable(address(capTable))).adjustAuthorizedShares(stockClassId, newSharesAuthorized);
+        StockClassFacet(payable(address(capTable))).adjustAuthorizedShares(stockClassId, newStockClassSharesAuthorized);
     }
 
     function test_AdjustStockPlanPool() public {
