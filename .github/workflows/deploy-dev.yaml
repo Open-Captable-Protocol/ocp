@@ -28,7 +28,7 @@ jobs:
 
             - name: Run Tests
               run: |
-                  cd chain && forge test
+                  cd chain && forge test --summary
 
             - name: Create .env file
               run: |
