@@ -93,3 +93,14 @@ struct IssueStockParams {
     string stock_legend_ids_mapping;
     string security_law_exemptions_mapping;
 }
+
+struct IssueConvertibleParams {
+    bytes16 stakeholder_id;
+    uint256 investment_amount;
+    bytes16 security_id;
+    string convertible_type;
+    uint256 seniority;
+    string custom_id;
+    string security_law_exemptions_mapping;
+    string conversion_triggers_mapping;
+}

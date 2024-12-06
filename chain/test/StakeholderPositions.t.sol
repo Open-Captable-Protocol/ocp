@@ -8,7 +8,8 @@ import {
     ConvertibleActivePosition,
     EquityCompensationActivePosition,
     StakeholderPositions,
-    IssueStockParams
+    IssueStockParams,
+    IssueConvertibleParams
 } from "@libraries/Structs.sol";
 
 contract DiamondStakeholderPositionsTest is DiamondTestBase {
@@ -44,16 +45,17 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue convertible
         convertibleSecurityId = 0xd3373e0a4dd940000000000000000002;
-        ConvertiblesFacet(address(capTable)).issueConvertible(
-            stakeholderId,
-            1_000_000,
-            convertibleSecurityId,
-            "SAFE",
-            1,
-            "CONV_POS_001",
-            "REG_D",
-            "CONVERSION_ON_NEXT_EQUITY"
-        );
+        IssueConvertibleParams memory convertibleParams = IssueConvertibleParams({
+            stakeholder_id: stakeholderId,
+            investment_amount: 1_000_000,
+            security_id: convertibleSecurityId,
+            convertible_type: "SAFE",
+            seniority: 1,
+            custom_id: "CONV_POS_001",
+            security_law_exemptions_mapping: "REG_D",
+            conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
+        });
+        ConvertiblesFacet(address(capTable)).issueConvertible(convertibleParams);
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000003;

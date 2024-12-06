@@ -2,53 +2,44 @@
 pragma solidity ^0.8.0;
 
 import { StorageLib, Storage } from "@core/Storage.sol";
-import { ConvertibleActivePosition } from "@libraries/Structs.sol";
+import { ConvertibleActivePosition, IssueConvertibleParams } from "@libraries/Structs.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract ConvertiblesFacet {
-    function issueConvertible(
-        bytes16 stakeholder_id,
-        uint256 investment_amount,
-        bytes16 security_id,
-        string calldata convertible_type,
-        uint256 seniority,
-        string calldata custom_id,
-        string calldata security_law_exemptions_mapping,
-        string calldata conversion_triggers_mapping
-    )
-        external
-    {
+    function issueConvertible(IssueConvertibleParams calldata params) external {
         Storage storage ds = StorageLib.get();
 
         if (!AccessControl.hasOperatorRole(msg.sender)) {
             revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.OPERATOR_ROLE);
         }
 
-        ValidationLib.validateStakeholder(stakeholder_id);
-        ValidationLib.validateAmount(investment_amount);
+        ValidationLib.validateStakeholder(params.stakeholder_id);
+        ValidationLib.validateAmount(params.investment_amount);
 
         // Create and store position
-        ds.convertibleActivePositions.securities[security_id] =
-            ConvertibleActivePosition({ stakeholder_id: stakeholder_id, investment_amount: investment_amount });
+        ds.convertibleActivePositions.securities[params.security_id] = ConvertibleActivePosition({
+            stakeholder_id: params.stakeholder_id,
+            investment_amount: params.investment_amount
+        });
 
         // Track security IDs for this stakeholder
-        ds.convertibleActivePositions.stakeholderToSecurities[stakeholder_id].push(security_id);
+        ds.convertibleActivePositions.stakeholderToSecurities[params.stakeholder_id].push(params.security_id);
 
         // Add reverse mapping
-        ds.convertibleActivePositions.securityToStakeholder[security_id] = stakeholder_id;
+        ds.convertibleActivePositions.securityToStakeholder[params.security_id] = params.stakeholder_id;
 
         // Store transaction
         bytes memory txData = abi.encode(
-            stakeholder_id,
-            investment_amount,
-            security_id,
-            convertible_type,
-            conversion_triggers_mapping,
-            seniority,
-            security_law_exemptions_mapping,
-            custom_id
+            params.stakeholder_id,
+            params.investment_amount,
+            params.security_id,
+            params.convertible_type,
+            params.conversion_triggers_mapping,
+            params.seniority,
+            params.security_law_exemptions_mapping,
+            params.custom_id
         );
         TxHelper.createTx(TxType.CONVERTIBLE_ISSUANCE, txData);
     }
