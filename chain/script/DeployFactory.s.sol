@@ -21,7 +21,7 @@ import { AccessControl } from "@libraries/AccessControl.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 
 contract DeployFactoryScript is Script {
-    function deployInitialFacets(address _contractOwner) internal returns (address) {
+    function deployInitialFacets() internal returns (address) {
         // Deploy all facets
         console.log("Deploying facets...");
         DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
@@ -42,7 +42,7 @@ contract DeployFactoryScript is Script {
         // console.log("Deployer address:", deployer);
 
         // Create the diamond with deployer as owner
-        CapTable referenceDiamond = new CapTable(_contractOwner, address(diamondCutFacet));
+        CapTable referenceDiamond = new CapTable(address(diamondCutFacet));
         console.log("Reference diamond created at:", address(referenceDiamond));
 
         // Create cuts array for all facets
@@ -199,7 +199,7 @@ contract DeployFactoryScript is Script {
 
         // Deploy new facets if addresses not in env
         if (referenceDiamond == address(0)) {
-            referenceDiamond = deployInitialFacets(deployer);
+            referenceDiamond = deployInitialFacets();
         }
 
         console.log("------- New Facet Addresses (Add to .env) -------");

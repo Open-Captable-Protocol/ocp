@@ -46,7 +46,7 @@ contract CapTableFactory {
         DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
 
         // Make the factory the owner
-        CapTable diamond = new CapTable(address(this), address(diamondCutFacet));
+        CapTable diamond = new CapTable(address(diamondCutFacet));
 
         // Get facet information from reference diamond
         IDiamondLoupe loupe = IDiamondLoupe(referenceDiamond);
