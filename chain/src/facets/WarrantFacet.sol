@@ -2,52 +2,34 @@
 pragma solidity ^0.8.0;
 
 import { StorageLib, Storage } from "@core/Storage.sol";
-import { WarrantActivePosition } from "@libraries/Structs.sol";
+import { WarrantActivePosition, IssueWarrantParams } from "@libraries/Structs.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract WarrantFacet {
-    function issueWarrant(
-        bytes16 stakeholder_id,
-        uint256 quantity,
-        bytes16 security_id,
-        uint256 purchase_price,
-        string calldata custom_id,
-        string calldata security_law_exemptions_mapping,
-        string calldata exercise_triggers_mapping
-    )
-        external
-    {
+    function issueWarrant(IssueWarrantParams calldata params) external {
         Storage storage ds = StorageLib.get();
 
         if (!AccessControl.hasOperatorRole(msg.sender)) {
             revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.OPERATOR_ROLE);
         }
 
-        ValidationLib.validateStakeholder(stakeholder_id);
-        ValidationLib.validateQuantity(quantity);
+        ValidationLib.validateStakeholder(params.stakeholder_id);
+        ValidationLib.validateQuantity(params.quantity);
 
         // Create and store position
-        ds.warrantActivePositions.securities[security_id] =
-            WarrantActivePosition({ stakeholder_id: stakeholder_id, quantity: quantity });
+        ds.warrantActivePositions.securities[params.security_id] =
+            WarrantActivePosition({ stakeholder_id: params.stakeholder_id, quantity: params.quantity });
 
         // Track security IDs for this stakeholder
-        ds.warrantActivePositions.stakeholderToSecurities[stakeholder_id].push(security_id);
+        ds.warrantActivePositions.stakeholderToSecurities[params.stakeholder_id].push(params.security_id);
 
         // Add reverse mapping
-        ds.warrantActivePositions.securityToStakeholder[security_id] = stakeholder_id;
+        ds.warrantActivePositions.securityToStakeholder[params.security_id] = params.stakeholder_id;
 
         // Store transaction
-        bytes memory txData = abi.encode(
-            stakeholder_id,
-            quantity,
-            security_id,
-            purchase_price,
-            custom_id,
-            security_law_exemptions_mapping,
-            exercise_triggers_mapping
-        );
+        bytes memory txData = abi.encode(params);
         TxHelper.createTx(TxType.WARRANT_ISSUANCE, txData);
     }
 

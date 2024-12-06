@@ -119,3 +119,13 @@ struct IssueEquityCompensationParams {
     string termination_exercise_windows_mapping;
     string security_law_exemptions_mapping;
 }
+
+struct IssueWarrantParams {
+    bytes16 stakeholder_id;
+    uint256 quantity;
+    bytes16 security_id;
+    uint256 purchase_price;
+    string custom_id;
+    string security_law_exemptions_mapping;
+    string exercise_triggers_mapping;
+}

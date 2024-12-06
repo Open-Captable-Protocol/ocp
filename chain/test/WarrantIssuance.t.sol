@@ -5,7 +5,7 @@ import "./TestBase.sol";
 import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
-import { WarrantActivePosition } from "@libraries/Structs.sol";
+import { WarrantActivePosition, IssueWarrantParams } from "@libraries/Structs.sol";
 
 contract DiamondWarrantIssuanceTest is DiamondTestBase {
     function testIssueWarrant() public {
@@ -19,15 +19,16 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
             abi.encode(stakeholderId, quantity, securityId, 1e18, "WARRANT_001", "REG_D", "TIME_BASED")
         );
 
-        WarrantFacet(address(capTable)).issueWarrant(
-            stakeholderId,
-            quantity,
-            securityId,
-            1e18, // purchase_price
-            "WARRANT_001", // custom_id
-            "REG_D", // security_law_exemptions_mapping
-            "TIME_BASED" // exercise_triggers_mapping
-        );
+        IssueWarrantParams memory params = IssueWarrantParams({
+            stakeholder_id: stakeholderId,
+            quantity: quantity,
+            security_id: securityId,
+            purchase_price: 1e18,
+            custom_id: "WARRANT_001",
+            security_law_exemptions_mapping: "REG_D",
+            exercise_triggers_mapping: "TIME_BASED"
+        });
+        WarrantFacet(address(capTable)).issueWarrant(params);
 
         // Verify position was created correctly
         WarrantActivePosition memory position = WarrantFacet(address(capTable)).getWarrantPosition(securityId);
@@ -39,19 +40,31 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        // Just let it fail without expectRevert
-        WarrantFacet(address(capTable)).issueWarrant(
-            invalidStakeholderId, 1000, securityId, 1e18, "WARRANT_002", "REG_D", "TIME_BASED"
-        );
+        IssueWarrantParams memory params = IssueWarrantParams({
+            stakeholder_id: invalidStakeholderId,
+            quantity: 1000,
+            security_id: securityId,
+            purchase_price: 1e18,
+            custom_id: "WARRANT_002",
+            security_law_exemptions_mapping: "REG_D",
+            exercise_triggers_mapping: "TIME_BASED"
+        });
+        WarrantFacet(address(capTable)).issueWarrant(params);
     }
 
     function testFailZeroQuantity() public {
         bytes16 stakeholderId = createStakeholder();
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        // Just let it fail without expectRevert
-        WarrantFacet(address(capTable)).issueWarrant(
-            stakeholderId, 0, securityId, 1e18, "WARRANT_003", "REG_D", "TIME_BASED"
-        );
+        IssueWarrantParams memory params = IssueWarrantParams({
+            stakeholder_id: stakeholderId,
+            quantity: 0,
+            security_id: securityId,
+            purchase_price: 1e18,
+            custom_id: "WARRANT_003",
+            security_law_exemptions_mapping: "REG_D",
+            exercise_triggers_mapping: "TIME_BASED"
+        });
+        WarrantFacet(address(capTable)).issueWarrant(params);
     }
 }
