@@ -29,6 +29,6 @@ echo '@libraries/=src/libraries/' >> remappings.txt
 echo '@core/=src/core/' >> remappings.txt
 
 echo "Building contracts..."
-forge build --via-ir || exit 1
+forge build || exit 1
 
 echo "Setup completed successfully!"
