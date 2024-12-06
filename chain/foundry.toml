@@ -21,6 +21,6 @@ ignore = []
 rpc_url = "${RPC_URL}"
 
 [etherscan]
-optimism_goerli_etherscan = { key = "${ETHERSCAN_L2_API_KEY}", chain = "sepolia" }
+optimism_goerli_etherscan = { key = "${ETHERSCAN_L2_API_KEY}", chain = "base-sepolia" }
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
