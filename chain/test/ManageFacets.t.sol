@@ -48,93 +48,93 @@ contract ManageFacetTest is Test, DeployFactoryScript {
         console.log("done setUp");
     }
 
-    // function testAddFacet() public {
-    //     // Create selectors for mock facet
-    //     bytes4[] memory selectors = new bytes4[](2);
-    //     selectors[0] = MockFacet.setValue.selector;
-    //     selectors[1] = MockFacet.getValue.selector;
+    function testAddFacet() public {
+        // Create selectors for mock facet
+        bytes4[] memory selectors = new bytes4[](2);
+        selectors[0] = MockFacet.setValue.selector;
+        selectors[1] = MockFacet.getValue.selector;
 
-    //     // Add the facet
-    //     console.log("referenceDiamond: ", referenceDiamond);
-    //     console.log("address(capTable): ", address(capTable));
-    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+        // Add the facet
+        console.log("referenceDiamond: ", referenceDiamond);
+        console.log("address(capTable): ", address(capTable));
+        manager.addFacet(address(capTable), address(mockFacet), selectors);
 
-    //     // Verify facet was added
-    //     IDiamondLoupe.Facet[] memory facets = IDiamondLoupe(address(capTable)).facets();
-    //     bool found = false;
-    //     for (uint i = 0; i < facets.length; i++) {
-    //         if (facets[i].facetAddress == address(mockFacet)) {
-    //             found = true;
-    //             assertEq(facets[i].functionSelectors.length, 2);
-    //             break;
-    //         }
-    //     }
-    //     assertTrue(found, "Facet not found after addition");
+        // Verify facet was added
+        IDiamondLoupe.Facet[] memory facets = IDiamondLoupe(address(capTable)).facets();
+        bool found = false;
+        for (uint256 i = 0; i < facets.length; i++) {
+            if (facets[i].facetAddress == address(mockFacet)) {
+                found = true;
+                assertEq(facets[i].functionSelectors.length, 2);
+                break;
+            }
+        }
+        assertTrue(found, "Facet not found after addition");
 
-    //     // Test functionality
-    //     MockFacet(address(capTable)).setValue(42);
-    //     assertEq(MockFacet(address(capTable)).getValue(), 42);
-    // }
+        // Test functionality
+        MockFacet(address(capTable)).setValue(42);
+        assertEq(MockFacet(address(capTable)).getValue(), 42);
+    }
 
-    // function testReplaceFacet() public {
-    //     // First add the original facet
-    //     bytes4[] memory selectors = new bytes4[](2);
-    //     selectors[0] = MockFacet.setValue.selector;
-    //     selectors[1] = MockFacet.getValue.selector;
-    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    function testReplaceFacet() public {
+        // First add the original facet
+        bytes4[] memory selectors = new bytes4[](2);
+        selectors[0] = MockFacet.setValue.selector;
+        selectors[1] = MockFacet.getValue.selector;
+        manager.addFacet(address(capTable), address(mockFacet), selectors);
 
-    //     // Set initial value
-    //     MockFacet(address(capTable)).setValue(42);
-    //     assertEq(MockFacet(address(capTable)).getValue(), 42);
+        // Set initial value
+        MockFacet(address(capTable)).setValue(42);
+        assertEq(MockFacet(address(capTable)).getValue(), 42);
 
-    //     // Replace with V2
-    //     upgrader.replaceFacet(address(capTable), address(mockFacetV2), selectors);
+        // Replace with V2
+        manager.replaceFacet(address(capTable), address(mockFacetV2), selectors);
 
-    //     // Verify value persists after upgrade (storage remains unchanged)
-    //     assertEq(MockFacet(address(capTable)).getValue(), 42);
-    // }
+        // Verify value persists after upgrade (storage remains unchanged)
+        assertEq(MockFacet(address(capTable)).getValue(), 42);
+    }
 
-    // function testRemoveFacet() public {
-    //     // First add the facet
-    //     bytes4[] memory selectors = new bytes4[](2);
-    //     selectors[0] = MockFacet.setValue.selector;
-    //     selectors[1] = MockFacet.getValue.selector;
-    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    function testRemoveFacet() public {
+        // First add the facet
+        bytes4[] memory selectors = new bytes4[](2);
+        selectors[0] = MockFacet.setValue.selector;
+        selectors[1] = MockFacet.getValue.selector;
+        manager.addFacet(address(capTable), address(mockFacet), selectors);
 
-    //     // Remove the facet
-    //     upgrader.removeFacet(address(capTable), selectors);
+        // Remove the facet
+        manager.removeFacet(address(capTable), selectors);
 
-    //     // Verify facet was removed
-    //     IDiamondLoupe.Facet[] memory facets = IDiamondLoupe(address(capTable)).facets();
-    //     for (uint i = 0; i < facets.length; i++) {
-    //         // check that the facet address is not the one we removed
-    //         assertFalse(facets[i].facetAddress == address(mockFacet), "Facet still exists after removal");
-    //     }
+        // Verify facet was removed
+        IDiamondLoupe.Facet[] memory facets = IDiamondLoupe(address(capTable)).facets();
+        for (uint256 i = 0; i < facets.length; i++) {
+            // check that the facet address is not the one we removed
+            assertFalse(facets[i].facetAddress == address(mockFacet), "Facet still exists after removal");
+        }
 
-    //     // Verify function calls revert
-    //     vm.expectRevert("Diamond: Function does not exist");
-    //     MockFacet(address(capTable)).setValue(42);
-    // }
+        // Verify function calls revert
+        vm.expectRevert("Diamond: Function does not exist");
+        MockFacet(address(capTable)).setValue(42);
+    }
 
-    // function testUpgradeWithNewFunction() public {
-    //     // First add original facet with basic functions
-    //     bytes4[] memory selectors = new bytes4[](2);
-    //     selectors[0] = MockFacet.setValue.selector;
-    //     selectors[1] = MockFacet.getValue.selector;
-    //     upgrader.addFacet(address(capTable), address(mockFacet), selectors);
+    function testUpgradeWithNewFunction() public {
+        // First add original facet with basic functions
+        bytes4[] memory selectors = new bytes4[](2);
+        selectors[0] = MockFacet.setValue.selector;
+        selectors[1] = MockFacet.getValue.selector;
+        manager.addFacet(address(capTable), address(mockFacet), selectors);
 
-    //     // Set initial value
-    //     MockFacet(address(capTable)).setValue(42);
+        // Set initial value
+        MockFacet(address(capTable)).setValue(42);
 
-    //     // Add new function from V2
-    //     bytes4[] memory newSelectors = new bytes4[](1);
-    //     newSelectors[0] = MockFacet.getValuePlusOne.selector;
-    //     upgrader.addFacet(address(capTable), address(mockFacetV2), newSelectors);
+        // Add new function from V2
+        bytes4[] memory newSelectors = new bytes4[](1);
+        newSelectors[0] = MockFacet.getValuePlusOne.selector;
+        manager.addFacet(address(capTable), address(mockFacetV2), newSelectors);
 
-    //     // Test old and new functionality
-    //     assertEq(MockFacet(address(capTable)).getValue(), 42);
-    //     assertEq(MockFacet(address(capTable)).getValuePlusOne(), 43);
-    // }
+        // Test old and new functionality
+        assertEq(MockFacet(address(capTable)).getValue(), 42);
+        assertEq(MockFacet(address(capTable)).getValuePlusOne(), 43);
+    }
 
     function testSyncDiamonds() public {
         // Add mock facet to reference diamond
