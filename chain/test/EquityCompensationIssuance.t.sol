@@ -5,7 +5,7 @@ import "./TestBase.sol";
 import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
-import { EquityCompensationActivePosition } from "@libraries/Structs.sol";
+import { EquityCompensationActivePosition, IssueEquityCompensationParams } from "@libraries/Structs.sol";
 
 contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
     bytes16 stakeholderId;
@@ -52,20 +52,21 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
             )
         );
 
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId,
-            stockClassId,
-            stockPlanId,
-            quantity,
-            securityId,
-            "ISO", // compensation_type
-            1e18, // exercise_price
-            1e18, // base_price
-            "2025-12-31", // expiration_date
-            "EQCOMP_001", // custom_id
-            "90_DAYS", // termination_exercise_windows_mapping
-            "REG_D" // security_law_exemptions_mapping
-        );
+        IssueEquityCompensationParams memory params = IssueEquityCompensationParams({
+            stakeholder_id: stakeholderId,
+            stock_class_id: stockClassId,
+            stock_plan_id: stockPlanId,
+            quantity: quantity,
+            security_id: securityId,
+            compensation_type: "ISO",
+            exercise_price: 1e18,
+            base_price: 1e18,
+            expiration_date: "2025-12-31",
+            custom_id: "EQCOMP_001",
+            termination_exercise_windows_mapping: "90_DAYS",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        EquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
 
         // Verify position was created correctly
         EquityCompensationActivePosition memory position =
@@ -80,58 +81,61 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            invalidStakeholderId,
-            stockClassId,
-            stockPlanId,
-            1000,
-            securityId,
-            "ISO",
-            1e18,
-            1e18,
-            "2025-12-31",
-            "EQCOMP_002",
-            "90_DAYS",
-            "REG_D"
-        );
+        IssueEquityCompensationParams memory params = IssueEquityCompensationParams({
+            stakeholder_id: invalidStakeholderId,
+            stock_class_id: stockClassId,
+            stock_plan_id: stockPlanId,
+            quantity: 1000,
+            security_id: securityId,
+            compensation_type: "ISO",
+            exercise_price: 1e18,
+            base_price: 1e18,
+            expiration_date: "2025-12-31",
+            custom_id: "EQCOMP_002",
+            termination_exercise_windows_mapping: "90_DAYS",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        EquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 
     function testFailInvalidStockClass() public {
         bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId,
-            invalidStockClassId,
-            stockPlanId,
-            1000,
-            securityId,
-            "ISO",
-            1e18,
-            1e18,
-            "2025-12-31",
-            "EQCOMP_003",
-            "90_DAYS",
-            "REG_D"
-        );
+        IssueEquityCompensationParams memory params = IssueEquityCompensationParams({
+            stakeholder_id: stakeholderId,
+            stock_class_id: invalidStockClassId,
+            stock_plan_id: stockPlanId,
+            quantity: 1000,
+            security_id: securityId,
+            compensation_type: "ISO",
+            exercise_price: 1e18,
+            base_price: 1e18,
+            expiration_date: "2025-12-31",
+            custom_id: "EQCOMP_003",
+            termination_exercise_windows_mapping: "90_DAYS",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        EquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 
     function testFailZeroQuantity() public {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId,
-            stockClassId,
-            stockPlanId,
-            0,
-            securityId,
-            "ISO",
-            1e18,
-            1e18,
-            "2025-12-31",
-            "EQCOMP_005",
-            "90_DAYS",
-            "REG_D"
-        );
+        IssueEquityCompensationParams memory params = IssueEquityCompensationParams({
+            stakeholder_id: stakeholderId,
+            stock_class_id: stockClassId,
+            stock_plan_id: stockPlanId,
+            quantity: 0,
+            security_id: securityId,
+            compensation_type: "ISO",
+            exercise_price: 1e18,
+            base_price: 1e18,
+            expiration_date: "2025-12-31",
+            custom_id: "EQCOMP_005",
+            termination_exercise_windows_mapping: "90_DAYS",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        EquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 }

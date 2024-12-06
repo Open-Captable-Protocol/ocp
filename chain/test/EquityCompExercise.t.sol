@@ -5,8 +5,12 @@ import "./TestBase.sol";
 import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
-import { EquityCompensationActivePosition, StockActivePosition } from "@libraries/Structs.sol";
-import { IssueStockParams } from "@libraries/Structs.sol";
+import {
+    EquityCompensationActivePosition,
+    StockActivePosition,
+    IssueEquityCompensationParams,
+    IssueStockParams
+} from "@libraries/Structs.sol";
 
 contract DiamondEquityCompExerciseTest is DiamondTestBase {
     bytes16 stakeholderId;
@@ -42,20 +46,21 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000001;
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId,
-            stockClassId,
-            stockPlanId,
-            EQUITY_COMP_QUANTITY,
-            equityCompSecurityId,
-            "ISO", // compensation_type
-            1e18, // exercise_price
-            1e18, // base_price
-            "2025-12-31", // expiration_date
-            "EQCOMP_EX_001", // custom_id
-            "90_DAYS", // termination_exercise_windows_mapping
-            "REG_D" // security_law_exemptions_mapping
-        );
+        IssueEquityCompensationParams memory equityParams = IssueEquityCompensationParams({
+            stakeholder_id: stakeholderId,
+            stock_class_id: stockClassId,
+            stock_plan_id: stockPlanId,
+            quantity: EQUITY_COMP_QUANTITY,
+            security_id: equityCompSecurityId,
+            compensation_type: "ISO",
+            exercise_price: 1e18,
+            base_price: 1e18,
+            expiration_date: "2025-12-31",
+            custom_id: "EQCOMP_EX_001",
+            termination_exercise_windows_mapping: "90_DAYS",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        EquityCompensationFacet(address(capTable)).issueEquityCompensation(equityParams);
 
         // Issue resulting stock
         stockSecurityId = 0xd3373e0a4dd940000000000000000002;
