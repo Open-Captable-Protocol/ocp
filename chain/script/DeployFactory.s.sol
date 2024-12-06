@@ -21,164 +21,104 @@ import { AccessControl } from "@libraries/AccessControl.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 
 contract DeployFactoryScript is Script {
+    // Struct to hold facet deployment info
+    struct FacetDeployment {
+        address facetAddress;
+        bytes4[] selectors;
+    }
+
+    // Struct to organize facet cut data
+    struct FacetCutData {
+        string name; // For logging/debugging
+        address facetAddress;
+        bytes4[] selectors;
+    }
+
     function deployInitialFacets() internal returns (address) {
         // Deploy all facets
         console.log("Deploying facets...");
-        DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
-        DiamondLoupeFacet diamondLoupeFacet = new DiamondLoupeFacet();
-        IssuerFacet issuerFacet = new IssuerFacet();
-        StakeholderFacet stakeholderFacet = new StakeholderFacet();
-        StockClassFacet stockClassFacet = new StockClassFacet();
-        StockFacet stockFacet = new StockFacet();
-        ConvertiblesFacet convertiblesFacet = new ConvertiblesFacet();
-        EquityCompensationFacet equityCompensationFacet = new EquityCompensationFacet();
-        StockPlanFacet stockPlanFacet = new StockPlanFacet();
-        WarrantFacet warrantFacet = new WarrantFacet();
-        StakeholderNFTFacet stakeholderNFTFacet = new StakeholderNFTFacet();
-        AccessControlFacet accessControlFacet = new AccessControlFacet();
+        FacetDeployment[] memory deployments = new FacetDeployment[](11);
 
-        // Create reference diamond with deployer as owner
-        // address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
-        // console.log("Deployer address:", deployer);
+        // ------------------- Diamond Loupe Facet -------------------
+        deployments[0] = FacetDeployment({ facetAddress: address(new DiamondLoupeFacet()), selectors: new bytes4[](5) });
+        deployments[0].selectors[0] = DiamondLoupeFacet.facets.selector;
+        deployments[0].selectors[1] = DiamondLoupeFacet.facetFunctionSelectors.selector;
+        deployments[0].selectors[2] = DiamondLoupeFacet.facetAddresses.selector;
+        deployments[0].selectors[3] = DiamondLoupeFacet.facetAddress.selector;
+        deployments[0].selectors[4] = DiamondLoupeFacet.supportsInterface.selector;
 
-        // Create the diamond with deployer as owner
-        CapTable referenceDiamond = new CapTable(address(diamondCutFacet));
-        console.log("Reference diamond created at:", address(referenceDiamond));
+        // ------------------- Issuer Facet -------------------
+        deployments[1] = FacetDeployment({ facetAddress: address(new IssuerFacet()), selectors: new bytes4[](2) });
+        deployments[1].selectors[0] = IssuerFacet.initializeIssuer.selector;
+        deployments[1].selectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
 
-        // Create cuts array for all facets
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](11);
+        // ------------------- Stakeholder Facet -------------------
+        deployments[2] = FacetDeployment({ facetAddress: address(new StakeholderFacet()), selectors: new bytes4[](3) });
+        deployments[2].selectors[0] = StakeholderFacet.createStakeholder.selector;
+        deployments[2].selectors[1] = StakeholderFacet.getStakeholderPositions.selector;
+        deployments[2].selectors[2] = StakeholderFacet.linkStakeholderAddress.selector;
 
-        // Add DiamondLoupe functions
-        bytes4[] memory loupeSelectors = new bytes4[](5);
-        loupeSelectors[0] = DiamondLoupeFacet.facets.selector;
-        loupeSelectors[1] = DiamondLoupeFacet.facetFunctionSelectors.selector;
-        loupeSelectors[2] = DiamondLoupeFacet.facetAddresses.selector;
-        loupeSelectors[3] = DiamondLoupeFacet.facetAddress.selector;
-        loupeSelectors[4] = DiamondLoupeFacet.supportsInterface.selector;
+        // ------------------- Stock Class Facet -------------------
+        deployments[3] = FacetDeployment({ facetAddress: address(new StockClassFacet()), selectors: new bytes4[](2) });
+        deployments[3].selectors[0] = StockClassFacet.createStockClass.selector;
+        deployments[3].selectors[1] = StockClassFacet.adjustAuthorizedShares.selector;
 
-        // Add issuer functions
-        bytes4[] memory issuerSelectors = new bytes4[](2);
-        issuerSelectors[0] = IssuerFacet.initializeIssuer.selector;
-        issuerSelectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
+        // ------------------- Stock Facet -------------------
+        deployments[4] = FacetDeployment({ facetAddress: address(new StockFacet()), selectors: new bytes4[](1) });
+        deployments[4].selectors[0] = StockFacet.issueStock.selector;
 
-        // Add stakeholder functions
-        bytes4[] memory stakeholderSelectors = new bytes4[](3);
-        stakeholderSelectors[0] = StakeholderFacet.createStakeholder.selector;
-        stakeholderSelectors[1] = StakeholderFacet.getStakeholderPositions.selector;
-        stakeholderSelectors[2] = StakeholderFacet.linkStakeholderAddress.selector;
+        // ------------------- Convertibles Facet -------------------
+        deployments[5] = FacetDeployment({ facetAddress: address(new ConvertiblesFacet()), selectors: new bytes4[](2) });
+        deployments[5].selectors[0] = ConvertiblesFacet.issueConvertible.selector;
+        deployments[5].selectors[1] = ConvertiblesFacet.getConvertiblePosition.selector;
 
-        // Add stock class functions
-        bytes4[] memory stockClassSelectors = new bytes4[](2);
-        stockClassSelectors[0] = StockClassFacet.createStockClass.selector;
-        stockClassSelectors[1] = StockClassFacet.adjustAuthorizedShares.selector;
+        // ------------------- Equity Compensation Facet -------------------
+        deployments[6] =
+            FacetDeployment({ facetAddress: address(new EquityCompensationFacet()), selectors: new bytes4[](3) });
+        deployments[6].selectors[0] = EquityCompensationFacet.issueEquityCompensation.selector;
+        deployments[6].selectors[1] = EquityCompensationFacet.getPosition.selector;
+        deployments[6].selectors[2] = EquityCompensationFacet.exerciseEquityCompensation.selector;
 
-        // Add stock functions
-        bytes4[] memory stockSelectors = new bytes4[](1);
-        stockSelectors[0] = StockFacet.issueStock.selector;
+        // ------------------- Stock Plan Facet -------------------
+        deployments[7] = FacetDeployment({ facetAddress: address(new StockPlanFacet()), selectors: new bytes4[](2) });
+        deployments[7].selectors[0] = StockPlanFacet.createStockPlan.selector;
+        deployments[7].selectors[1] = StockPlanFacet.adjustStockPlanPool.selector;
 
-        // Add convertible functions
-        bytes4[] memory convertibleSelectors = new bytes4[](2);
-        convertibleSelectors[0] = ConvertiblesFacet.issueConvertible.selector;
-        convertibleSelectors[1] = ConvertiblesFacet.getConvertiblePosition.selector;
+        // ------------------- Warrant Facet -------------------
+        deployments[8] = FacetDeployment({ facetAddress: address(new WarrantFacet()), selectors: new bytes4[](2) });
+        deployments[8].selectors[0] = WarrantFacet.issueWarrant.selector;
+        deployments[8].selectors[1] = WarrantFacet.getWarrantPosition.selector;
 
-        // Add equity compensation functions
-        bytes4[] memory equityCompensationSelectors = new bytes4[](3);
-        equityCompensationSelectors[0] = EquityCompensationFacet.issueEquityCompensation.selector;
-        equityCompensationSelectors[1] = EquityCompensationFacet.getPosition.selector;
-        equityCompensationSelectors[2] = EquityCompensationFacet.exerciseEquityCompensation.selector;
+        // ------------------- Stakeholder NFT Facet -------------------
+        deployments[9] =
+            FacetDeployment({ facetAddress: address(new StakeholderNFTFacet()), selectors: new bytes4[](2) });
+        deployments[9].selectors[0] = StakeholderNFTFacet.mint.selector;
+        deployments[9].selectors[1] = StakeholderNFTFacet.tokenURI.selector;
 
-        // Add stock plan functions
-        bytes4[] memory stockPlanSelectors = new bytes4[](2);
-        stockPlanSelectors[0] = StockPlanFacet.createStockPlan.selector;
-        stockPlanSelectors[1] = StockPlanFacet.adjustStockPlanPool.selector;
+        // ------------------- Access Control Facet -------------------
+        deployments[10] =
+            FacetDeployment({ facetAddress: address(new AccessControlFacet()), selectors: new bytes4[](8) });
+        deployments[10].selectors[0] = AccessControlFacet.grantRole.selector;
+        deployments[10].selectors[1] = AccessControlFacet.revokeRole.selector;
+        deployments[10].selectors[2] = AccessControlFacet.hasRole.selector;
+        deployments[10].selectors[3] = AccessControlFacet.initializeAccessControl.selector;
+        deployments[10].selectors[4] = AccessControlFacet.transferAdmin.selector;
+        deployments[10].selectors[5] = AccessControlFacet.acceptAdmin.selector;
+        deployments[10].selectors[6] = AccessControlFacet.getAdmin.selector;
+        deployments[10].selectors[7] = AccessControlFacet.getPendingAdmin.selector;
 
-        // Add warrant functions
-        bytes4[] memory warrantSelectors = new bytes4[](2);
-        warrantSelectors[0] = WarrantFacet.issueWarrant.selector;
-        warrantSelectors[1] = WarrantFacet.getWarrantPosition.selector;
+        // Create reference diamond
+        CapTable referenceDiamond = new CapTable(address(new DiamondCutFacet()));
 
-        // Add NFT functions
-        bytes4[] memory nftSelectors = new bytes4[](2);
-        nftSelectors[0] = StakeholderNFTFacet.mint.selector;
-        nftSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
-
-        // Add access control functions
-        bytes4[] memory accessControlSelectors = new bytes4[](8);
-        accessControlSelectors[0] = AccessControlFacet.grantRole.selector;
-        accessControlSelectors[1] = AccessControlFacet.revokeRole.selector;
-        accessControlSelectors[2] = AccessControlFacet.hasRole.selector;
-        accessControlSelectors[3] = AccessControlFacet.initializeAccessControl.selector;
-        accessControlSelectors[4] = AccessControlFacet.transferAdmin.selector;
-        accessControlSelectors[5] = AccessControlFacet.acceptAdmin.selector;
-        accessControlSelectors[6] = AccessControlFacet.getAdmin.selector;
-        accessControlSelectors[7] = AccessControlFacet.getPendingAdmin.selector;
-
-        // Create the cuts
-        cuts[0] = IDiamondCut.FacetCut({
-            facetAddress: address(diamondLoupeFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: loupeSelectors
-        });
-
-        cuts[1] = IDiamondCut.FacetCut({
-            facetAddress: address(issuerFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: issuerSelectors
-        });
-
-        cuts[2] = IDiamondCut.FacetCut({
-            facetAddress: address(stakeholderFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stakeholderSelectors
-        });
-
-        cuts[3] = IDiamondCut.FacetCut({
-            facetAddress: address(stockClassFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stockClassSelectors
-        });
-
-        cuts[4] = IDiamondCut.FacetCut({
-            facetAddress: address(stockFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stockSelectors
-        });
-
-        cuts[5] = IDiamondCut.FacetCut({
-            facetAddress: address(convertiblesFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: convertibleSelectors
-        });
-
-        cuts[6] = IDiamondCut.FacetCut({
-            facetAddress: address(equityCompensationFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: equityCompensationSelectors
-        });
-
-        cuts[7] = IDiamondCut.FacetCut({
-            facetAddress: address(stockPlanFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: stockPlanSelectors
-        });
-
-        cuts[8] = IDiamondCut.FacetCut({
-            facetAddress: address(warrantFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: warrantSelectors
-        });
-
-        cuts[9] = IDiamondCut.FacetCut({
-            facetAddress: address(stakeholderNFTFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: nftSelectors
-        });
-
-        cuts[10] = IDiamondCut.FacetCut({
-            facetAddress: address(accessControlFacet),
-            action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: accessControlSelectors
-        });
+        // Convert deployments to cuts
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](deployments.length);
+        for (uint256 i = 0; i < deployments.length; i++) {
+            cuts[i] = IDiamondCut.FacetCut({
+                facetAddress: deployments[i].facetAddress,
+                action: IDiamondCut.FacetCutAction.Add,
+                functionSelectors: deployments[i].selectors
+            });
+        }
 
         // Perform the cuts
         DiamondCutFacet(address(referenceDiamond)).diamondCut(cuts, address(0), "");
