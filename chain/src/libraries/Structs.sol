@@ -82,3 +82,14 @@ struct StakeholderPositions {
     ConvertibleActivePosition[] convertibles;
     EquityCompensationActivePosition[] equityCompensations;
 }
+
+struct IssueStockParams {
+    bytes16 stock_class_id;
+    uint256 share_price;
+    uint256 quantity;
+    bytes16 stakeholder_id;
+    bytes16 security_id;
+    string custom_id;
+    string stock_legend_ids_mapping;
+    string security_law_exemptions_mapping;
+}

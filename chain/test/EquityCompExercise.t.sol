@@ -6,6 +6,7 @@ import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { EquityCompensationActivePosition, StockActivePosition } from "@libraries/Structs.sol";
+import { IssueStockParams } from "@libraries/Structs.sol";
 
 contract DiamondEquityCompExerciseTest is DiamondTestBase {
     bytes16 stakeholderId;
@@ -58,16 +59,17 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Issue resulting stock
         stockSecurityId = 0xd3373e0a4dd940000000000000000002;
-        StockFacet(address(capTable)).issueStock(
-            stockClassId,
-            1e18, // share price
-            EQUITY_COMP_QUANTITY,
-            stakeholderId,
-            stockSecurityId,
-            "STOCK_EX_001", // custom_id
-            "LEGEND_1", // stock_legend_ids_mapping
-            "REG_D" // security_law_exemptions_mapping
-        );
+        IssueStockParams memory params = IssueStockParams({
+            stock_class_id: stockClassId,
+            share_price: 1e18,
+            quantity: EQUITY_COMP_QUANTITY,
+            stakeholder_id: stakeholderId,
+            security_id: stockSecurityId,
+            custom_id: "STOCK_EX_001",
+            stock_legend_ids_mapping: "LEGEND_1",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        StockFacet(address(capTable)).issueStock(params);
     }
 
     function testExerciseEquityCompensation() public {
@@ -75,16 +77,17 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Issue new stock position with exact quantity to exercise
         bytes16 newStockSecurityId = 0xd3373e0a4dd940000000000000000003;
-        StockFacet(address(capTable)).issueStock(
-            stockClassId,
-            1e18, // share price
-            exerciseQuantity, // Must match exercise quantity
-            stakeholderId,
-            newStockSecurityId,
-            "STOCK_EX_002",
-            "LEGEND_1",
-            "REG_D"
-        );
+        IssueStockParams memory exerciseParams = IssueStockParams({
+            stock_class_id: stockClassId,
+            share_price: 1e18,
+            quantity: exerciseQuantity,
+            stakeholder_id: stakeholderId,
+            security_id: newStockSecurityId,
+            custom_id: "STOCK_EX_002",
+            stock_legend_ids_mapping: "LEGEND_1",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        StockFacet(address(capTable)).issueStock(exerciseParams);
 
         vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(
@@ -145,16 +148,17 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Issue stock to different stakeholder
         bytes16 otherStockSecurityId = 0xd3373e0a4dd940000000000000000003;
-        StockFacet(address(capTable)).issueStock(
-            stockClassId,
-            1e18, // share price
-            500,
-            otherStakeholderId,
-            otherStockSecurityId,
-            "STOCK_EX_003",
-            "LEGEND_1",
-            "REG_D"
-        );
+        IssueStockParams memory otherParams = IssueStockParams({
+            stock_class_id: stockClassId,
+            share_price: 1e18,
+            quantity: 500,
+            stakeholder_id: otherStakeholderId,
+            security_id: otherStockSecurityId,
+            custom_id: "STOCK_EX_003",
+            stock_legend_ids_mapping: "LEGEND_1",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        StockFacet(address(capTable)).issueStock(otherParams);
 
         vm.expectRevert(
             abi.encodeWithSelector(

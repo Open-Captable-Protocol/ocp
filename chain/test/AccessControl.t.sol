@@ -10,6 +10,7 @@ import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
 import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
+import { IssueStockParams } from "@libraries/Structs.sol";
 
 contract AccessControlTest is DiamondTestBase {
     address admin;
@@ -64,16 +65,17 @@ contract AccessControlTest is DiamondTestBase {
 
         // Test issueStock with operator role
         vm.startPrank(operator);
-        StockFacet(address(capTable)).issueStock(
-            stockClassId, // stock_class_id
-            1, // share_price
-            100, // quantity
-            stakeholderId, // stakeholder_id
-            bytes16(keccak256("security1")), // security_id
-            "custom_id", // custom_id
-            "stock_legend_ids_mapping", // stock_legend_ids_mapping
-            "security_law_exemptions_mapping" // security_law_exemptions_mapping
-        );
+        IssueStockParams memory params = IssueStockParams({
+            stock_class_id: stockClassId,
+            share_price: 1,
+            quantity: 100,
+            stakeholder_id: stakeholderId,
+            security_id: bytes16(keccak256("security1")),
+            custom_id: "custom_id",
+            stock_legend_ids_mapping: "stock_legend_ids_mapping",
+            security_law_exemptions_mapping: "security_law_exemptions_mapping"
+        });
+        StockFacet(address(capTable)).issueStock(params);
         vm.stopPrank();
 
         // Test unauthorized access
@@ -83,16 +85,17 @@ contract AccessControlTest is DiamondTestBase {
                 AccessControl.AccessControlUnauthorized.selector, investor, AccessControl.OPERATOR_ROLE
             )
         );
-        StockFacet(address(capTable)).issueStock(
-            stockClassId, // stock_class_id
-            1, // share_price
-            100, // quantity
-            stakeholderId, // stakeholder_id
-            bytes16(keccak256("security2")), // security_id
-            "custom_id", // custom_id
-            "stock_legend_ids_mapping", // stock_legend_ids_mapping
-            "security_law_exemptions_mapping" // security_law_exemptions_mapping
-        );
+        IssueStockParams memory params2 = IssueStockParams({
+            stock_class_id: stockClassId,
+            share_price: 1,
+            quantity: 100,
+            stakeholder_id: stakeholderId,
+            security_id: bytes16(keccak256("security2")),
+            custom_id: "custom_id",
+            stock_legend_ids_mapping: "stock_legend_ids_mapping",
+            security_law_exemptions_mapping: "security_law_exemptions_mapping"
+        });
+        StockFacet(address(capTable)).issueStock(params2);
         vm.stopPrank();
     }
 

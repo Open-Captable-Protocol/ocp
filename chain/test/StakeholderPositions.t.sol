@@ -7,7 +7,8 @@ import {
     WarrantActivePosition,
     ConvertibleActivePosition,
     EquityCompensationActivePosition,
-    StakeholderPositions
+    StakeholderPositions,
+    IssueStockParams
 } from "@libraries/Structs.sol";
 
 contract DiamondStakeholderPositionsTest is DiamondTestBase {
@@ -29,9 +30,17 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue stock
         stockSecurityId = 0xd3373e0a4dd940000000000000000001;
-        StockFacet(address(capTable)).issueStock(
-            stockClassId, 1e18, 1000, stakeholderId, stockSecurityId, "STOCK_POS_001", "LEGEND_1", "REG_D"
-        );
+        IssueStockParams memory params = IssueStockParams({
+            stock_class_id: stockClassId,
+            share_price: 1e18,
+            quantity: 1000,
+            stakeholder_id: stakeholderId,
+            security_id: stockSecurityId,
+            custom_id: "STOCK_POS_001",
+            stock_legend_ids_mapping: "LEGEND_1",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        StockFacet(address(capTable)).issueStock(params);
 
         // Issue convertible
         convertibleSecurityId = 0xd3373e0a4dd940000000000000000002;
