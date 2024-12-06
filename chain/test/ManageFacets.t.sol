@@ -7,8 +7,7 @@ import "./mocks/MockFacet.sol";
 import { ManageFacetScript } from "../script/ManageFacets.s.sol";
 import { SyncDiamondsScript } from "../script/SyncDiamonds.s.sol";
 import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
-import "../script/DeployFactory.s.sol";
-import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
+import { DeployFactoryScript } from "../script/DeployFactory.s.sol";
 
 contract ManageFacetTest is Test, DeployFactoryScript {
     MockFacet public mockFacet;

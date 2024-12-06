@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "@core/CapTable.sol";
 import { CapTableFactory } from "@core/CapTableFactory.sol";
-import "@facets/IssuerFacet.sol";
+import { IssuerFacet } from "@facets/IssuerFacet.sol";
 import { CapTable } from "@core/CapTable.sol";
 import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
 import { StockClassFacet } from "@facets/StockClassFacet.sol";
@@ -13,14 +13,14 @@ import { StockFacet } from "@facets/StockFacet.sol";
 import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
 import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
 import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
-import "diamond-3-hardhat/facets/DiamondCutFacet.sol";
-import "diamond-3-hardhat/facets/DiamondLoupeFacet.sol";
+import { DiamondCutFacet } from "@facets/DiamondCutFacet.sol";
+import { DiamondLoupeFacet } from "diamond-3-hardhat/facets/DiamondLoupeFacet.sol";
 import "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
-import "../script/DeployFactory.s.sol";
+import { DeployFactoryScript } from "../script/DeployFactory.s.sol";
 
 contract DiamondTestBase is Test, DeployFactoryScript {
     uint256 public issuerInitialSharesAuthorized = 1_000_000;
@@ -63,17 +63,11 @@ contract DiamondTestBase is Test, DeployFactoryScript {
     function createStakeholder() public virtual returns (bytes16) {
         bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
 
-        // Debug log before creation
-        console.log("Before creation - index:", StorageLib.get().stakeholderIndex[stakeholderId]);
-
         vm.expectEmit(true, false, false, false, address(capTable));
         emit StakeholderCreated(stakeholderId);
 
         // Call through the diamond proxy instead of using delegatecall
         StakeholderFacet(address(capTable)).createStakeholder(stakeholderId);
-
-        // Debug log after creation
-        console.log("After creation - index:", StorageLib.get().stakeholderIndex[stakeholderId]);
 
         return stakeholderId;
     }

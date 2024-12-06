@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import { CapTable } from "./CapTable.sol";
 import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
-import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
+import { DiamondCutFacet } from "@facets/DiamondCutFacet.sol";
 import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { IssuerFacet } from "@facets/IssuerFacet.sol";
 import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
