@@ -32,26 +32,6 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
     function testIssueEquityCompensation() public {
         uint256 quantity = 1000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
-
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(
-            TxType.EQUITY_COMPENSATION_ISSUANCE,
-            abi.encode(
-                stakeholderId,
-                stockClassId,
-                stockPlanId,
-                quantity,
-                securityId,
-                "ISO",
-                1e18,
-                1e18,
-                "2025-12-31",
-                "EQCOMP_001",
-                "90_DAYS",
-                "REG_D"
-            )
-        );
-
         IssueEquityCompensationParams memory params = IssueEquityCompensationParams({
             stakeholder_id: stakeholderId,
             stock_class_id: stockClassId,
@@ -66,6 +46,10 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
             termination_exercise_windows_mapping: "90_DAYS",
             security_law_exemptions_mapping: "REG_D"
         });
+
+        vm.expectEmit(true, true, false, true, address(capTable));
+        emit TxHelper.TxCreated(TxType.EQUITY_COMPENSATION_ISSUANCE, abi.encode(params));
+
         EquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
 
         // Verify position was created correctly

@@ -48,7 +48,7 @@ contract DiamondTestBase is Test, DeployFactoryScript {
         console.log("contractOwner: ", contractOwner);
 
         // Use the deployment script's function
-        referenceDiamond = deployInitialFacets(contractOwner);
+        referenceDiamond = deployInitialFacets();
 
         // Create factory using reference diamond
         factory = new CapTableFactory(contractOwner, referenceDiamond);

@@ -13,12 +13,6 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         uint256 quantity = 1000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
 
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(
-            TxType.WARRANT_ISSUANCE,
-            abi.encode(stakeholderId, quantity, securityId, 1e18, "WARRANT_001", "REG_D", "TIME_BASED")
-        );
-
         IssueWarrantParams memory params = IssueWarrantParams({
             stakeholder_id: stakeholderId,
             quantity: quantity,
@@ -28,6 +22,9 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             exercise_triggers_mapping: "TIME_BASED"
         });
+        vm.expectEmit(true, true, false, true, address(capTable));
+        emit TxHelper.TxCreated(TxType.WARRANT_ISSUANCE, abi.encode(params));
+
         WarrantFacet(address(capTable)).issueWarrant(params);
 
         // Verify position was created correctly
