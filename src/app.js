@@ -99,20 +99,28 @@ const startServer = async () => {
 
         const issuers = (await readAllIssuers()) || null;
         if (issuers) {
-            const contractAddresses = issuers
-                .filter((issuer) => issuer?.deployed_to)
-                .reduce((acc, issuer) => {
-                    acc[issuer.id] = issuer.deployed_to;
-                    return acc;
-                }, {});
+            // Group contracts by chain ID
+            const contractsToWatch = issuers
+                .filter(issuer => issuer?.deployed_to && issuer?.chainId)
+                .map(issuer => ({
+                    address: issuer.deployed_to,
+                    chainId: issuer.chainId
+                }));
 
-            console.log(contractAddresses);
-            console.log("Issuer -> Contract Address");
-            const contractsToWatch = Object.values(contractAddresses);
-            console.log("Watching ", contractsToWatch.length, " Contracts");
+            console.log("Watching contracts by chain:");
+            const contractsByChain = contractsToWatch.reduce((acc, contract) => {
+                acc[contract.chainId] = (acc[contract.chainId] || 0) + 1;
+                return acc;
+            }, {});
+            
+            Object.entries(contractsByChain).forEach(([chainId, count]) => {
+                console.log(`Chain ${chainId}: ${count} contracts`);
+            });
+
             startListener(contractsToWatch);
         }
     });
+
     app.on("error", (err) => {
         console.error(err);
         if (err.code === "EADDRINUSE") {

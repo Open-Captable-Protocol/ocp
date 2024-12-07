@@ -7,6 +7,7 @@ const FactorySchema = new mongoose.Schema(
         object_type: { type: String, default: "FACTORY" },
         implementation_address: String,
         factory_address: String,
+        chainId: { type: Number, required: true },
     },
     { timestamps: true }
 );

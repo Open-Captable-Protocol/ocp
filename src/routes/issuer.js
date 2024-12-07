@@ -42,11 +42,16 @@ issuer.get("/total-number", async (req, res) => {
 
 issuer.post("/create", async (req, res) => {
     try {
-        // OCF doesn't allow extra fields in their validation
+        const { chainId, ...issuerData } = req.body;
+        
+        if (!chainId) {
+            return res.status(400).send({ error: "chainId is required" });
+        }
+
         const incomingIssuerToValidate = {
             id: uuid(),
             object_type: "ISSUER",
-            ...req.body,
+            ...issuerData,
         };
 
         console.log("⏳ | Issuer to validate", incomingIssuerToValidate);
@@ -56,14 +61,20 @@ issuer.post("/create", async (req, res) => {
         if (exists && exists._id) {
             return res.status(200).send({ message: "issuer already exists", issuer: exists });
         }
+
         const issuerIdBytes16 = convertUUIDToBytes16(incomingIssuerToValidate.id);
         console.log("💾 | Issuer id in bytes16 ", issuerIdBytes16);
-        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized);
+        const { address, deployHash } = await deployCapTable(
+            issuerIdBytes16, 
+            incomingIssuerToValidate.initial_shares_authorized,
+            chainId
+        );
 
         const incomingIssuerForDB = {
             ...incomingIssuerToValidate,
             deployed_to: address,
             tx_hash: deployHash,
+            chainId,
         };
 
         const issuer = await createIssuer(incomingIssuerForDB);

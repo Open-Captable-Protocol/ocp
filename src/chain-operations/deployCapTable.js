@@ -30,17 +30,19 @@ export const facetsABI = [
 ];
 
 const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
-const provider = getProvider();
-export const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
 
-async function deployCapTable(issuerId, initial_shares_authorized) {
+async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
+    // Get provider for specified chain
+    const provider = getProvider(chainId);
+    const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
     console.log("🗽 | Wallet address: ", wallet.address);
 
-    const factory = await findOne(Factory, { version: "DIAMOND" });
+    // Find factory for this chain
+    const factory = await findOne(Factory, { version: "DIAMOND", chainId });
     const factoryAddress = factory?.factory_address;
 
     if (!factoryAddress) {
-        throw new Error(`❌ | Factory address not found`);
+        throw new Error(`Factory not found for chain ${chainId}`);
     }
     console.log("🏭 | Factory address: ", factoryAddress);
 
@@ -56,8 +58,6 @@ async function deployCapTable(issuerId, initial_shares_authorized) {
 
     const diamondAddress = await capTableFactory.capTables(capTableCount - BigInt(1));
     console.log("✅ | Diamond address: ", diamondAddress);
-
-    // Diamond Facets ABI
 
     return {
         contract: new ethers.Contract(diamondAddress, facetsABI, wallet),
