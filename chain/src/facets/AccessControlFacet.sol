@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 import { Storage, StorageLib } from "@core/Storage.sol";
-import { AccessControlUpgradeable } from "openzeppelin/access/AccessControlUpgradeable.sol";
+import { AccessControlUpgradeable } from
+    "openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 import "forge-std/console.sol";
 
 contract AccessControlFacet is AccessControlUpgradeable {
