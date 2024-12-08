@@ -5,6 +5,7 @@ import "forge-std/Script.sol";
 import "forge-std/console.sol";
 import { CapTableFactory } from "@core/CapTableFactory.sol";
 import { CapTable } from "@core/CapTable.sol";
+import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import { IssuerFacet } from "@facets/IssuerFacet.sol";
 import { DiamondLoupeFacet } from "diamond-3-hardhat/facets/DiamondLoupeFacet.sol";
 import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
@@ -18,7 +19,6 @@ import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
-import { DiamondCutFacet } from "@facets/DiamondCutFacet.sol";
 
 contract DeployFactoryScript is Script {
     // Struct to hold facet deployment info

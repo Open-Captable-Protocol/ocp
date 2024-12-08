@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { LibDiamond } from "@libraries/LibDiamond.sol";
+import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
 import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 
 contract DiamondBase {
