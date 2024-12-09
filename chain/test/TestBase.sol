@@ -20,9 +20,9 @@ import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
-import "../script/DeployFactory.s.sol";
+import { LibDeployment } from "../script/DeployFactory.s.sol";
 
-contract DiamondTestBase is Test, DeployFactoryScript {
+contract DiamondTestBase is Test {
     uint256 public issuerInitialSharesAuthorized = 1_000_000;
     bytes16 public issuerId = 0xd3373e0a4dd9430f8a563281f2800e1e;
     address public contractOwner;
@@ -45,13 +45,12 @@ contract DiamondTestBase is Test, DeployFactoryScript {
 
     function setUp() public virtual {
         contractOwner = address(this);
-        console.log("contractOwner: ", contractOwner);
 
         // Use the deployment script's function
-        referenceDiamond = deployInitialFacets();
+        referenceDiamond = LibDeployment.deployInitialFacets(contractOwner);
 
         // Create factory using reference diamond
-        factory = new CapTableFactory(contractOwner, referenceDiamond);
+        factory = new CapTableFactory(referenceDiamond);
 
         // Create a new cap table for testing
         capTable = CapTable(payable(factory.createCapTable(issuerId, issuerInitialSharesAuthorized)));
