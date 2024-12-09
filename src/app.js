@@ -23,6 +23,7 @@ import ocfRoutes from "./routes/ocf.js";
 import { readAllIssuers, readIssuerById } from "./db/operations/read.js";
 import { contractCache } from "./utils/simple_caches.js";
 import { getContractInstance } from "./chain-operations/getContractInstances.js";
+import { getChainConfig, SUPPORTED_CHAINS } from "./utils/chains.js";
 
 setupEnv();
 Sentry.init({
@@ -35,11 +36,22 @@ Sentry.init({
 const app = express();
 
 const PORT = process.env.PORT;
-const CHAIN = process.env.CHAIN;
 
 // Middlewares
 const chainMiddleware = (req, res, next) => {
-    req.chain = CHAIN;
+    // For issuer creation, expect chainId in the request
+    const chainId = req.body.chain_id;
+    if (!chainId) {
+        return res.status(400).send("chain_id is required for issuer creation");
+    }
+
+    // Validate that this is a supported chain
+    const chainConfig = getChainConfig(Number(chainId));
+    if (!chainConfig) {
+        return res.status(400).send(`Unsupported chain ID: ${chainId}. Supported chains are: ${Object.keys(SUPPORTED_CHAINS).join(", ")}`);
+    }
+
+    req.chain = Number(chainId);
     next();
 };
 
@@ -56,13 +68,14 @@ const contractMiddleware = async (req, res, next) => {
     if (!issuer || !issuer.id) return res.status(404).send("issuer not found ");
 
     // Check if contract instance already exists in cache
-    if (!contractCache[req.body.issuerId]) {
-        const contract = await getContractInstance(issuer.deployed_to);
-        contractCache[req.body.issuerId] = { contract };
+    const cacheKey = `${issuer.chainId}-${req.body.issuerId}`;
+    if (!contractCache[cacheKey]) {
+        const contract = await getContractInstance(issuer.deployed_to, issuer.chainId);
+        contractCache[cacheKey] = { contract };
     }
 
     setTag("issuerId", req.body.issuerId);
-    req.contract = contractCache[req.body.issuerId].contract;
+    req.contract = contractCache[cacheKey].contract;
     next();
 };
 
@@ -101,23 +114,23 @@ const startServer = async () => {
         if (issuers) {
             // Group contracts by chain ID
             const contractsToWatch = issuers
-                .filter(issuer => issuer?.deployed_to && issuer?.chainId)
-                .map(issuer => ({
+                .filter((issuer) => issuer?.deployed_to && issuer?.chain_id)
+                .map((issuer) => ({
                     address: issuer.deployed_to,
-                    chainId: issuer.chainId
+                    chain_id: issuer.chain_id,
                 }));
 
             console.log("Watching contracts by chain:");
             const contractsByChain = contractsToWatch.reduce((acc, contract) => {
-                acc[contract.chainId] = (acc[contract.chainId] || 0) + 1;
+                acc[contract.chain_id] = (acc[contract.chain_id] || 0) + 1;
                 return acc;
             }, {});
-            
+
             Object.entries(contractsByChain).forEach(([chainId, count]) => {
                 console.log(`Chain ${chainId}: ${count} contracts`);
             });
 
-            startListener(contractsToWatch);
+            await startListener(contractsToWatch);
         }
     });
 

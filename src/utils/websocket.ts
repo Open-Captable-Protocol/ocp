@@ -1,7 +1,6 @@
 /* eslint-disable no-case-declarations */
 
 import { Log, AbiCoder, Block, ethers } from "ethers";
-import { Provider } from "ethers/src.ts/providers";
 import getProvider from "../chain-operations/getProvider";
 import get from "lodash/get.js";
 import { handleStockPlan, txMapper, txTypes } from "../chain-operations/transactionHandlers";
@@ -20,14 +19,14 @@ const TOPICS = {
 const abiCoder = new AbiCoder();
 
 // Create a map to store providers and their active listeners
-const providers = new Map<number, Provider>();
+const providers = new Map<number, ethers.Provider>();
 const activeListeners = new Map<number, boolean>();
 const watchedAddressesByChain = new Map<number, Set<string>>();
 
 // Function to get or create provider for a chain
-const getChainProvider = (chainId: number): Provider => {
+const getChainProvider = (chainId: number): ethers.Provider => {
     if (!providers.has(chainId)) {
-        providers.set(chainId, getProvider(chainId) as Provider);
+        providers.set(chainId, getProvider(chainId) as ethers.Provider);
     }
     return providers.get(chainId)!;
 };
@@ -35,14 +34,14 @@ const getChainProvider = (chainId: number): Provider => {
 // Function to add new addresses to watch for a specific chain
 export const addAddressesToWatch = async (addresses: string | string[], chainId: number) => {
     const addressArray = Array.isArray(addresses) ? addresses : [addresses];
-    
+
     if (!watchedAddressesByChain.has(chainId)) {
         watchedAddressesByChain.set(chainId, new Set());
     }
-    
+
     const chainAddresses = watchedAddressesByChain.get(chainId)!;
     addressArray.forEach((address) => chainAddresses.add(address.toLowerCase()));
-    
+
     // Only update filter if we don't have an active listener for this chain
     if (!activeListeners.get(chainId)) {
         await setupChainListener(chainId);
@@ -53,7 +52,7 @@ export const addAddressesToWatch = async (addresses: string | string[], chainId:
 const setupChainListener = async (chainId: number) => {
     const provider = getChainProvider(chainId);
     const addresses = Array.from(watchedAddressesByChain.get(chainId) || []);
-    
+
     if (addresses.length > 0) {
         // Remove any existing listener for this chain
         if (activeListeners.get(chainId)) {
@@ -61,15 +60,18 @@ const setupChainListener = async (chainId: number) => {
         }
 
         // Set up new listener
-        await provider.on({
-            address: addresses,
-            topics: [Object.values(TOPICS)]
-        }, async (log: Log) => {
-            const block = await provider.getBlock(log.blockNumber!);
-            if (block) {
-                handleEventType(log, block, log.address, chainId);
+        await provider.on(
+            {
+                address: addresses,
+                topics: [Object.values(TOPICS)],
+            },
+            async (log: Log) => {
+                const block = await provider.getBlock(log.blockNumber!);
+                if (block) {
+                    handleEventType(log, block, log.address);
+                }
             }
-        });
+        );
 
         activeListeners.set(chainId, true);
         console.log(` Chain ${chainId}: Listening to ${addresses.length} contracts`);
@@ -77,11 +79,11 @@ const setupChainListener = async (chainId: number) => {
 };
 
 // Function to start listening for all chains
-export const startListener = async (contracts: { address: string, chainId: number }[]) => {
+export const startListener = async (contracts: { address: string; chain_id: number }[]) => {
     // Group contracts by chain
-    const contractsByChain = contracts.reduce((acc, { address, chainId }) => {
-        if (!acc[chainId]) acc[chainId] = [];
-        acc[chainId].push(address);
+    const contractsByChain = contracts.reduce((acc, { address, chain_id }) => {
+        if (!acc[chain_id]) acc[chain_id] = [];
+        acc[chain_id].push(address);
         return acc;
     }, {} as Record<number, string[]>);
 
@@ -92,17 +94,15 @@ export const startListener = async (contracts: { address: string, chainId: numbe
         if (!watchedAddressesByChain.has(numericChainId)) {
             watchedAddressesByChain.set(numericChainId, new Set());
         }
-        addresses.forEach(addr => 
-            watchedAddressesByChain.get(numericChainId)!.add(addr.toLowerCase())
-        );
-        
+        addresses.forEach((addr) => watchedAddressesByChain.get(numericChainId)!.add(addr.toLowerCase()));
+
         // Setup single listener for this chain
         await setupChainListener(numericChainId);
     }
 };
 
 // Update handleEventType to include chainId
-const handleEventType = async (log: Log, block: Block, deployed_to: string, chainId: number) => {
+const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
     const topic = get(log, "topics.0", null);
     console.log(" | Handling event type", topic);
     switch (topic) {
