@@ -79,11 +79,11 @@ const setupChainListener = async (chainId: number) => {
 };
 
 // Function to start listening for all chains
-export const startListener = async (contracts: { address: string; chainId: number }[]) => {
+export const startListener = async (contracts: { address: string; chain_id: number }[]) => {
     // Group contracts by chain
-    const contractsByChain = contracts.reduce((acc, { address, chainId }) => {
-        if (!acc[chainId]) acc[chainId] = [];
-        acc[chainId].push(address);
+    const contractsByChain = contracts.reduce((acc, { address, chain_id }) => {
+        if (!acc[chain_id]) acc[chain_id] = [];
+        acc[chain_id].push(address);
         return acc;
     }, {} as Record<number, string[]>);
 

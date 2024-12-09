@@ -114,15 +114,15 @@ const startServer = async () => {
         if (issuers) {
             // Group contracts by chain ID
             const contractsToWatch = issuers
-                .filter((issuer) => issuer?.deployed_to && issuer?.chainId)
+                .filter((issuer) => issuer?.deployed_to && issuer?.chain_id)
                 .map((issuer) => ({
                     address: issuer.deployed_to,
-                    chainId: issuer.chainId,
+                    chain_id: issuer.chain_id,
                 }));
 
             console.log("Watching contracts by chain:");
             const contractsByChain = contractsToWatch.reduce((acc, contract) => {
-                acc[contract.chainId] = (acc[contract.chainId] || 0) + 1;
+                acc[contract.chain_id] = (acc[contract.chain_id] || 0) + 1;
                 return acc;
             }, {});
 
