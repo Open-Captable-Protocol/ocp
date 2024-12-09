@@ -40,18 +40,18 @@ const PORT = process.env.PORT;
 // Middlewares
 const chainMiddleware = (req, res, next) => {
     // For issuer creation, expect chainId in the request
-    const chainId = req.body.chainId;
+    const chainId = req.body.chain_id;
     if (!chainId) {
-        return res.status(400).send("chainId is required for issuer creation");
+        return res.status(400).send("chain_id is required for issuer creation");
     }
 
     // Validate that this is a supported chain
-    const chainConfig = getChainConfig(chainId);
+    const chainConfig = getChainConfig(Number(chainId));
     if (!chainConfig) {
         return res.status(400).send(`Unsupported chain ID: ${chainId}. Supported chains are: ${Object.keys(SUPPORTED_CHAINS).join(", ")}`);
     }
 
-    req.chain = chainId;
+    req.chain = Number(chainId);
     next();
 };
 

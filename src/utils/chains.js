@@ -18,12 +18,6 @@ export const SUPPORTED_CHAINS = {
         rpcUrl: "http://localhost:8545",
         wsUrl: "ws://localhost:8545",
     },
-    31338: {
-        // Anvil
-        name: "Anvil2",
-        rpcUrl: "http://localhost:8546",
-        wsUrl: "ws://localhost:8546",
-    },
 };
 
 // Get chain configuration
