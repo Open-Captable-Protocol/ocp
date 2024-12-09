@@ -10,8 +10,9 @@ import {
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
+import { IEquityCompensationFacet } from "@interfaces/IEquityCompensationFacet.sol";
 
-contract EquityCompensationFacet {
+contract EquityCompensationFacet is IEquityCompensationFacet {
     /// @notice Issue equity compensation to a stakeholder
     /// @dev Only OPERATOR_ROLE can issue equity compensation
     function issueEquityCompensation(IssueEquityCompensationParams calldata params) external {
