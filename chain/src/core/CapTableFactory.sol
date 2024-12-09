@@ -16,42 +16,33 @@ import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
-import "forge-std/console.sol";
+import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
 
-contract CapTableFactory {
+contract CapTableFactory is Ownable {
     event CapTableCreated(address indexed capTable, bytes16 indexed issuerId);
-
-    address public newAdmin; // new admin to transfer ownership to
 
     address[] public capTables;
 
     // Reference diamond to copy facets from
     address public immutable referenceDiamond;
 
-    constructor(address _newAdmin, address _referenceDiamond) {
-        require(_newAdmin != address(0), "Invalid new admin");
+    constructor(address _referenceDiamond) {
         require(_referenceDiamond != address(0), "Invalid referenceDiamond");
         referenceDiamond = _referenceDiamond;
-        newAdmin = _newAdmin;
     }
 
     function createCapTable(bytes16 id, uint256 initialSharesAuthorized) external returns (address) {
         require(id != bytes16(0) && initialSharesAuthorized != 0, "Invalid issuer params");
 
-        console.log("createCapTable");
-        console.log("msg.sender: ", msg.sender);
-        console.log("address(this): ", address(this));
-
         // Deploy new DiamondCutFacet
         DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
 
-        // Make the factory the owner
-        CapTable diamond = new CapTable(address(diamondCutFacet));
+        // Create CapTable with factory as initial owner
+        CapTable diamond = new CapTable(address(this), address(diamondCutFacet));
 
         // Get facet information from reference diamond
         IDiamondLoupe loupe = IDiamondLoupe(referenceDiamond);
         IDiamondLoupe.Facet[] memory existingFacets = loupe.facets();
-        console.log("Reference diamond facets:", existingFacets.length);
 
         // Count valid facets (excluding DiamondCut)
         uint256 validFacetCount = 0;
@@ -81,43 +72,31 @@ contract CapTableFactory {
         }
 
         // Perform the cuts
-        console.log("Performing cuts with", validFacetCount, "facets");
         DiamondCutFacet(address(diamond)).diamondCut(cuts, address(0), "");
 
-        console.log("Starting access control initialization");
         // Initialize access control first - this makes the factory the admin
         AccessControlFacet(address(diamond)).initializeAccessControl();
 
-        // Since factory is now admin, it can grant roles to newAdmin and diamond
-        // console.log("Granting newAdmin DEFAULT_ADMIN_ROLE");
-        // console.log("newAdmin: ", newAdmin);
+        // Grant the diamond the OPERATOR_ROLE - Necessary for the NFT facet to work
         AccessControlFacet(address(diamond)).grantRole(AccessControl.OPERATOR_ROLE, address(diamond));
 
         // Initialize the issuer
-        console.log("Initializing issuer");
         IssuerFacet(address(diamond)).initializeIssuer(id, initialSharesAuthorized);
 
         // Store the new cap table
         capTables.push(address(diamond));
 
         emit CapTableCreated(address(diamond), id);
-        console.log("newAdmin: ", newAdmin);
-        console.log("msg.sender: ", msg.sender);
-        console.log("address(this): ", address(this));
 
-        // Only transfer admin if newAdmin is not the same as msg.sender
-        AccessControlFacet(address(diamond)).transferAdmin(newAdmin);
+        // Transfer Diamond ownership to msg.sender
+        CapTable(payable(diamond)).transferOwner(msg.sender);
+        // Transfer AccessControlFacet admin to msg.sender
+        AccessControlFacet(address(diamond)).transferAdmin(msg.sender);
+
         return address(diamond);
     }
 
     function getCapTableCount() external view returns (uint256) {
         return capTables.length;
-    }
-
-    // Only factory admin can change the new admin address
-    function setNewAdmin(address _newAdmin) external {
-        require(_newAdmin != address(0), "Invalid new admin");
-        // Add access control if needed
-        newAdmin = _newAdmin;
     }
 }
