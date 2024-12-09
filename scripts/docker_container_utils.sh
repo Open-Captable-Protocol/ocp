@@ -10,11 +10,19 @@ check_health() {
 
 # Function to get available port
 get_port() {
-    if lsof -Pi :8081 -sTCP:LISTEN -t >/dev/null; then
-        echo "8082"
-    else
-        echo "8081"
+    local port=8081
+    # Check both Docker containers and system processes
+    if docker ps -q --filter "publish=$port" >/dev/null || \
+       sudo lsof -Pi :$port -sTCP:LISTEN -t >/dev/null; then
+        port=8082
+        # Double check the alternative port too
+        if docker ps -q --filter "publish=$port" >/dev/null || \
+           sudo lsof -Pi :$port -sTCP:LISTEN -t >/dev/null; then
+            echo "Both ports are in use!" >&2
+            return 1
+        fi
     fi
+    echo "$port"
 }
 
 # Function to wait for container to be healthy
