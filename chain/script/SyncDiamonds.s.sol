@@ -10,6 +10,7 @@ import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { CapTable } from "@core/CapTable.sol";
 
 library LibSyncDiamonds {
+    // After updating or creating a new facet, we need to ensure deployed instances are updated
     function syncDiamond(address targetDiamond, address referenceDiamond) internal {
         // Get current owner
         IDiamondLoupe loupe = IDiamondLoupe(referenceDiamond);
