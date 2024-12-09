@@ -7,9 +7,11 @@ import { CapTableFactory } from "@core/CapTableFactory.sol";
 import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
+import { CapTable } from "@core/CapTable.sol";
 
-contract SyncDiamondsScript is Script {
-    function syncDiamond(address targetDiamond, address referenceDiamond) public {
+library LibSyncDiamonds {
+    function syncDiamond(address targetDiamond, address referenceDiamond) internal {
+        // Get current owner
         IDiamondLoupe loupe = IDiamondLoupe(referenceDiamond);
         IDiamondLoupe targetLoupe = IDiamondLoupe(targetDiamond);
 
@@ -75,7 +77,9 @@ contract SyncDiamondsScript is Script {
             }
         }
     }
+}
 
+contract SyncDiamondsScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address referenceDiamond = vm.envAddress("REFERENCE_DIAMOND");
@@ -90,7 +94,7 @@ contract SyncDiamondsScript is Script {
         // Sync each cap table
         for (uint256 i = 0; i < count; i++) {
             address capTable = capTableFactory.capTables(i);
-            syncDiamond(capTable, referenceDiamond);
+            LibSyncDiamonds.syncDiamond(capTable, referenceDiamond);
             console.log("Synced cap table:", capTable);
         }
 
