@@ -20,21 +20,15 @@ import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 
-contract DeployFactoryScript is Script {
-    // Struct to hold facet deployment info
+library LibDeployment {
     struct FacetDeployment {
         address facetAddress;
         bytes4[] selectors;
     }
 
-    // Struct to organize facet cut data
-    struct FacetCutData {
-        string name; // For logging/debugging
-        address facetAddress;
-        bytes4[] selectors;
-    }
-
-    function deployInitialFacets() internal returns (address) {
+    function deployInitialFacets(address owner) public returns (address) {
+        console.log("\n\nDeploying facets...");
+        console.log("address(this): ", address(this));
         // Deploy all facets
         console.log("Deploying facets...");
         FacetDeployment[] memory deployments = new FacetDeployment[](11);
@@ -108,7 +102,7 @@ contract DeployFactoryScript is Script {
         deployments[10].selectors[7] = AccessControlFacet.getPendingAdmin.selector;
 
         // Create reference diamond
-        CapTable referenceDiamond = new CapTable(address(new DiamondCutFacet()));
+        CapTable referenceDiamond = new CapTable(owner, address(new DiamondCutFacet()));
 
         // Convert deployments to cuts
         IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](deployments.length);
@@ -122,8 +116,23 @@ contract DeployFactoryScript is Script {
 
         // Perform the cuts
         DiamondCutFacet(address(referenceDiamond)).diamondCut(cuts, address(0), "");
-
+        console.log("Cuts completed for reference diamond at:", address(referenceDiamond));
         return address(referenceDiamond);
+    }
+}
+
+contract DeployFactoryScript is Script {
+    // Struct to hold facet deployment info
+    struct FacetDeployment {
+        address facetAddress;
+        bytes4[] selectors;
+    }
+
+    // Struct to organize facet cut data
+    struct FacetCutData {
+        string name; // For logging/debugging
+        address facetAddress;
+        bytes4[] selectors;
     }
 
     function run() external {
@@ -131,15 +140,16 @@ contract DeployFactoryScript is Script {
         if (deployerPrivateKey == 0) {
             revert("Missing PRIVATE_KEY in .env");
         }
-        vm.startBroadcast(deployerPrivateKey);
+        address deployerWallet = vm.addr(deployerPrivateKey);
+
+        vm.startBroadcast(deployerWallet);
 
         // Try to get addresses from env
         address referenceDiamond = vm.envOr("REFERENCE_DIAMOND", address(0));
-        address deployer = vm.addr(deployerPrivateKey);
 
         // Deploy new facets if addresses not in env
         if (referenceDiamond == address(0)) {
-            referenceDiamond = deployInitialFacets();
+            referenceDiamond = LibDeployment.deployInitialFacets(deployerWallet);
         }
 
         console.log("------- New Facet Addresses (Add to .env) -------");
@@ -147,7 +157,7 @@ contract DeployFactoryScript is Script {
         console.log("-------------------------------------------------");
 
         // Deploy factory with facet addresses
-        CapTableFactory factory = new CapTableFactory(deployer, referenceDiamond);
+        CapTableFactory factory = new CapTableFactory(referenceDiamond);
 
         address capTable = factory.createCapTable(bytes16("TEST"), 1_000_000);
         console.log("\nCapTableFactory deployed at:", address(factory));
@@ -171,7 +181,7 @@ contract DeployFactoryScript is Script {
         address deployer = vm.addr(deployerPrivateKey);
         console.log("Deploying DiamondCapTable system to Base Sepolia");
 
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast(deployer);
 
         // Try to get addresses from env
         address referenceDiamond = vm.envOr("REFERENCE_DIAMOND", address(0));
@@ -181,7 +191,7 @@ contract DeployFactoryScript is Script {
             revert("Missing REFERENCE_DIAMOND in .env");
         }
         // Deploy factory with facet addresses
-        CapTableFactory factory = new CapTableFactory(deployer, referenceDiamond);
+        CapTableFactory factory = new CapTableFactory(referenceDiamond);
 
         console.log("\nCapTableFactory deployed at:", address(factory));
 
