@@ -7,9 +7,9 @@ import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
 
-contract ManageFacetScript is Script {
-    function addFacet(address diamond, address newFacet, bytes4[] memory selectors) public {
-        // Create the cut struct
+library LibManageFacets {
+    function addFacet(address diamond, address newFacet, bytes4[] memory selectors) internal {
+        console.log("\nAdding facet...");
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
         cut[0] = IDiamondCut.FacetCut({
             facetAddress: newFacet,
@@ -48,7 +48,9 @@ contract ManageFacetScript is Script {
         // Perform the cut
         DiamondCutFacet(diamond).diamondCut(cut, address(0), "");
     }
+}
 
+contract ManageFacetScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address referenceDiamond = vm.envAddress("REFERENCE_DIAMOND");
@@ -65,7 +67,7 @@ contract ManageFacetScript is Script {
         // NewFacet newFacet = new NewFacet();
         // bytes4[] memory selectors = new bytes4[](1);
         // selectors[0] = NewFacet.newFunction.selector;
-        // addFacet(referenceDiamond, address(newFacet), selectors);
+        // LibManageFacets.addFacet(referenceDiamond, address(newFacet), selectors);
 
         vm.stopBroadcast();
     }

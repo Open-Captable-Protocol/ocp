@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 import fs from "fs";
 import pathTools from "path";
+import get from "lodash/get";
 
 const splitPath = (path) => {
     /* 
@@ -38,9 +39,18 @@ export const setupEnv = () => {
     if (_ALREADY_SETUP) {
         return;
     }
+
+    // If we're in a Docker environment, skip file loading
+    if (get(process, "env.DOCKER_ENV", false)) {
+        console.log("Using runtime environment variables");
+        _ALREADY_SETUP = true;
+        return;
+    }
+
+    // Fall back to .env file for local development
     const fileName = process.env.USE_ENV_FILE || ".env";
     const path = getEnvFile(fileName);
-    console.log("setupEnv with:", path);
+    console.log("Loading from env file:", path);
     config({ path });
     _ALREADY_SETUP = true;
 };

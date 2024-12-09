@@ -6,6 +6,7 @@ import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { StakeholderPositions } from "@libraries/Structs.sol";
+import { IssueStockParams } from "@libraries/Structs.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 
 contract DiamondStakeholderNFTTest is DiamondTestBase {
@@ -29,16 +30,17 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         // Create a stock class and issue some stock for the NFT metadata
         bytes16 stockClassId = createStockClass();
         bytes16 stockSecurityId = 0xd3373e0a4dd940000000000000000001;
-        StockFacet(address(capTable)).issueStock(
-            stockClassId,
-            1e18,
-            1000,
-            stakeholderId,
-            stockSecurityId,
-            "custom_id", // custom_id
-            "stock_legend_ids_mapping", // stock_legend_ids_mapping
-            "security_law_exemptions_mapping" // security_law_exemptions_mapping
-        );
+        IssueStockParams memory params = IssueStockParams({
+            stock_class_id: stockClassId,
+            share_price: 1e18,
+            quantity: 1000,
+            stakeholder_id: stakeholderId,
+            security_id: stockSecurityId,
+            custom_id: "custom_id",
+            stock_legend_ids_mapping: "stock_legend_ids_mapping",
+            security_law_exemptions_mapping: "security_law_exemptions_mapping"
+        });
+        StockFacet(address(capTable)).issueStock(params);
     }
 
     function testLinkStakeholderAddress() public {
