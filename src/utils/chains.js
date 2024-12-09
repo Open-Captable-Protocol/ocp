@@ -1,20 +1,23 @@
 // Chain configuration for supported networks
 export const SUPPORTED_CHAINS = {
-    8453: {  // Base Mainnet
-        name: 'Base Mainnet',
+    8453: {
+        // Base Mainnet
+        name: "Base Mainnet",
         rpcUrl: process.env.BASE_RPC_URL,
         wsUrl: process.env.BASE_WS_URL,
     },
-    84532: {  // Base Sepolia
-        name: 'Base Sepolia',
+    84532: {
+        // Base Sepolia
+        name: "Base Sepolia",
         rpcUrl: process.env.BASE_SEPOLIA_RPC_URL,
         wsUrl: process.env.BASE_SEPOLIA_WS_URL,
     },
-    31337: {  // Anvil
-        name: 'Anvil',
-        rpcUrl: 'http://localhost:8545',
-        wsUrl: 'ws://localhost:8545',
-    }
+    31337: {
+        // Anvil
+        name: "Anvil",
+        rpcUrl: "http://localhost:8545",
+        wsUrl: "ws://localhost:8545",
+    },
 };
 
 // Get chain configuration

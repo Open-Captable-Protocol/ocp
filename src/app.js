@@ -23,8 +23,7 @@ import ocfRoutes from "./routes/ocf.js";
 import { readAllIssuers, readIssuerById } from "./db/operations/read.js";
 import { contractCache } from "./utils/simple_caches.js";
 import { getContractInstance } from "./chain-operations/getContractInstances.js";
-import { getChainConfig } from "./chain-operations/getChainConfig.js";
-import { SUPPORTED_CHAINS } from "./chain-operations/constants.js";
+import { getChainConfig, SUPPORTED_CHAINS } from "./utils/chains.js";
 
 setupEnv();
 Sentry.init({
@@ -49,7 +48,7 @@ const chainMiddleware = (req, res, next) => {
     // Validate that this is a supported chain
     const chainConfig = getChainConfig(chainId);
     if (!chainConfig) {
-        return res.status(400).send(`Unsupported chain ID: ${chainId}. Supported chains are: ${Object.keys(SUPPORTED_CHAINS).join(', ')}`);
+        return res.status(400).send(`Unsupported chain ID: ${chainId}. Supported chains are: ${Object.keys(SUPPORTED_CHAINS).join(", ")}`);
     }
 
     req.chain = chainId;
@@ -115,10 +114,10 @@ const startServer = async () => {
         if (issuers) {
             // Group contracts by chain ID
             const contractsToWatch = issuers
-                .filter(issuer => issuer?.deployed_to && issuer?.chainId)
-                .map(issuer => ({
+                .filter((issuer) => issuer?.deployed_to && issuer?.chainId)
+                .map((issuer) => ({
                     address: issuer.deployed_to,
-                    chainId: issuer.chainId
+                    chainId: issuer.chainId,
                 }));
 
             console.log("Watching contracts by chain:");
@@ -126,12 +125,12 @@ const startServer = async () => {
                 acc[contract.chainId] = (acc[contract.chainId] || 0) + 1;
                 return acc;
             }, {});
-            
+
             Object.entries(contractsByChain).forEach(([chainId, count]) => {
                 console.log(`Chain ${chainId}: ${count} contracts`);
             });
 
-            startListener(contractsToWatch);
+            await startListener(contractsToWatch);
         }
     });
 

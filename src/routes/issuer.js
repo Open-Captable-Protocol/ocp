@@ -43,7 +43,7 @@ issuer.get("/total-number", async (req, res) => {
 issuer.post("/create", async (req, res) => {
     try {
         const { chainId, ...issuerData } = req.body;
-        
+
         if (!chainId) {
             return res.status(400).send({ error: "chainId is required" });
         }
@@ -64,11 +64,7 @@ issuer.post("/create", async (req, res) => {
 
         const issuerIdBytes16 = convertUUIDToBytes16(incomingIssuerToValidate.id);
         console.log("💾 | Issuer id in bytes16 ", issuerIdBytes16);
-        const { address, deployHash } = await deployCapTable(
-            issuerIdBytes16, 
-            incomingIssuerToValidate.initial_shares_authorized,
-            chainId
-        );
+        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized, chainId);
 
         const incomingIssuerForDB = {
             ...incomingIssuerToValidate,

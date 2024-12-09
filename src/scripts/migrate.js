@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
 import { readIssuerById, getAllStateMachineObjectsById } from "../db/operations/read.js";
 import { updateIssuerById } from "../db/operations/update.js";
-import deployCapTable, { facetsABI, wallet } from "../chain-operations/deployCapTable.js";
+import deployCapTable, { facetsABI } from "../chain-operations/deployCapTable.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import { convertAndReflectStockClassOnchain } from "../controllers/stockClassController.js";
 import { convertAndReflectStakeholderOnchain } from "../controllers/stakeholderController.js";
@@ -22,6 +22,8 @@ import { connectDB } from "../db/config/mongoose.ts";
 import fs from "fs";
 import path from "path";
 import { validateIssuerForMigration } from "./validate.js";
+
+const wallet = {}; // TODO: fix
 
 // Load environment variables
 dotenv.config();
