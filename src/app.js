@@ -23,6 +23,8 @@ import ocfRoutes from "./routes/ocf.js";
 import { readAllIssuers, readIssuerById } from "./db/operations/read.js";
 import { contractCache } from "./utils/simple_caches.js";
 import { getContractInstance } from "./chain-operations/getContractInstances.js";
+import { getChainConfig } from "./chain-operations/getChainConfig.js";
+import { SUPPORTED_CHAINS } from "./chain-operations/constants.js";
 
 setupEnv();
 Sentry.init({
@@ -35,11 +37,22 @@ Sentry.init({
 const app = express();
 
 const PORT = process.env.PORT;
-const CHAIN = process.env.CHAIN;
 
 // Middlewares
 const chainMiddleware = (req, res, next) => {
-    req.chain = CHAIN;
+    // For issuer creation, expect chainId in the request
+    const chainId = req.body.chainId;
+    if (!chainId) {
+        return res.status(400).send("chainId is required for issuer creation");
+    }
+
+    // Validate that this is a supported chain
+    const chainConfig = getChainConfig(chainId);
+    if (!chainConfig) {
+        return res.status(400).send(`Unsupported chain ID: ${chainId}. Supported chains are: ${Object.keys(SUPPORTED_CHAINS).join(', ')}`);
+    }
+
+    req.chain = chainId;
     next();
 };
 
@@ -56,13 +69,14 @@ const contractMiddleware = async (req, res, next) => {
     if (!issuer || !issuer.id) return res.status(404).send("issuer not found ");
 
     // Check if contract instance already exists in cache
-    if (!contractCache[req.body.issuerId]) {
-        const contract = await getContractInstance(issuer.deployed_to);
-        contractCache[req.body.issuerId] = { contract };
+    const cacheKey = `${issuer.chainId}-${req.body.issuerId}`;
+    if (!contractCache[cacheKey]) {
+        const contract = await getContractInstance(issuer.deployed_to, issuer.chainId);
+        contractCache[cacheKey] = { contract };
     }
 
     setTag("issuerId", req.body.issuerId);
-    req.contract = contractCache[req.body.issuerId].contract;
+    req.contract = contractCache[cacheKey].contract;
     next();
 };
 
