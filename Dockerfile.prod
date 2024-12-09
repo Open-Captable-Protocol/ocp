@@ -4,12 +4,12 @@ FROM node:18
 # Set the working directory
 WORKDIR /app
 
-# COPY ./chain/out ./chain/out
-COPY . .
-
-# Install dependencies and setup
+# Copy package files first to leverage Docker cache
+COPY package.json yarn.lock ./
 RUN yarn install
 
+# Then copy the rest of the files
+COPY . .
+
 EXPOSE 8080
-# Specify the command to run on container start
 CMD ["yarn", "prod"]

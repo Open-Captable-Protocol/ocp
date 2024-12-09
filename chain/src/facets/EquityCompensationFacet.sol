@@ -2,7 +2,11 @@
 pragma solidity ^0.8.0;
 
 import { StorageLib, Storage } from "@core/Storage.sol";
-import { EquityCompensationActivePosition, StockActivePosition } from "@libraries/Structs.sol";
+import {
+    EquityCompensationActivePosition,
+    StockActivePosition,
+    IssueEquityCompensationParams
+} from "@libraries/Structs.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
@@ -10,62 +14,34 @@ import { AccessControl } from "@libraries/AccessControl.sol";
 contract EquityCompensationFacet {
     /// @notice Issue equity compensation to a stakeholder
     /// @dev Only OPERATOR_ROLE can issue equity compensation
-    function issueEquityCompensation(
-        bytes16 stakeholder_id,
-        bytes16 stock_class_id,
-        bytes16 stock_plan_id,
-        uint256 quantity,
-        bytes16 security_id,
-        string calldata compensation_type,
-        uint256 exercise_price,
-        uint256 base_price,
-        string calldata expiration_date,
-        string calldata custom_id,
-        string calldata termination_exercise_windows_mapping,
-        string calldata security_law_exemptions_mapping
-    )
-        external
-    {
+    function issueEquityCompensation(IssueEquityCompensationParams calldata params) external {
         Storage storage ds = StorageLib.get();
 
         if (!AccessControl.hasOperatorRole(msg.sender)) {
             revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.OPERATOR_ROLE);
         }
 
-        ValidationLib.validateStakeholder(stakeholder_id);
-        ValidationLib.validateStockClass(stock_class_id);
-        ValidationLib.validateQuantity(quantity);
+        ValidationLib.validateStakeholder(params.stakeholder_id);
+        ValidationLib.validateStockClass(params.stock_class_id);
+        ValidationLib.validateQuantity(params.quantity);
 
         // Create and store position
-        ds.equityCompensationActivePositions.securities[security_id] = EquityCompensationActivePosition({
-            stakeholder_id: stakeholder_id,
-            quantity: quantity,
+        ds.equityCompensationActivePositions.securities[params.security_id] = EquityCompensationActivePosition({
+            stakeholder_id: params.stakeholder_id,
+            quantity: params.quantity,
             timestamp: uint40(block.timestamp),
-            stock_class_id: stock_class_id,
-            stock_plan_id: stock_plan_id
+            stock_class_id: params.stock_class_id,
+            stock_plan_id: params.stock_plan_id
         });
 
         // Track security IDs for this stakeholder
-        ds.equityCompensationActivePositions.stakeholderToSecurities[stakeholder_id].push(security_id);
+        ds.equityCompensationActivePositions.stakeholderToSecurities[params.stakeholder_id].push(params.security_id);
 
         // Add reverse mapping
-        ds.equityCompensationActivePositions.securityToStakeholder[security_id] = stakeholder_id;
+        ds.equityCompensationActivePositions.securityToStakeholder[params.security_id] = params.stakeholder_id;
 
         // Store transaction
-        bytes memory txData = abi.encode(
-            stakeholder_id,
-            stock_class_id,
-            stock_plan_id,
-            quantity,
-            security_id,
-            compensation_type,
-            exercise_price,
-            base_price,
-            expiration_date,
-            custom_id,
-            termination_exercise_windows_mapping,
-            security_law_exemptions_mapping
-        );
+        bytes memory txData = abi.encode(params);
         TxHelper.createTx(TxType.EQUITY_COMPENSATION_ISSUANCE, txData);
     }
 
