@@ -14,8 +14,7 @@ import STAKEHOLDER_NFT_FACET from "../../chain/out/StakeholderNFTFacet.sol/Stake
 
 setupEnv();
 
-const provider = getProvider();
-export const getContractInstance = (address) => {
+export const getContractInstance = (address, chainId) => {
     const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
     // Create a combined ABI from all facets
     const combinedABI = [
@@ -31,6 +30,7 @@ export const getContractInstance = (address) => {
         ...STAKEHOLDER_NFT_FACET.abi,
     ];
 
+    const provider = getProvider(chainId);
     const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
     const contract = new ethers.Contract(address, combinedABI, wallet);
 
