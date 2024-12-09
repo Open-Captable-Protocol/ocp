@@ -107,12 +107,9 @@ jobs:
                       # Start new container
                       echo 'Starting new container...' && \
                       CONTAINER_NAME=ocp-dev-${DEPLOY_TIME} && \
-                      NEW_PORT=\$(get_port)
-                      echo \"Using port: \$NEW_PORT\" && \
 
                       # Run container
                       docker run --name \$CONTAINER_NAME -d \
-                      -p \${NEW_PORT}:8080 \
                       --health-cmd='curl -f http://localhost:8080/health || exit 1' \
                       --health-interval='2s' \
                       --health-retries='3' \
