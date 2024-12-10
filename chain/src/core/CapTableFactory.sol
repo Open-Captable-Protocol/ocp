@@ -9,6 +9,7 @@ import { IssuerFacet } from "@facets/IssuerFacet.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 import { Ownable } from "openzeppelin-contracts/contracts/access/Ownable.sol";
+import { DiamondLoupeFacet } from "diamond-3-hardhat/facets/DiamondLoupeFacet.sol";
 
 contract CapTableFactory is Ownable {
     event CapTableCreated(address indexed capTable, bytes16 indexed issuerId);
@@ -26,14 +27,14 @@ contract CapTableFactory is Ownable {
     function createCapTable(bytes16 id, uint256 initialSharesAuthorized) external onlyOwner returns (address) {
         require(id != bytes16(0) && initialSharesAuthorized != 0, "Invalid issuer params");
 
-        // Deploy new DiamondCutFacet
-        DiamondCutFacet diamondCutFacet = new DiamondCutFacet();
+        // Get DiamondCutFacet address from reference diamond using loupe
+        DiamondLoupeFacet loupe = DiamondLoupeFacet(referenceDiamond);
+        address diamondCutFacet = loupe.facetAddress(IDiamondCut.diamondCut.selector);
 
         // Create CapTable with factory as initial owner
-        CapTable diamond = new CapTable(address(this), address(diamondCutFacet));
+        CapTable diamond = new CapTable(address(this), diamondCutFacet);
 
         // Get facet information from reference diamond
-        IDiamondLoupe loupe = IDiamondLoupe(referenceDiamond);
         IDiamondLoupe.Facet[] memory existingFacets = loupe.facets();
 
         // Count valid facets (excluding DiamondCut)
