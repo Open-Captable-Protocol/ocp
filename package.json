@@ -8,7 +8,6 @@
   "type": "module",
   "scripts": {
     "validate": "npx tsx src/scripts/main.js",
-    "fix": "npx tsx src/scripts/fix.js",
     "migrate": "npx tsx src/scripts/migrate.js",
     "start": "npx tsx src/app.js",
     "dev": "npx tsx watch src/app.js",
