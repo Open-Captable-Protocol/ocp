@@ -9,12 +9,13 @@ import WARRANT_FACET from "../../chain/out/WarrantFacet.sol/WarrantFacet.json";
 import EQUITY_COMPENSATION_FACET from "../../chain/out/EquityCompensationFacet.sol/EquityCompensationFacet.json";
 import STOCK_PLAN_FACET from "../../chain/out/StockPlanFacet.sol/StockPlanFacet.json";
 import STAKEHOLDER_NFT_FACET from "../../chain/out/StakeholderNFTFacet.sol/StakeholderNFTFacet.json";
+import ACCESS_CONTROL_FACET from "../../chain/out/AccessControlFacet.sol/AccessControlFacet.json";
 import { toScaledBigNumber } from "../utils/convertToFixedPointDecimals.js";
 import { setupEnv } from "../utils/env.js";
 import getProvider from "./getProvider.js";
 import { findOne } from "../db/operations/atomic";
 import Factory from "../db/objects/Factory.js";
-import { assert } from "node:assert";
+import assert from "node:assert";
 
 setupEnv();
 
@@ -28,6 +29,7 @@ export const facetsABI = [
     ...WARRANT_FACET.abi,
     ...EQUITY_COMPENSATION_FACET.abi,
     ...STAKEHOLDER_NFT_FACET.abi,
+    ...ACCESS_CONTROL_FACET.abi,
 ];
 
 const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -46,7 +48,7 @@ async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
     console.log("🗽 | Wallet address: ", wallet.address);
 
     // Find factory for this chain
-    const factory = await findOne(Factory, { version: "DIAMOND", chainId });
+    const factory = await findOne(Factory, { version: "DIAMOND", chain_id: chainId });
     const factoryAddress = factory?.factory_address;
 
     if (!factoryAddress) {
