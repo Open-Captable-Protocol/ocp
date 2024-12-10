@@ -27,6 +27,7 @@ forge remappings > remappings.txt || exit 1
 echo '@facets/=src/facets/' >> remappings.txt
 echo '@libraries/=src/libraries/' >> remappings.txt
 echo '@core/=src/core/' >> remappings.txt
+echo '@interfaces/=src/interfaces/' >> remappings.txt
 
 echo "Building contracts..."
 forge build || exit 1
