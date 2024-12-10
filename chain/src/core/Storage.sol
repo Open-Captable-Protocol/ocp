@@ -12,6 +12,12 @@ import {
 } from "@libraries/Structs.sol";
 
 struct Storage {
+    // Access Control storage
+    mapping(bytes32 => mapping(address => bool)) roles;
+    mapping(bytes32 => bytes32) roleAdmin; // hierarchy of roles
+    address currentAdmin; // Current admin address
+    address pendingAdmin; // Pending admin address for ownership transfer
+    // Existing storage
     Issuer issuer;
     bytes16[] stakeholders;
     mapping(bytes16 => uint256) stakeholderIndex;

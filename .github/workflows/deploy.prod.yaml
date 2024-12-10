@@ -1,0 +1,132 @@
+name: Deployment (Prod)
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    build:
+        name: Build, Test, and Deploy
+        environment: prod
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+              with:
+                  submodules: true
+                  fetch-depth: 0
+
+            # Setup and cache dependencies
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: "18"
+                  cache: "yarn"
+
+            - name: Install Node Dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Install Foundry
+              uses: foundry-rs/foundry-toolchain@v1
+
+            - name: Run Forge Install Script
+              run: chmod +x setup.sh && ./setup.sh
+
+            # Run all tests and checks
+            - name: Run Forge Tests
+              run: cd chain && forge test --summary
+
+            - name: Run ESLint
+              run: yarn lint:check
+
+            - name: Check Formatting
+              run: yarn format:check
+
+            - name: Deploy
+              shell: bash
+              env:
+                  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+                  HOST: ${{ secrets.LIGHTSAIL_INSTANCE_PUBLIC_IP_PROD }}
+                  PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+                  ETHERSCAN_L2_API_KEY: ${{ secrets.ETHERSCAN_L2_API_KEY }}
+                  SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+                  RPC_URL: ${{ secrets.RPC_URL }}
+                  CHAIN_ID: ${{ secrets.CHAIN_ID }}
+
+              run: |
+                  # Generate timestamp for deployment
+                  DEPLOY_TIME=$(date +%s)
+                  # Save SSH key and set permissions
+                  echo "$SSH_PRIVATE_KEY" > deploy_key
+                  chmod 600 deploy_key
+
+                  # Create a temp directory for deployment
+                  DEPLOY_DIR="/tmp/deploy-${DEPLOY_TIME}"
+                  mkdir -p $DEPLOY_DIR
+
+                  # Copy necessary files to temp directory
+                  echo "Preparing deployment files..."
+                  cp -r . $DEPLOY_DIR/
+
+                  # Sync files to server
+                  echo "Syncing files to server..."
+                  rsync -az --delete \
+                    --exclude='node_modules' \
+                    --exclude='.git' \
+                    --exclude='deploy_key' \
+                    --include='chain/out' \
+                    --include='chain/out/**' \
+                    -e "ssh -i deploy_key -o StrictHostKeyChecking=no" \
+                    $DEPLOY_DIR/ \
+                    ubuntu@"$HOST":/home/ubuntu/app-${DEPLOY_TIME}
+
+                  sudo su && \
+                  cd /home/ubuntu/app-${DEPLOY_TIME} && \
+                  echo "Building image on host..." && \
+                  # Source the functions
+                  source ./scripts/docker_container_utils.sh && \
+                  docker build -t ocp-prod:${DEPLOY_TIME} -f Dockerfile.prod . && \
+
+                  # Initial cleanup of dangling images and stopped containers
+                  echo "Cleaning up old resources..." && \
+                  docker ps -q --filter "publish=8081" | xargs -r docker rm -f && \
+                  docker ps -q --filter "publish=8082" | xargs -r docker rm -f && \
+                  docker container prune -f && \
+                  docker image prune -f && \
+
+                  # Start new container on different port
+                  echo "Starting new container..." && \
+                  CONTAINER_NAME=ocp-prod-${DEPLOY_TIME} && \
+                  NEW_PORT=$(get_port)
+                  echo "Using port: $NEW_PORT" && \
+
+                  docker run --name $CONTAINER_NAME -d \
+                  -p ${NEW_PORT}:8080 \
+                  --health-cmd="curl -f http://localhost:8080/health || exit 1" \
+                  --health-interval=2s \
+                  --health-retries=3 \
+                  --health-timeout=5s \
+                  --restart always \
+                  -e DOCKER_ENV="true" \
+                  -e NODE_ENV="production" \
+                  -e SENTRY_DSN="${{ secrets.SENTRY_DSN }}" \
+                  -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+                  -e RPC_URL="${{ secrets.RPC_URL }}" \
+                  -e CHAIN_ID="${{ secrets.CHAIN_ID }}" \
+                  -e PORT=8080 \
+                  -e PRIVATE_KEY="${{ secrets.PRIVATE_KEY }}" \
+                  -e ETHERSCAN_L2_API_KEY="${{ secrets.ETHERSCAN_L2_API_KEY }}" \
+                  -v "/home/ubuntu/global-bundle.pem:/global-bundle.pem" \
+                  ocp-prod:${DEPLOY_TIME} && \
+
+                  # Wait for container to be healthy
+                  wait_for_health "$CONTAINER_NAME" && \
+
+                  # If container is healthy, switch traffic
+                  if [ $? -eq 0 ]; then
+                      handle_container_switch "$CONTAINER_NAME" "${DEPLOY_TIME}" "prod"
+                  else
+                      handle_failed_deployment "$CONTAINER_NAME" "${DEPLOY_TIME}" "prod"
+                  fi

@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
 import { readIssuerById, getAllStateMachineObjectsById } from "../db/operations/read.js";
 import { updateIssuerById } from "../db/operations/update.js";
-import deployCapTable, { facetsABI, wallet } from "../chain-operations/deployCapTable.js";
+import deployCapTable, { facetsABI, getWallet } from "../chain-operations/deployCapTable.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import { convertAndReflectStockClassOnchain } from "../controllers/stockClassController.js";
 import { convertAndReflectStakeholderOnchain } from "../controllers/stakeholderController.js";
@@ -104,7 +104,7 @@ async function migrateIssuer(issuerId) {
             await updateMigrationLog(issuerId, migrationLog);
         }
 
-        const contract = new Contract(migrationLog.address, facetsABI, wallet);
+        const contract = new Contract(migrationLog.address, facetsABI, await getWallet(issuer.chain_id));
 
         // 5. Deploy Stock Classes
         console.log("\nDeploying Stock Classes...");

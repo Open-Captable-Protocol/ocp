@@ -7,7 +7,10 @@ import {
     WarrantActivePosition,
     ConvertibleActivePosition,
     EquityCompensationActivePosition,
-    StakeholderPositions
+    StakeholderPositions,
+    IssueStockParams,
+    IssueConvertibleParams,
+    IssueEquityCompensationParams
 } from "@libraries/Structs.sol";
 
 contract DiamondStakeholderPositionsTest is DiamondTestBase {
@@ -29,17 +32,49 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue stock
         stockSecurityId = 0xd3373e0a4dd940000000000000000001;
-        StockFacet(address(capTable)).issueStock(stockClassId, 1e18, 1000, stakeholderId, stockSecurityId);
+        IssueStockParams memory params = IssueStockParams({
+            stock_class_id: stockClassId,
+            share_price: 1e18,
+            quantity: 1000,
+            stakeholder_id: stakeholderId,
+            security_id: stockSecurityId,
+            custom_id: "STOCK_POS_001",
+            stock_legend_ids_mapping: "LEGEND_1",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        StockFacet(address(capTable)).issueStock(params);
 
         // Issue convertible
         convertibleSecurityId = 0xd3373e0a4dd940000000000000000002;
-        ConvertiblesFacet(address(capTable)).issueConvertible(stakeholderId, 1_000_000, convertibleSecurityId);
+        IssueConvertibleParams memory convertibleParams = IssueConvertibleParams({
+            stakeholder_id: stakeholderId,
+            investment_amount: 1_000_000,
+            security_id: convertibleSecurityId,
+            convertible_type: "SAFE",
+            seniority: 1,
+            custom_id: "CONV_POS_001",
+            security_law_exemptions_mapping: "REG_D",
+            conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
+        });
+        ConvertiblesFacet(address(capTable)).issueConvertible(convertibleParams);
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000003;
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(
-            stakeholderId, stockClassId, stockPlanId, 1000, equityCompSecurityId
-        );
+        IssueEquityCompensationParams memory equityParams = IssueEquityCompensationParams({
+            stakeholder_id: stakeholderId,
+            stock_class_id: stockClassId,
+            stock_plan_id: stockPlanId,
+            quantity: 1000,
+            security_id: equityCompSecurityId,
+            compensation_type: "ISO",
+            exercise_price: 1e18,
+            base_price: 1e18,
+            expiration_date: "2025-12-31",
+            custom_id: "EQCOMP_POS_001",
+            termination_exercise_windows_mapping: "90_DAYS",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        EquityCompensationFacet(address(capTable)).issueEquityCompensation(equityParams);
     }
 
     function testGetStakeholderPositions() public {

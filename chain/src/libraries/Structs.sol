@@ -11,8 +11,8 @@ struct Issuer {
 struct StockClass {
     bytes16 id;
     string class_type; // ["COMMON", "PREFERRED"]
-    uint256 price_per_share; // Per-share price this stock class was issued for // remove this.
     uint256 shares_issued;
+    uint256 price_per_share;
     uint256 shares_authorized;
 }
 
@@ -38,9 +38,6 @@ struct ConvertibleActivePosition {
     bytes16 stakeholder_id;
     uint256 investment_amount;
 }
-// uint256 valuation_cap; // unsure we want to store this
-// uint256 discount_rate; // unsure we want to store this
-// string convertible_type; // ["NOTE", "SAFE"] // do we even care?
 
 struct ConvertibleActivePositions {
     mapping(bytes16 => bytes16[]) stakeholderToSecurities;
@@ -84,4 +81,51 @@ struct StakeholderPositions {
     WarrantActivePosition[] warrants;
     ConvertibleActivePosition[] convertibles;
     EquityCompensationActivePosition[] equityCompensations;
+}
+
+struct IssueStockParams {
+    bytes16 stock_class_id;
+    uint256 share_price;
+    uint256 quantity;
+    bytes16 stakeholder_id;
+    bytes16 security_id;
+    string custom_id;
+    string stock_legend_ids_mapping;
+    string security_law_exemptions_mapping;
+}
+
+struct IssueConvertibleParams {
+    bytes16 stakeholder_id;
+    uint256 investment_amount;
+    bytes16 security_id;
+    string convertible_type;
+    uint256 seniority;
+    string custom_id;
+    string security_law_exemptions_mapping;
+    string conversion_triggers_mapping;
+}
+
+struct IssueEquityCompensationParams {
+    bytes16 stakeholder_id;
+    bytes16 stock_class_id;
+    bytes16 stock_plan_id;
+    uint256 quantity;
+    bytes16 security_id;
+    string compensation_type;
+    uint256 exercise_price;
+    uint256 base_price;
+    string expiration_date;
+    string custom_id;
+    string termination_exercise_windows_mapping;
+    string security_law_exemptions_mapping;
+}
+
+struct IssueWarrantParams {
+    bytes16 stakeholder_id;
+    uint256 quantity;
+    bytes16 security_id;
+    uint256 purchase_price;
+    string custom_id;
+    string security_law_exemptions_mapping;
+    string exercise_triggers_mapping;
 }

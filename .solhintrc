@@ -15,12 +15,12 @@
     "no-empty-blocks": "warn",
     "max-line-length": [
       "warn",
-      120
+      145
     ],
     "reason-string": [
       "warn",
       {
-        "maxLength": 64
+        "maxLength": 145
       }
     ],
     "state-visibility": "error",
@@ -34,6 +34,7 @@
     ],
     "ordering": "warn",
     "reentrancy": "error",
-    "avoid-low-level-calls": "warn"
+    "avoid-low-level-calls": "warn",
+    "operator-whitespace": "off"
   }
 }

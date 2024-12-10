@@ -9,6 +9,7 @@ import {
     EquityCompensationActivePosition,
     StakeholderPositions
 } from "@libraries/Structs.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract StakeholderFacet {
     event StakeholderCreated(bytes16 indexed id);
@@ -17,8 +18,14 @@ contract StakeholderFacet {
     error StakeholderAlreadyExists(bytes16 stakeholder_id);
     error AddressAlreadyLinked(address wallet_address);
 
+    /// @notice Create a new stakeholder
+    /// @dev Only OPERATOR_ROLE can create stakeholders
     function createStakeholder(bytes16 _id) external {
         Storage storage ds = StorageLib.get();
+
+        if (!AccessControl.hasOperatorRole(msg.sender)) {
+            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.OPERATOR_ROLE);
+        }
 
         if (ds.stakeholderIndex[_id] > 0) {
             revert StakeholderAlreadyExists(_id);
@@ -30,8 +37,14 @@ contract StakeholderFacet {
         emit StakeholderCreated(_id);
     }
 
+    /// @notice Link a wallet address to a stakeholder
+    /// @dev Only OPERATOR_ROLE can link addresses
     function linkStakeholderAddress(bytes16 stakeholder_id, address wallet_address) external {
         Storage storage ds = StorageLib.get();
+
+        if (!AccessControl.hasOperatorRole(msg.sender)) {
+            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.OPERATOR_ROLE);
+        }
 
         // Check if address is already linked
         if (ds.addressToStakeholderId[wallet_address] != bytes16(0)) {
@@ -44,8 +57,26 @@ contract StakeholderFacet {
         emit StakeholderAddressLinked(stakeholder_id, wallet_address);
     }
 
+    /// @notice Get all positions for a stakeholder
+    /// @dev INVESTOR_ROLE can only view their own positions, OPERATOR_ROLE and above can view any
     function getStakeholderPositions(bytes16 stakeholder_id) external view returns (StakeholderPositions memory) {
         Storage storage ds = StorageLib.get();
+
+        // Check that caller has at least investor role
+        if (
+            !AccessControl.hasAdminRole(msg.sender) && !AccessControl.hasOperatorRole(msg.sender)
+                && !AccessControl.hasInvestorRole(msg.sender)
+        ) {
+            revert AccessControl.AccessControlUnauthorizedOrInvestor(msg.sender);
+        }
+
+        // If caller is an investor, they can only view their own positions
+        if (
+            AccessControl.hasInvestorRole(msg.sender) && !AccessControl.hasOperatorRole(msg.sender)
+                && !AccessControl.hasAdminRole(msg.sender)
+        ) {
+            require(ds.addressToStakeholderId[msg.sender] == stakeholder_id, "Can only view own positions");
+        }
 
         StakeholderPositions memory positions;
 

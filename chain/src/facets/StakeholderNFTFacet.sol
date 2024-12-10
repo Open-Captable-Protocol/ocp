@@ -13,6 +13,7 @@ import {
 } from "@libraries/Structs.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract StakeholderNFTFacet is ERC721 {
     error NotStakeholder();
@@ -21,10 +22,17 @@ contract StakeholderNFTFacet is ERC721 {
 
     constructor() ERC721("Stakeholder Position", "STKPOS") { }
 
+    /// @notice Mint an NFT representing a stakeholder's position
+    /// @dev Only stakeholders with INVESTOR_ROLE can mint their own NFT
     function mint() external {
         Storage storage ds = StorageLib.get();
 
-        // Get stakeholder ID from msg.sender (we'll need to add a mapping for this)
+        // Verify caller has investor role
+        if (!AccessControl.hasInvestorRole(msg.sender)) {
+            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.INVESTOR_ROLE);
+        }
+
+        // Get stakeholder ID from msg.sender
         bytes16 stakeholderId = ds.addressToStakeholderId[msg.sender];
 
         if (ds.stakeholderIndex[stakeholderId] == 0) {
@@ -40,8 +48,18 @@ contract StakeholderNFTFacet is ERC721 {
         _mint(msg.sender, tokenId);
     }
 
+    /// @notice Get the URI for a token, containing metadata about stakeholder positions
+    /// @dev Only OPERATOR_ROLE or the token owner can view the token URI
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
+
+        // Allow operators and admins to view any token URI
+        if (!AccessControl.hasOperatorRole(msg.sender) && !AccessControl.hasAdminRole(msg.sender)) {
+            // For non-operators, verify caller is the token owner (investor)
+            if (ownerOf(tokenId) != msg.sender) {
+                revert AccessControl.AccessControlUnauthorizedOrInvestor(msg.sender);
+            }
+        }
 
         bytes16 stakeholderId = bytes16(uint128(tokenId));
         StakeholderPositions memory positions = StakeholderFacet(address(this)).getStakeholderPositions(stakeholderId);

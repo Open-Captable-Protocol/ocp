@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import CAP_TABLE_FACTORY from "../../chain/out/DiamondCapTableFactory.sol/DiamondCapTableFactory.json";
+import CAP_TABLE_FACTORY from "../../chain/out/CapTableFactory.sol/CapTableFactory.json";
 import { setupEnv } from "../utils/env.js";
 import getProvider from "./getProvider.js";
 import STAKEHOLDER_FACET from "../../chain/out/StakeholderFacet.sol/StakeholderFacet.json";
@@ -14,8 +14,7 @@ import STAKEHOLDER_NFT_FACET from "../../chain/out/StakeholderNFTFacet.sol/Stake
 
 setupEnv();
 
-const provider = getProvider();
-export const getContractInstance = (address) => {
+export const getContractInstance = (address, chainId) => {
     const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
     // Create a combined ABI from all facets
     const combinedABI = [
@@ -31,6 +30,7 @@ export const getContractInstance = (address) => {
         ...STAKEHOLDER_NFT_FACET.abi,
     ];
 
+    const provider = getProvider(chainId);
     const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
     const contract = new ethers.Contract(address, combinedABI, wallet);
 

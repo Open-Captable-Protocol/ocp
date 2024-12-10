@@ -1,0 +1,48 @@
+name: Integration Tests
+
+on:
+    pull_request:
+        branches:
+            - "*"
+            - "!main"
+            - "dev"
+        types: [opened, synchronize, reopened]
+
+jobs:
+    test:
+        name: Build and Test
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+              with:
+                  submodules: true
+                  fetch-depth: 0
+
+            # Install only ESLint dependencies
+            - name: Install ESLint Dependencies
+              run: |
+                  yarn add -D @eslint/js@latest \
+                          @typescript-eslint/eslint-plugin@latest \
+                          @typescript-eslint/parser@latest \
+                          eslint-plugin-import@latest \
+                          globals@latest
+
+            - name: Install Foundry
+              uses: foundry-rs/foundry-toolchain@v1
+              with:
+                  version: nightly
+
+            - name: Run Forge Install Script
+              run: |
+                  chmod +x setup.sh && ./setup.sh
+
+            # Run all tests and checks
+            - name: Run Forge Tests
+              run: cd chain && forge test --summary
+
+            - name: Run ESLint
+              run: npx eslint "src/**/*.{js,ts,mjs,mts}"
+
+            - name: Check Formatting
+              run: npx prettier --check "src/**/*.{js,mjs,ts,mts,json,md}"
