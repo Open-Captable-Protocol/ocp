@@ -5,22 +5,21 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "@core/CapTable.sol";
 import { CapTableFactory } from "@core/CapTableFactory.sol";
-import "@facets/IssuerFacet.sol";
-import { CapTable } from "@core/CapTable.sol";
-import { StakeholderFacet } from "@facets/StakeholderFacet.sol";
-import { StockClassFacet } from "@facets/StockClassFacet.sol";
-import { StockFacet } from "@facets/StockFacet.sol";
-import { ConvertiblesFacet } from "@facets/ConvertiblesFacet.sol";
-import { EquityCompensationFacet } from "@facets/EquityCompensationFacet.sol";
-import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
+import { IIssuerFacet } from "@interfaces/IIssuerFacet.sol";
+import { IStakeholderFacet } from "@interfaces/IStakeholderFacet.sol";
+import { IStockClassFacet } from "@interfaces/IStockClassFacet.sol";
+import { IStockPlanFacet } from "@interfaces/IStockPlanFacet.sol";
+import { IAccessControlFacet } from "@interfaces/IAccessControlFacet.sol";
 import "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import "diamond-3-hardhat/facets/DiamondLoupeFacet.sol";
 import "diamond-3-hardhat/interfaces/IDiamondCut.sol";
-import { WarrantFacet } from "@facets/WarrantFacet.sol";
-import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
-import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 import { LibDeployment } from "../script/DeployFactory.s.sol";
+import { IStockFacet } from "@interfaces/IStockFacet.sol";
+import { IConvertiblesFacet } from "@interfaces/IConvertiblesFacet.sol";
+import { IEquityCompensationFacet } from "@interfaces/IEquityCompensationFacet.sol";
+import { IWarrantFacet } from "@interfaces/IWarrantFacet.sol";
+import { IStakeholderNFTFacet } from "@interfaces/IStakeholderNFTFacet.sol";
 
 contract DiamondTestBase is Test {
     uint256 public issuerInitialSharesAuthorized = 1_000_000;
@@ -55,24 +54,17 @@ contract DiamondTestBase is Test {
         // Create a new cap table for testing
         capTable = CapTable(payable(factory.createCapTable(issuerId, issuerInitialSharesAuthorized)));
         console.log("capTable: ", address(capTable));
-        AccessControlFacet(address(capTable)).acceptAdmin();
+        IAccessControlFacet(address(capTable)).acceptAdmin();
     }
 
     // Common helper functions
     function createStakeholder() public virtual returns (bytes16) {
         bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
 
-        // Debug log before creation
-        console.log("Before creation - index:", StorageLib.get().stakeholderIndex[stakeholderId]);
-
         vm.expectEmit(true, false, false, false, address(capTable));
         emit StakeholderCreated(stakeholderId);
 
-        // Call through the diamond proxy instead of using delegatecall
-        StakeholderFacet(address(capTable)).createStakeholder(stakeholderId);
-
-        // Debug log after creation
-        console.log("After creation - index:", StorageLib.get().stakeholderIndex[stakeholderId]);
+        IStakeholderFacet(address(capTable)).createStakeholder(stakeholderId);
 
         return stakeholderId;
     }
@@ -87,7 +79,7 @@ contract DiamondTestBase is Test {
         vm.expectEmit(true, true, true, true, address(capTable));
         emit StockClassCreated(stockClassId, classType, pricePerShare, initialSharesAuthorized);
 
-        StockClassFacet(payable(address(capTable))).createStockClass(
+        IStockClassFacet(address(capTable)).createStockClass(
             stockClassId, classType, pricePerShare, initialSharesAuthorized
         );
 
@@ -102,13 +94,13 @@ contract DiamondTestBase is Test {
         vm.expectEmit(true, false, false, true, address(capTable));
         emit StockPlanCreated(stockPlanId, sharesReserved);
 
-        StockPlanFacet(payable(address(capTable))).createStockPlan(stockPlanId, stockClassIds, sharesReserved);
+        IStockPlanFacet(address(capTable)).createStockPlan(stockPlanId, stockClassIds, sharesReserved);
 
         return stockPlanId;
     }
 
     // Add this helper function alongside the other helpers
     function linkStakeholderAddress(bytes16 _stakeholderId, address _wallet) public {
-        StakeholderFacet(payable(address(capTable))).linkStakeholderAddress(_stakeholderId, _wallet);
+        IStakeholderFacet(address(capTable)).linkStakeholderAddress(_stakeholderId, _wallet);
     }
 }

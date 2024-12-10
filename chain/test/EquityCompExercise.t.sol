@@ -11,6 +11,10 @@ import {
     IssueEquityCompensationParams,
     IssueStockParams
 } from "@libraries/Structs.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
+import { IAccessControlFacet } from "@interfaces/IAccessControlFacet.sol";
+import { IStockFacet } from "@interfaces/IStockFacet.sol";
+import { IEquityCompensationFacet } from "@interfaces/IEquityCompensationFacet.sol";
 
 contract DiamondEquityCompExerciseTest is DiamondTestBase {
     bytes16 stakeholderId;
@@ -26,7 +30,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Grant necessary roles
         vm.startPrank(contractOwner);
-        AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, address(this));
+        IAccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, address(this));
         vm.stopPrank();
 
         // Create prerequisites
@@ -36,7 +40,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Grant investor role to stakeholder
         vm.prank(contractOwner);
-        AccessControlFacet(address(capTable)).grantRole(AccessControl.INVESTOR_ROLE, stakeholderWallet);
+        IAccessControlFacet(address(capTable)).grantRole(AccessControl.INVESTOR_ROLE, stakeholderWallet);
 
         stockClassId = createStockClass();
 
@@ -60,7 +64,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             termination_exercise_windows_mapping: "90_DAYS",
             security_law_exemptions_mapping: "REG_D"
         });
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(equityParams);
+        IEquityCompensationFacet(address(capTable)).issueEquityCompensation(equityParams);
 
         // Issue resulting stock
         stockSecurityId = 0xd3373e0a4dd940000000000000000002;
@@ -74,7 +78,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             stock_legend_ids_mapping: "LEGEND_1",
             security_law_exemptions_mapping: "REG_D"
         });
-        StockFacet(address(capTable)).issueStock(params);
+        IStockFacet(address(capTable)).issueStock(params);
     }
 
     function testExerciseEquityCompensation() public {
@@ -92,7 +96,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             stock_legend_ids_mapping: "LEGEND_1",
             security_law_exemptions_mapping: "REG_D"
         });
-        StockFacet(address(capTable)).issueStock(exerciseParams);
+        IStockFacet(address(capTable)).issueStock(exerciseParams);
 
         vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(
@@ -101,13 +105,13 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Exercise as stakeholder
         vm.prank(stakeholderWallet);
-        EquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
+        IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             equityCompSecurityId, newStockSecurityId, exerciseQuantity
         );
 
         // Verify equity comp position was updated
         EquityCompensationActivePosition memory position =
-            EquityCompensationFacet(address(capTable)).getPosition(equityCompSecurityId);
+            IEquityCompensationFacet(address(capTable)).getPosition(equityCompSecurityId);
         assertEq(position.quantity, EQUITY_COMP_QUANTITY - exerciseQuantity);
     }
 
@@ -119,30 +123,32 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Exercise as stakeholder
         vm.prank(stakeholderWallet);
-        EquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
+        IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY
         );
 
         // Verify position was removed
         EquityCompensationActivePosition memory position =
-            EquityCompensationFacet(address(capTable)).getPosition(equityCompSecurityId);
+            IEquityCompensationFacet(address(capTable)).getPosition(equityCompSecurityId);
         assertEq(position.quantity, 0);
     }
 
     function testFailInvalidEquityCompSecurity() public {
         bytes16 invalidSecurityId = 0xd3373e0a4dd940000000000000000099;
 
-        EquityCompensationFacet(address(capTable)).exerciseEquityCompensation(invalidSecurityId, stockSecurityId, 500);
+        IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(invalidSecurityId, stockSecurityId, 500);
     }
 
     function testFailInvalidStockSecurity() public {
         bytes16 invalidStockId = 0xd3373e0a4dd940000000000000000099;
 
-        EquityCompensationFacet(address(capTable)).exerciseEquityCompensation(equityCompSecurityId, invalidStockId, 500);
+        IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
+            equityCompSecurityId, invalidStockId, 500
+        );
     }
 
     function testFailInsufficientShares() public {
-        EquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
+        IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY + 1
         );
     }
@@ -163,14 +169,14 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             stock_legend_ids_mapping: "LEGEND_1",
             security_law_exemptions_mapping: "REG_D"
         });
-        StockFacet(address(capTable)).issueStock(otherParams);
+        IStockFacet(address(capTable)).issueStock(otherParams);
 
         vm.expectRevert(
             abi.encodeWithSelector(
                 ValidationLib.InvalidSecurityStakeholder.selector, otherStockSecurityId, stakeholderId
             )
         );
-        EquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
+        IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             equityCompSecurityId, otherStockSecurityId, 500
         );
     }
