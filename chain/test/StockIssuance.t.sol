@@ -5,6 +5,7 @@ import "./TestBase.sol";
 import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { IssueStockParams } from "@libraries/Structs.sol";
+import { IStockFacet } from "@interfaces/IStockFacet.sol";
 
 contract DiamondStockIssuanceTest is DiamondTestBase {
     function createStockClassAndStakeholder(uint256 sharesAuthorized) public returns (bytes16, bytes16) {
@@ -13,11 +14,11 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
 
         vm.expectEmit(true, false, false, false, address(capTable));
         emit StakeholderCreated(stakeholderId);
-        StakeholderFacet(payable(address(capTable))).createStakeholder(stakeholderId);
+        IStakeholderFacet(address(capTable)).createStakeholder(stakeholderId);
 
         vm.expectEmit(true, true, false, false, address(capTable));
         emit StockClassCreated(stockClassId, "COMMON", 100, sharesAuthorized);
-        StockClassFacet(payable(address(capTable))).createStockClass(stockClassId, "COMMON", 100, sharesAuthorized);
+        IStockClassFacet(address(capTable)).createStockClass(stockClassId, "COMMON", 100, sharesAuthorized);
 
         return (stockClassId, stakeholderId);
     }
@@ -54,7 +55,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D"
         });
 
-        StockFacet(address(capTable)).issueStock(params);
+        IStockFacet(address(capTable)).issueStock(params);
     }
 
     function testFailInvalidStakeholder() public {
@@ -73,7 +74,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D"
         });
 
-        StockFacet(address(capTable)).issueStock(params);
+        IStockFacet(address(capTable)).issueStock(params);
     }
 
     function testFailInvalidStockClass() public {
@@ -92,7 +93,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D"
         });
 
-        StockFacet(address(capTable)).issueStock(params);
+        IStockFacet(address(capTable)).issueStock(params);
     }
 
     function testFailInsufficientIssuerShares() public {
@@ -110,7 +111,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D"
         });
 
-        StockFacet(address(capTable)).issueStock(params);
+        IStockFacet(address(capTable)).issueStock(params);
     }
 
     function testFailInsufficientStockClassShares() public {
@@ -128,6 +129,6 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D"
         });
 
-        StockFacet(address(capTable)).issueStock(params);
+        IStockFacet(address(capTable)).issueStock(params);
     }
 }

@@ -12,6 +12,9 @@ import {
     IssueConvertibleParams,
     IssueEquityCompensationParams
 } from "@libraries/Structs.sol";
+import { IStockFacet } from "@interfaces/IStockFacet.sol";
+import { IConvertiblesFacet } from "@interfaces/IConvertiblesFacet.sol";
+import { IEquityCompensationFacet } from "@interfaces/IEquityCompensationFacet.sol";
 
 contract DiamondStakeholderPositionsTest is DiamondTestBase {
     bytes16 stakeholderId;
@@ -42,7 +45,7 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
             stock_legend_ids_mapping: "LEGEND_1",
             security_law_exemptions_mapping: "REG_D"
         });
-        StockFacet(address(capTable)).issueStock(params);
+        IStockFacet(address(capTable)).issueStock(params);
 
         // Issue convertible
         convertibleSecurityId = 0xd3373e0a4dd940000000000000000002;
@@ -56,7 +59,7 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
         });
-        ConvertiblesFacet(address(capTable)).issueConvertible(convertibleParams);
+        IConvertiblesFacet(address(capTable)).issueConvertible(convertibleParams);
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000003;
@@ -74,12 +77,12 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
             termination_exercise_windows_mapping: "90_DAYS",
             security_law_exemptions_mapping: "REG_D"
         });
-        EquityCompensationFacet(address(capTable)).issueEquityCompensation(equityParams);
+        IEquityCompensationFacet(address(capTable)).issueEquityCompensation(equityParams);
     }
 
     function testGetStakeholderPositions() public {
         StakeholderPositions memory positions =
-            StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
+            IStakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
 
         // Verify stock position
         assertEq(positions.stocks.length, 1);

@@ -7,7 +7,9 @@ import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { StakeholderPositions } from "@libraries/Structs.sol";
 import { IssueStockParams } from "@libraries/Structs.sol";
-import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
+import { IStakeholderNFTFacet } from "@interfaces/IStakeholderNFTFacet.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
+import { IStockFacet } from "@interfaces/IStockFacet.sol";
 
 contract DiamondStakeholderNFTTest is DiamondTestBase {
     bytes16 stakeholderId;
@@ -22,9 +24,9 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
 
         // Grant necessary roles
         vm.startPrank(contractOwner);
-        AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, address(this));
-        AccessControlFacet(address(capTable)).grantRole(AccessControl.INVESTOR_ROLE, stakeholderWallet);
-        AccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, stakeholderWallet);
+        IAccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, address(this));
+        IAccessControlFacet(address(capTable)).grantRole(AccessControl.INVESTOR_ROLE, stakeholderWallet);
+        IAccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, stakeholderWallet);
         vm.stopPrank();
 
         // Create a stock class and issue some stock for the NFT metadata
@@ -40,7 +42,7 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
             stock_legend_ids_mapping: "stock_legend_ids_mapping",
             security_law_exemptions_mapping: "security_law_exemptions_mapping"
         });
-        StockFacet(address(capTable)).issueStock(params);
+        IStockFacet(address(capTable)).issueStock(params);
     }
 
     function testLinkStakeholderAddress() public {
@@ -49,7 +51,7 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
 
         // Verify the link was created by trying to mint
         vm.prank(stakeholderWallet);
-        StakeholderNFTFacet(address(capTable)).mint();
+        IStakeholderNFTFacet(address(capTable)).mint();
 
         // If we get here without reverting, the link worked
         assertTrue(true, "Link successful - NFT minted");
@@ -61,13 +63,13 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
 
         // Mint NFT
         vm.prank(stakeholderWallet);
-        StakeholderNFTFacet(address(capTable)).mint();
+        IStakeholderNFTFacet(address(capTable)).mint();
     }
 
     function testFailMintWithoutLink() public {
         // Try to mint without linking - should fail
         vm.prank(stakeholderWallet);
-        StakeholderNFTFacet(address(capTable)).mint();
+        IStakeholderNFTFacet(address(capTable)).mint();
     }
 
     function testFailDoubleMint() public {
@@ -76,11 +78,11 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
 
         // First mint
         vm.prank(stakeholderWallet);
-        StakeholderNFTFacet(address(capTable)).mint();
+        IStakeholderNFTFacet(address(capTable)).mint();
 
         // Try to mint again - should fail
         vm.prank(stakeholderWallet);
-        StakeholderNFTFacet(address(capTable)).mint();
+        IStakeholderNFTFacet(address(capTable)).mint();
     }
 
     function testTokenURI() public {
@@ -90,7 +92,7 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         vm.startPrank(stakeholderWallet);
 
         // Mint NFT
-        StakeholderNFTFacet(address(capTable)).mint();
+        IStakeholderNFTFacet(address(capTable)).mint();
 
         vm.stopPrank();
 
@@ -98,7 +100,7 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         uint256 tokenId = uint256(bytes32(stakeholderId));
 
         // Get URI as stakeholderWallet (token owner)
-        string memory uri = StakeholderNFTFacet(address(capTable)).tokenURI(tokenId);
+        string memory uri = IStakeholderNFTFacet(address(capTable)).tokenURI(tokenId);
 
         // Basic validation of URI format
         assertTrue(bytes(uri).length > 0, "URI should not be empty");
@@ -106,7 +108,7 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         // Also check positions exist
 
         StakeholderPositions memory positions =
-            StakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
+            IStakeholderFacet(address(capTable)).getStakeholderPositions(stakeholderId);
 
         assertTrue(positions.stocks.length > 0, "Should have stock positions");
     }

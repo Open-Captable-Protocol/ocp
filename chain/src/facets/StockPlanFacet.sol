@@ -17,28 +17,28 @@ contract StockPlanFacet {
 
     /// @notice Create a new stock plan with specified stock classes and reserved shares
     /// @dev Only OPERATOR_ROLE can create stock plans
-    function createStockPlan(bytes16 _id, bytes16[] memory _stock_class_ids, uint256 _shares_reserved) external {
+    function createStockPlan(bytes16 id, bytes16[] memory stock_class_ids, uint256 shares_reserved) external {
         Storage storage ds = StorageLib.get();
 
         if (!AccessControl.hasOperatorRole(msg.sender)) {
             revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.OPERATOR_ROLE);
         }
 
-        if (ds.stockPlanIndex[_id] > 0) {
-            revert StockPlanAlreadyExists(_id);
+        if (ds.stockPlanIndex[id] > 0) {
+            revert StockPlanAlreadyExists(id);
         }
 
         // Verify all stock classes exist
-        for (uint256 i = 0; i < _stock_class_ids.length; i++) {
-            if (ds.stockClassIndex[_stock_class_ids[i]] == 0) {
-                revert InvalidStockClass(_stock_class_ids[i]);
+        for (uint256 i = 0; i < stock_class_ids.length; i++) {
+            if (ds.stockClassIndex[stock_class_ids[i]] == 0) {
+                revert InvalidStockClass(stock_class_ids[i]);
             }
         }
 
-        ds.stockPlans.push(StockPlan({ stock_class_ids: _stock_class_ids, shares_reserved: _shares_reserved }));
-        ds.stockPlanIndex[_id] = ds.stockPlans.length;
+        ds.stockPlans.push(StockPlan({ stock_class_ids: stock_class_ids, shares_reserved: shares_reserved }));
+        ds.stockPlanIndex[id] = ds.stockPlans.length;
 
-        emit StockPlanCreated(_id, _shares_reserved);
+        emit StockPlanCreated(id, shares_reserved);
     }
 
     /// @notice Adjust the number of shares reserved in a stock plan

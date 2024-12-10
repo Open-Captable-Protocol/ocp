@@ -6,6 +6,7 @@ import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { WarrantActivePosition, IssueWarrantParams } from "@libraries/Structs.sol";
+import { IWarrantFacet } from "@interfaces/IWarrantFacet.sol";
 
 contract DiamondWarrantIssuanceTest is DiamondTestBase {
     function testIssueWarrant() public {
@@ -25,10 +26,10 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(TxType.WARRANT_ISSUANCE, abi.encode(params));
 
-        WarrantFacet(address(capTable)).issueWarrant(params);
+        IWarrantFacet(address(capTable)).issueWarrant(params);
 
         // Verify position was created correctly
-        WarrantActivePosition memory position = WarrantFacet(address(capTable)).getWarrantPosition(securityId);
+        WarrantActivePosition memory position = IWarrantFacet(address(capTable)).getWarrantPosition(securityId);
         assertEq(position.quantity, quantity);
         assertEq(position.stakeholder_id, stakeholderId);
     }
@@ -46,7 +47,7 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             exercise_triggers_mapping: "TIME_BASED"
         });
-        WarrantFacet(address(capTable)).issueWarrant(params);
+        IWarrantFacet(address(capTable)).issueWarrant(params);
     }
 
     function testFailZeroQuantity() public {
@@ -62,6 +63,6 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             exercise_triggers_mapping: "TIME_BASED"
         });
-        WarrantFacet(address(capTable)).issueWarrant(params);
+        IWarrantFacet(address(capTable)).issueWarrant(params);
     }
 }

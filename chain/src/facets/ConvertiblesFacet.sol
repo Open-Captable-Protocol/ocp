@@ -6,8 +6,9 @@ import { ConvertibleActivePosition, IssueConvertibleParams } from "@libraries/St
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
+import { IConvertiblesFacet } from "@interfaces/IConvertiblesFacet.sol";
 
-contract ConvertiblesFacet {
+contract ConvertiblesFacet is IConvertiblesFacet {
     function issueConvertible(IssueConvertibleParams calldata params) external {
         Storage storage ds = StorageLib.get();
 

@@ -8,3 +8,4 @@ openzeppelin/=lib/openzeppelin-contracts-upgradeable/contracts/
 @facets/=src/facets/
 @libraries/=src/libraries/
 @core/=src/core/
+@interfaces/=src/interfaces/

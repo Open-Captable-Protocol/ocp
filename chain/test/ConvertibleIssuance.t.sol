@@ -6,6 +6,7 @@ import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { ConvertibleActivePosition, IssueConvertibleParams } from "@libraries/Structs.sol";
+import { IConvertiblesFacet } from "@interfaces/IConvertiblesFacet.sol";
 
 contract DiamondConvertibleIssuanceTest is DiamondTestBase {
     function testIssueConvertible() public {
@@ -31,11 +32,11 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
         });
-        ConvertiblesFacet(address(capTable)).issueConvertible(params);
+        IConvertiblesFacet(address(capTable)).issueConvertible(params);
 
         // Verify position was created correctly
         ConvertibleActivePosition memory position =
-            ConvertiblesFacet(address(capTable)).getConvertiblePosition(securityId);
+            IConvertiblesFacet(address(capTable)).getConvertiblePosition(securityId);
         assertEq(position.investment_amount, investmentAmount);
         assertEq(position.stakeholder_id, stakeholderId);
     }
@@ -54,7 +55,7 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
         });
-        ConvertiblesFacet(address(capTable)).issueConvertible(params);
+        IConvertiblesFacet(address(capTable)).issueConvertible(params);
     }
 
     function testFailZeroAmount() public {
@@ -71,6 +72,6 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
         });
-        ConvertiblesFacet(address(capTable)).issueConvertible(params);
+        IConvertiblesFacet(address(capTable)).issueConvertible(params);
     }
 }
