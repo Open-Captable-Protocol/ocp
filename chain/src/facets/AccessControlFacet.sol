@@ -5,16 +5,12 @@ import { Storage, StorageLib } from "@core/Storage.sol";
 import { AccessControlUpgradeable } from
     "openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 import "forge-std/console.sol";
+import { IAccessControlFacet } from "@interfaces/IAccessControlFacet.sol";
 
-contract AccessControlFacet is AccessControlUpgradeable {
+contract AccessControlFacet is AccessControlUpgradeable, IAccessControlFacet {
     // Role definitions
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE"); // For protocols and issuer
     bytes32 public constant INVESTOR_ROLE = keccak256("INVESTOR_ROLE"); // For shareholders/stakeholders
-
-    // Error definitions from AccessControl
-    error AccessControlUnauthorized(address account, bytes32 role);
-    error AccessControlBadConfirmation();
-    error AccessControlInvalidTransfer();
 
     /// @notice Initialize the access control system
     /// @dev Sets up initial roles. The deployer (CapTableFactory) gets admin role
@@ -35,18 +31,40 @@ contract AccessControlFacet is AccessControlUpgradeable {
     }
 
     /// @dev Override hasRole to use diamond storage
-    function hasRole(bytes32 role, address account) public view virtual override returns (bool) {
+    function hasRole(
+        bytes32 role,
+        address account
+    )
+        public
+        view
+        virtual
+        override(AccessControlUpgradeable, IAccessControlFacet)
+        returns (bool)
+    {
         return StorageLib.get().roles[role][account];
     }
 
     /// @dev Override getRoleAdmin to use diamond storage
-    function getRoleAdmin(bytes32 role) public view virtual override returns (bytes32) {
+    function getRoleAdmin(bytes32 role)
+        public
+        view
+        virtual
+        override(AccessControlUpgradeable, IAccessControlFacet)
+        returns (bytes32)
+    {
         return StorageLib.get().roleAdmin[role];
     }
 
     /// @notice Grants `role` to `account`
     /// @dev Caller must have admin role for `role`
-    function grantRole(bytes32 role, address account) public virtual override {
+    function grantRole(
+        bytes32 role,
+        address account
+    )
+        public
+        virtual
+        override(AccessControlUpgradeable, IAccessControlFacet)
+    {
         if (!hasRole(getRoleAdmin(role), msg.sender)) {
             revert AccessControlUnauthorized(msg.sender, getRoleAdmin(role));
         }
@@ -55,16 +73,30 @@ contract AccessControlFacet is AccessControlUpgradeable {
 
     /// @notice Revokes `role` from `account`
     /// @dev Caller must have admin role for `role`
-    function revokeRole(bytes32 role, address account) public virtual override {
+    function revokeRole(
+        bytes32 role,
+        address account
+    )
+        public
+        virtual
+        override(AccessControlUpgradeable, IAccessControlFacet)
+    {
         if (!hasRole(getRoleAdmin(role), msg.sender)) {
             revert AccessControlUnauthorized(msg.sender, getRoleAdmin(role));
         }
         _revokeRole(role, account);
     }
 
-    /// @notice Revokes `role` from the calling account
-    /// @dev Calling account must be granted `role`
-    function renounceRole(bytes32 role, address account) public virtual override {
+    /// @notice Renounces `role` for the calling account
+    /// @dev Calling account must have the role
+    function renounceRole(
+        bytes32 role,
+        address account
+    )
+        public
+        virtual
+        override(AccessControlUpgradeable, IAccessControlFacet)
+    {
         if (account != msg.sender) {
             revert AccessControlBadConfirmation();
         }

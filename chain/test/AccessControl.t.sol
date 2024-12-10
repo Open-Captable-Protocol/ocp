@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./TestBase.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
+import { IAccessControlFacet } from "@interfaces/IAccessControlFacet.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 import { StockClassFacet } from "@facets/StockClassFacet.sol";
 import { StockFacet } from "@facets/StockFacet.sol";
@@ -227,7 +228,7 @@ contract AccessControlTest is DiamondTestBase {
 
         // Try accept from wrong address (should fail)
         vm.startPrank(unauthorized);
-        vm.expectRevert(AccessControlFacet.AccessControlInvalidTransfer.selector);
+        vm.expectRevert(IAccessControlFacet.AccessControlInvalidTransfer.selector);
         AccessControlFacet(address(capTable)).acceptAdmin();
         vm.stopPrank();
 
@@ -252,7 +253,7 @@ contract AccessControlTest is DiamondTestBase {
 
     function testCannotTransferToZeroAddress() public {
         vm.startPrank(admin);
-        vm.expectRevert(AccessControlFacet.AccessControlInvalidTransfer.selector);
+        vm.expectRevert(IAccessControlFacet.AccessControlInvalidTransfer.selector);
         AccessControlFacet(address(capTable)).transferAdmin(address(0));
         vm.stopPrank();
     }
