@@ -181,21 +181,9 @@ contract DeployFactoryScript is Script {
 
         // Deploy factory with facet addresses
         CapTableFactory factory = new CapTableFactory(referenceDiamond);
-
-        address capTable = factory.createCapTable(bytes16("TEST"), 1_000_000);
-        console.log("CapTable deployed at:", capTable);
-        AccessControlFacet(capTable).acceptAdmin();
-        vm.stopPrank();
-        console.log("Diamond admin after accepting:", AccessControlFacet(capTable).getAdmin());
-        // Verify factory is no longer admin
-        console.log(
-            "Factory is admin:",
-            AccessControlFacet(capTable).hasRole(AccessControl.DEFAULT_ADMIN_ROLE, address(factory))
-        );
-
-        console.log(
-            "Deployer is admin:", AccessControlFacet(capTable).hasRole(AccessControl.DEFAULT_ADMIN_ROLE, deployerWallet)
-        );
+        console.log("\n------- Factory Address (add to .env) -------");
+        console.log("FACTORY_ADDRESS=", address(factory));
+        console.log("-------------------------------------------------");
 
         vm.stopBroadcast();
     }

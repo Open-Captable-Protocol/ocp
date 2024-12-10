@@ -77,8 +77,8 @@ function validateTransactionByType(tx, referenceSets) {
             references: { stakeholder_id: stakeholderIds },
         },
         TX_WARRANT_ISSUANCE: {
-            required: ["stock_class_id", "quantity"],
-            references: { stock_plan_id: stockPlanIds, stock_class_id: stockClassIds },
+            required: ["quantity"],
+            references: { stakeholder_id: stakeholderIds },
             customValidation: (tx) => {
                 const errors = [];
                 if (tx.quantity === 0) {
@@ -173,6 +173,15 @@ async function validateCapTableData(issuerData) {
         ...stockClasses.flatMap((sc) => validateRequiredFields(sc, ["initial_shares_authorized", "price_per_share.amount"], "StockClass", sc.id)),
         ...stockPlans.flatMap((sp) => validateRequiredFields(sp, ["initial_shares_reserved", "stock_class_ids"], "StockPlan", sp.id))
     );
+
+    // Validate stock class shares don't exceed issuer authorized shares
+    // stockClasses.forEach((stockClass) => {
+    //     if (stockClass.initial_shares_authorized > issuerData.issuer.initial_shares_authorized) {
+    //         errors.push(
+    //             `StockClass ${stockClass.id} initial_shares_authorized (${stockClass.initial_shares_authorized}) exceeds issuer initial_shares_authorized (${issuerData.issuer.initial_shares_authorized}) - issuer id: ${issuerData.issuer.id}`
+    //         );
+    //     }
+    // });
 
     // Validate transactions
     errors.push(...transactions.flatMap((tx) => validateTransactionByType(tx, referenceSets)));
