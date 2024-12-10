@@ -26,9 +26,9 @@ import { validateIssuerForMigration } from "./validate.js";
 // Load environment variables
 dotenv.config();
 
-async function loadOrCreateMigrationLog(issuerId) {
+async function loadOrCreateMigrationLog(issuerName) {
     const migrationDir = path.join(process.cwd(), "migrations");
-    const logFile = path.join(migrationDir, `${issuerId}.log.json`);
+    const logFile = path.join(migrationDir, `${issuerName}.log.json`);
 
     try {
         // Create migrations directory if it doesn't exist
@@ -44,8 +44,9 @@ async function loadOrCreateMigrationLog(issuerId) {
 
         // Create new log file if it doesn't exist
         const initialLog = {
-            issuerId,
+            name: issuerName,
             startedAt: new Date().toISOString(),
+            updatedAt: null,
             records: {},
             errors: [],
         };
@@ -57,26 +58,26 @@ async function loadOrCreateMigrationLog(issuerId) {
     }
 }
 
-async function updateMigrationLog(issuerId, log) {
-    const logFile = path.join(process.cwd(), "migrations", `${issuerId}.log.json`);
-    fs.writeFileSync(logFile, JSON.stringify(log, null, 2));
+async function updateMigrationLog(issuerName, log) {
+    const logFile = path.join(process.cwd(), "migrations", `${issuerName}.log.json`);
+    fs.writeFileSync(logFile, JSON.stringify({ ...log, updatedAt: new Date().toISOString() }, null, 2));
 }
 
 async function migrateIssuer(issuerId) {
     await connectDB();
     let migrationLog;
-
+    let issuer;
     try {
         // Load or create migration log
-        migrationLog = await loadOrCreateMigrationLog(issuerId);
-        console.log("Migration log loaded:", migrationLog);
 
         // 1. Check if issuer exists in the database
 
-        const issuer = await readIssuerById(issuerId);
+        issuer = await readIssuerById(issuerId);
         if (!issuer) {
             throw new Error(`Issuer with ID ${issuerId} not found in database`);
         }
+        migrationLog = await loadOrCreateMigrationLog(issuer.legal_name);
+        console.log("Migration log loaded:", migrationLog);
         const issuerData = await getAllStateMachineObjectsById(issuerId);
         const errors = await validateIssuerForMigration(issuerData);
         if (errors.length > 0) {
@@ -84,7 +85,7 @@ async function migrateIssuer(issuerId) {
             throw new Error(errors.join("\n"));
         }
 
-        console.log(`Found issuer: ${issuer.name}`);
+        console.log(`Found issuer: ${issuer.legal_name}`);
 
         if (!migrationLog.records[issuerId]) {
             console.log("\nDeploying cap table...");
@@ -92,7 +93,7 @@ async function migrateIssuer(issuerId) {
             console.log(`Address before deployment: ${issuer.deployed_to}`);
             console.log(`TX Hash before deployment: ${issuer.tx_hash}`);
 
-            const { address, deployHash } = await deployCapTable(issuerIdBytes16, issuer.initial_shares_authorized);
+            const { address, deployHash } = await deployCapTable(issuerIdBytes16, issuer.initial_shares_authorized, issuer.chain_id);
             await updateIssuerById(issuerId, { deployed_to: address, tx_hash: deployHash });
 
             console.log(`\nCap table deployed successfully:`);
@@ -101,9 +102,10 @@ async function migrateIssuer(issuerId) {
             migrationLog.address = address;
             migrationLog.deployHash = deployHash;
             migrationLog.records[issuerId] = true;
-            await updateMigrationLog(issuerId, migrationLog);
+            await updateMigrationLog(issuer.legal_name, migrationLog);
         }
 
+        console.log({ issuerId, address: migrationLog.address, chainId: issuer.chain_id });
         const contract = new Contract(migrationLog.address, facetsABI, await getWallet(issuer.chain_id));
 
         // 5. Deploy Stock Classes
@@ -119,7 +121,7 @@ async function migrateIssuer(issuerId) {
             console.log(`Deploying Stock Class: ${stockClass.id}`);
             await convertAndReflectStockClassOnchain(contract, stockClass);
             migrationLog.records[stockClass.id] = true;
-            await updateMigrationLog(issuerId, migrationLog);
+            await updateMigrationLog(issuer.legal_name, migrationLog);
             console.log(`✅ Stock Class ${stockClass.id} deployed successfully`);
         }
 
@@ -135,7 +137,7 @@ async function migrateIssuer(issuerId) {
             console.log(`Deploying Stock Plan: ${stockPlan.id}`);
             await convertAndReflectStockPlanOnchain(contract, stockPlan);
             migrationLog.records[stockPlan.id] = true;
-            await updateMigrationLog(issuerId, migrationLog);
+            await updateMigrationLog(issuer.legal_name, migrationLog);
             console.log(`✅ Stock Plan ${stockPlan.id} deployed successfully`);
         }
 
@@ -151,7 +153,7 @@ async function migrateIssuer(issuerId) {
             console.log(`Deploying Stakeholder: ${stakeholder.id}`);
             await convertAndReflectStakeholderOnchain(contract, stakeholder.id);
             migrationLog.records[stakeholder.id] = true;
-            await updateMigrationLog(issuerId, migrationLog);
+            await updateMigrationLog(issuer.legal_name, migrationLog);
             console.log(`✅ Stakeholder ${stakeholder.id} deployed successfully`);
         }
 
@@ -235,7 +237,7 @@ async function migrateIssuer(issuerId) {
                 }
 
                 migrationLog.records[tx.id] = true;
-                await updateMigrationLog(issuerId, migrationLog);
+                await updateMigrationLog(issuer.legal_name, migrationLog);
                 console.log(`✅ Transaction ${tx.object_type} processed successfully`);
             } catch (error) {
                 migrationLog.errors.push({
@@ -244,7 +246,7 @@ async function migrateIssuer(issuerId) {
                     error: error.message,
                     timestamp: new Date().toISOString(),
                 });
-                await updateMigrationLog(issuerId, migrationLog);
+                await updateMigrationLog(issuer.legal_name, migrationLog);
                 throw error;
             }
         }
@@ -313,7 +315,7 @@ async function migrateIssuer(issuerId) {
                 error: error.message,
                 timestamp: new Date().toISOString(),
             });
-            await updateMigrationLog(issuerId, migrationLog);
+            await updateMigrationLog(issuer.legal_name, migrationLog);
         }
         console.error("Migration failed:", error);
         throw error;
