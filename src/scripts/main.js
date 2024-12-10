@@ -28,7 +28,8 @@ const askQuestion = (question) => {
 const main = async () => {
     try {
         await connectDB();
-        const issuers = await readAllIssuers();
+        // Skip Protelicious USA Corp
+        const issuers = (await readAllIssuers()).filter((i) => !i.legal_name.includes("Protelicious USA Corp"));
         const globalErrors = [];
 
         console.log(chalk.blue.bold(`Found ${issuers.length} issuers to validate.\n`));

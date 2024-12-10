@@ -17,24 +17,31 @@ const createInitialState = (issuer, stockClasses, stockPlans, stakeholders) => {
 
     // Create captable state
     const captableState = captableInitialState(issuer, stockClasses, stockPlans, stakeholders);
-
+    const errors = new Set();
+    if (!issuer.initial_shares_authorized) {
+        errors.add(`Issuer ${issuer.legal_name} has no initial_shares_authorized`);
+    }
     return {
         issuer: {
             id: issuer._id,
             sharesAuthorized: parseInt(issuer.initial_shares_authorized),
             sharesIssued: 0,
         },
-        stockClasses: stockClasses.reduce(
-            (acc, sc) => ({
+        stockClasses: stockClasses.reduce((acc, sc) => {
+            if (Number(sc.initial_shares_authorized) > Number(issuer.initial_shares_authorized)) {
+                errors.add(
+                    `[StockClass ${sc.id} initial_shares_authorized (${sc.initial_shares_authorized}) exceeds issuer initial_shares_authorized (${issuer.initial_shares_authorized})`
+                );
+            }
+            return {
                 ...acc,
                 [sc.id]: {
                     id: sc.id,
                     sharesAuthorized: parseInt(sc.initial_shares_authorized),
                     sharesIssued: 0,
                 },
-            }),
-            {}
-        ),
+            };
+        }, {}),
         stockPlans: {
             "no-stock-plan": {
                 id: "no-stock-plan",
@@ -62,7 +69,7 @@ const createInitialState = (issuer, stockClasses, stockPlans, stakeholders) => {
         ...dashboardState,
         ...captableState, // Add captable specific state
         transactions: [], // Reset transactions array
-        errors: new Set(), // Reset errors array
+        errors, // Reset errors array
     };
 };
 
@@ -457,6 +464,9 @@ export const captableStats = async ({ issuer, stockClasses, stockPlans, stakehol
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
         const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
+        if (initialState.errors.size > 0) {
+            return { valid: false, errors: Array.from(initialState.errors) };
+        }
         return {
             isCapTableEmpty: true,
             summary: {
@@ -493,6 +503,7 @@ export const captableStats = async ({ issuer, stockClasses, stockPlans, stakehol
             map((state) => {
                 // If there are errors, return the state as is
                 if (state.errors.size > 0) {
+                    console.error("Errors found in state:", Array.from(state.errors));
                     return state;
                 }
                 // Just maintain section structures without calculating totals yet
@@ -652,7 +663,11 @@ export const verifyCapTable = async (captable) => {
 
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
-        return true;
+        const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
+        if (initialState.errors.size > 0) {
+            return { valid: false, errors: Array.from(initialState.errors) };
+        }
+        return { valid: true, errors: [] };
     }
 
     const finalState = await lastValueFrom(
