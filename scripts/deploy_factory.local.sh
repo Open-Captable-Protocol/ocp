@@ -34,4 +34,4 @@ trap "rm $TEMP" EXIT
 
 set -x
 cd chain
-forge script script/DeployCapTableFactory.local.s.sol --broadcast --fork-url localhost:8545 --private-key $PRIVATE_KEY
+forge script script/DeployFactory.s.sol --broadcast --fork-url localhost:8545 --private-key $PRIVATE_KEY

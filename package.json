@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "migrate": "npx tsx src/scripts/migrate.js",
-    "prod": "npx tsx src/app.js",
+    "start": "npx tsx src/app.js",
     "dev": "npx tsx watch src/app.js",
     "format": "prettier --write \"src/**/*.{js,mjs,ts,mts,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,mjs,ts,mts,json,md}\"",
@@ -18,14 +18,13 @@
     "typecheck": "concurrently --raw yarn:typecheck:*",
     "typecheck:app": "tsc --noEmit",
     "prepare": "husky",
-    "deploy-factory:local": "sh ./scripts/deployFactoryLocal.sh",
+    "deploy:local": "sh ./scripts/deploy_factory.local.sh",
     "accept-transfer": "sh ./scripts/acceptTransfer.sh",
     "setup": "sh setup.sh",
     "deseed": "npx tsx src/db/scripts/deseed.js",
     "test": "cd chain && forge test",
     "test-js": "jest --testPathPattern src/tests/unit",
-    "test-js-integration": "jest --testPathPattern src/tests/integration",
-    "export-manifest": "cd src/db/samples && zip -r fairmint.zip fairmint && mv fairmint.zip $HOME/Downloads"
+    "test-js-integration": "jest --testPathPattern src/tests/integration"
   },
   "dependencies": {
     "@sentry/node": "^8.37.1",
