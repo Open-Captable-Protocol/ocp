@@ -14,6 +14,7 @@ import { setupEnv } from "../utils/env.js";
 import getProvider from "./getProvider.js";
 import { findOne } from "../db/operations/atomic";
 import Factory from "../db/objects/Factory.js";
+import { assert } from "node:assert";
 
 setupEnv();
 
@@ -31,10 +32,17 @@ export const facetsABI = [
 
 const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
 
+export const getWallet = async (chainId) => {
+    assert(WALLET_PRIVATE_KEY, "WALLET_PRIVATE_KEY is not set");
+    assert(chainId, "chainId is not set");
+
+    const provider = getProvider(chainId);
+    return new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
+};
+
 async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
     // Get provider for specified chain
-    const provider = getProvider(chainId);
-    const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
+    const wallet = await getWallet(chainId);
     console.log("🗽 | Wallet address: ", wallet.address);
 
     // Find factory for this chain
