@@ -47,7 +47,7 @@ contract EquityCompensationFacet is IEquityCompensationFacet {
     }
 
     /// @notice Exercise equity compensation to convert it into stock
-    /// @dev Only the stakeholder who owns the equity compensation can exercise it
+    /// @dev Only OPERATOR_ROLE can exercise equity compensation
     function exerciseEquityCompensation(
         bytes16 equity_comp_security_id,
         bytes16 resulting_stock_security_id,
@@ -57,15 +57,14 @@ contract EquityCompensationFacet is IEquityCompensationFacet {
     {
         Storage storage ds = StorageLib.get();
 
+        // Check that caller is an operator
+        if (!AccessControl.hasOperatorRole(msg.sender)) {
+            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.OPERATOR_ROLE);
+        }
+
         // Validate equity compensation security exists and has sufficient quantity
         EquityCompensationActivePosition memory equityPosition =
             ds.equityCompensationActivePositions.securities[equity_comp_security_id];
-
-        // Verify caller is the stakeholder who owns this equity compensation
-        bytes16 stakeholderId = ds.addressToStakeholderId[msg.sender];
-        if (stakeholderId != equityPosition.stakeholder_id) {
-            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.INVESTOR_ROLE);
-        }
 
         if (quantity == 0) {
             revert ValidationLib.InvalidQuantity();

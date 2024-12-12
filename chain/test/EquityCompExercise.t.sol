@@ -103,8 +103,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             TxType.EQUITY_COMPENSATION_EXERCISE, abi.encode(equityCompSecurityId, newStockSecurityId, exerciseQuantity)
         );
 
-        // Exercise as stakeholder
-        vm.prank(stakeholderWallet);
+        // Exercise as operator
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             equityCompSecurityId, newStockSecurityId, exerciseQuantity
         );
@@ -121,8 +120,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             TxType.EQUITY_COMPENSATION_EXERCISE, abi.encode(equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY)
         );
 
-        // Exercise as stakeholder
-        vm.prank(stakeholderWallet);
+        // Exercise as operator
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY
         );
@@ -131,6 +129,14 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         EquityCompensationActivePosition memory position =
             IEquityCompensationFacet(address(capTable)).getPosition(equityCompSecurityId);
         assertEq(position.quantity, 0);
+    }
+
+    function testFailNonOperatorExercise() public {
+        address nonOperator = address(0x129);
+        vm.prank(nonOperator);
+        IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
+            equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY
+        );
     }
 
     function testFailInvalidEquityCompSecurity() public {
@@ -171,6 +177,8 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         });
         IStockFacet(address(capTable)).issueStock(otherParams);
 
+        // Should fail when trying to exercise equity compensation with stock belonging to different stakeholder
+        // even though caller is an operator
         vm.expectRevert(
             abi.encodeWithSelector(
                 ValidationLib.InvalidSecurityStakeholder.selector, otherStockSecurityId, stakeholderId
