@@ -14,9 +14,14 @@ contract IssuerFacet {
     event IssuerAuthorizedSharesAdjusted(uint256 newSharesAuthorized);
 
     /// @notice Initialize the issuer with initial shares authorized
-    /// @dev Can only be called once by the factory during setup
+    /// @dev Can only be called once by an admin during setup
     function initializeIssuer(bytes16 id, uint256 initial_shares_authorized) external {
         Storage storage ds = StorageLib.get();
+
+        // Check that caller has admin role
+        if (!AccessControl.hasAdminRole(msg.sender)) {
+            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.DEFAULT_ADMIN_ROLE);
+        }
 
         if (ds.issuer.shares_authorized != 0) {
             revert IssuerAlreadyInitialized();
