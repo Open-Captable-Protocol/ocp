@@ -8,7 +8,6 @@ import { convertAndReflectStakeholderOnchain } from "../controllers/stakeholderC
 import { convertAndReflectStockPlanOnchain } from "../controllers/stockPlanController.js";
 import { convertAndAdjustIssuerAuthorizedSharesOnChain } from "../controllers/issuerController.js";
 import { convertAndAdjustStockClassAuthorizedSharesOnchain } from "../controllers/stockClassController.js";
-import { adjustStockPlanPool } from "../controllers/stockPlanController.js";
 import {
     convertAndCreateIssuanceStockOnchain,
     convertAndCreateIssuanceEquityCompensationOnchain,
@@ -203,7 +202,7 @@ async function migrateIssuer(issuerId) {
                         break;
 
                     case "TX_STOCK_PLAN_POOL_ADJUSTMENT":
-                        await adjustStockPlanPool(contract, tx.stock_plan_id, tx.shares_reserved);
+                        await convertAndReflectStockPlanOnchain(contract, tx.stock_plan_id, tx.shares_reserved);
                         break;
 
                     case "TX_STOCK_ISSUANCE":
