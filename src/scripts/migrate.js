@@ -20,10 +20,10 @@ import mongoose from "mongoose";
 import { connectDB } from "../db/config/mongoose.ts";
 import fs from "fs";
 import path from "path";
-import { validateIssuerForMigration } from "./validate.js";
 import chalk from "chalk";
 import readline from "readline";
 import { addAddressesToWatch, reamoveAllListeners } from "../utils/websocket.ts";
+import { validateIssuerForMigration } from "./validate.js";
 
 // Load environment variables
 dotenv.config();
@@ -74,12 +74,25 @@ async function loadOrCreateMigrationLog(issuerName) {
     }
 }
 
-async function updateMigrationLog(issuerName, log) {
+async function updateMigrationLog(issuerName, log, gasTracker = null) {
     const logFile = path.join(process.cwd(), "migrations", `${issuerName}.log.json`);
-    fs.writeFileSync(logFile, JSON.stringify({ ...log, updatedAt: new Date().toISOString() }, null, 2));
+    const updatedLog = {
+        ...log,
+        updatedAt: new Date().toISOString(),
+        // Add gas tracking if provided
+        ...(gasTracker && {
+            gasUsed: gasTracker.gasUsed.toString(),
+            transactionCount: gasTracker.transactionCount,
+        }),
+    };
+    fs.writeFileSync(logFile, JSON.stringify(updatedLog, null, 2));
 }
 
-async function migrateIssuer(issuerId) {
+const waitBetweenTransactions = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
+};
+
+async function migrateIssuer(issuerId, gasTracker = { gasUsed: BigInt(0), transactionCount: 0 }) {
     await connectDB();
     let migrationLog;
     let issuer;
@@ -109,7 +122,9 @@ async function migrateIssuer(issuerId) {
             console.log(`Address before deployment: ${issuer.deployed_to}`);
             console.log(`TX Hash before deployment: ${issuer.tx_hash}`);
 
-            const { address, deployHash } = await deployCapTable(issuerIdBytes16, issuer.initial_shares_authorized, issuer.chain_id);
+            const { address, deployHash, receipt } = await deployCapTable(issuerIdBytes16, issuer.initial_shares_authorized, issuer.chain_id);
+            trackGasUsage(receipt, gasTracker);
+
             await updateIssuerById(issuerId, { deployed_to: address, tx_hash: deployHash });
 
             console.log(`\nCap table deployed successfully:`);
@@ -118,7 +133,7 @@ async function migrateIssuer(issuerId) {
             migrationLog.address = address;
             migrationLog.deployHash = deployHash;
             migrationLog.records[issuerId] = true;
-            await updateMigrationLog(issuer.legal_name, migrationLog);
+            await updateMigrationLog(issuer.legal_name, migrationLog, gasTracker);
         }
 
         console.log({ issuerId, address: migrationLog.address, chainId: issuer.chain_id });
@@ -136,9 +151,12 @@ async function migrateIssuer(issuerId) {
             }
 
             console.log(`Deploying Stock Class: ${stockClass.id}`);
-            await convertAndReflectStockClassOnchain(contract, stockClass);
+            const receipt = await convertAndReflectStockClassOnchain(contract, stockClass);
             migrationLog.records[stockClass.id] = true;
-            await updateMigrationLog(issuer.legal_name, migrationLog);
+
+            trackGasUsage(receipt, gasTracker);
+            await updateMigrationLog(issuer.legal_name, migrationLog, gasTracker);
+            await waitBetweenTransactions();
             console.log(`✅ Stock Class ${stockClass.id} deployed successfully`);
         }
 
@@ -152,9 +170,11 @@ async function migrateIssuer(issuerId) {
             }
 
             console.log(`Deploying Stock Plan: ${stockPlan.id}`);
-            await convertAndReflectStockPlanOnchain(contract, stockPlan);
+            const receipt = await convertAndReflectStockPlanOnchain(contract, stockPlan);
             migrationLog.records[stockPlan.id] = true;
-            await updateMigrationLog(issuer.legal_name, migrationLog);
+            trackGasUsage(receipt, gasTracker);
+            await updateMigrationLog(issuer.legal_name, migrationLog, gasTracker);
+            await waitBetweenTransactions();
             console.log(`✅ Stock Plan ${stockPlan.id} deployed successfully`);
         }
 
@@ -168,9 +188,11 @@ async function migrateIssuer(issuerId) {
             }
 
             console.log(`Deploying Stakeholder: ${stakeholder.id}`);
-            await convertAndReflectStakeholderOnchain(contract, stakeholder.id);
+            const receipt = await convertAndReflectStakeholderOnchain(contract, stakeholder.id);
             migrationLog.records[stakeholder.id] = true;
-            await updateMigrationLog(issuer.legal_name, migrationLog);
+            trackGasUsage(receipt, gasTracker);
+            await updateMigrationLog(issuer.legal_name, migrationLog, gasTracker);
+            await waitBetweenTransactions();
             console.log(`✅ Stakeholder ${stakeholder.id} deployed successfully`);
         }
 
@@ -181,7 +203,8 @@ async function migrateIssuer(issuerId) {
         const successfulTxs = [];
         const failedTxs = [];
 
-        for (const [index, tx] of sortedTransactions.entries()) {
+        for (let index = 0; index < sortedTransactions.length; index++) {
+            const tx = sortedTransactions[index];
             console.log(`\nTransaction Progress: [${index + 1}/${totalTransactions}]`);
             if (migrationLog.records[tx.id]) {
                 console.log(`Skipping Transaction ${tx.id} (already processed)`);
@@ -192,29 +215,30 @@ async function migrateIssuer(issuerId) {
 
             try {
                 console.log({ tx });
+                let receipt;
                 switch (tx.object_type) {
                     case "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT":
-                        await convertAndAdjustIssuerAuthorizedSharesOnChain(contract, tx);
+                        receipt = await convertAndAdjustIssuerAuthorizedSharesOnChain(contract, tx);
                         break;
 
                     case "TX_STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT":
-                        await convertAndAdjustStockClassAuthorizedSharesOnchain(contract, tx);
+                        receipt = await convertAndAdjustStockClassAuthorizedSharesOnchain(contract, tx);
                         break;
 
                     case "TX_STOCK_PLAN_POOL_ADJUSTMENT":
-                        await convertAndReflectStockPlanOnchain(contract, tx.stock_plan_id, tx.shares_reserved);
+                        receipt = await convertAndReflectStockPlanOnchain(contract, tx.stock_plan_id, tx.shares_reserved);
                         break;
 
                     case "TX_STOCK_ISSUANCE":
-                        await convertAndCreateIssuanceStockOnchain(contract, tx);
+                        receipt = await convertAndCreateIssuanceStockOnchain(contract, tx);
                         break;
 
                     case "TX_EQUITY_COMPENSATION_ISSUANCE":
-                        await convertAndCreateIssuanceEquityCompensationOnchain(contract, tx);
+                        receipt = await convertAndCreateIssuanceEquityCompensationOnchain(contract, tx);
                         break;
 
                     case "TX_CONVERTIBLE_ISSUANCE":
-                        await convertAndCreateIssuanceConvertibleOnchain(contract, tx);
+                        receipt = await convertAndCreateIssuanceConvertibleOnchain(contract, tx);
                         break;
 
                     case "TX_EQUITY_COMPENSATION_EXERCISE":
@@ -226,7 +250,7 @@ async function migrateIssuer(issuerId) {
                             errors.push(`Transaction ${tx.id} has no resulting security ids`);
                             break;
                         }
-                        await convertAndCreateEquityCompensationExerciseOnchain(contract, tx);
+                        receipt = await convertAndCreateEquityCompensationExerciseOnchain(contract, tx);
                         break;
 
                     case "TX_WARRANT_ISSUANCE":
@@ -234,7 +258,7 @@ async function migrateIssuer(issuerId) {
                             errors.push(`Transaction ${tx.id} has 0 quantity`);
                             break;
                         }
-                        await convertAndCreateIssuanceWarrantOnchain(contract, tx);
+                        receipt = await convertAndCreateIssuanceWarrantOnchain(contract, tx);
                         break;
 
                     default:
@@ -242,17 +266,26 @@ async function migrateIssuer(issuerId) {
                 }
 
                 migrationLog.records[tx.id] = true;
-                await updateMigrationLog(issuer.legal_name, migrationLog);
+                trackGasUsage(receipt, gasTracker);
+                await updateMigrationLog(issuer.legal_name, migrationLog, gasTracker);
+                await waitBetweenTransactions();
                 console.log(`✅ Transaction ${tx.object_type} processed successfully`);
             } catch (error) {
-                migrationLog.errors.push({
-                    id: tx.id,
-                    type: tx.object_type,
-                    error: error.message,
-                    timestamp: new Date().toISOString(),
-                });
-                await updateMigrationLog(issuer.legal_name, migrationLog);
-                throw error;
+                const answer = await askQuestion(
+                    `\nError processing ${tx.object_type}. Would you like to:\n` +
+                        `  ${chalk.yellow("s")} - Skip this transaction\n` +
+                        `  ${chalk.yellow("r")} - Retry this transaction\n` +
+                        `  ${chalk.yellow("a")} - Abort migration\n` +
+                        `Enter your choice: `
+                );
+
+                if (answer.toLowerCase() === "a") {
+                    throw error;
+                } else if (answer.toLowerCase() === "r") {
+                    index--; // Retry same transaction
+                    continue;
+                }
+                // 's' skips to next transaction
             }
         }
 
@@ -317,10 +350,16 @@ async function migrateIssuer(issuerId) {
 
         // After all migrations are successful, mark as migrated in the log
         migrationLog.migrated = true;
-        await updateMigrationLog(issuer.legal_name, migrationLog);
+        await updateMigrationLog(issuer.legal_name, migrationLog, gasTracker);
 
         // Update issuer in database
         await updateIssuerById(issuerId, { migrated: true });
+
+        return {
+            success: true,
+            gasTracker,
+            issuerName: issuer.legal_name,
+        };
     } catch (error) {
         if (migrationLog) {
             migrationLog.errors.push({
@@ -328,10 +367,10 @@ async function migrateIssuer(issuerId) {
                 timestamp: new Date().toISOString(),
             });
             migrationLog.migrated = false;
-            await updateMigrationLog(issuer.legal_name, migrationLog);
+            await updateMigrationLog(issuer.legal_name, migrationLog, gasTracker);
         }
         console.error("Migration failed:", error);
-        throw error;
+        return { success: false, gasTracker, error };
     } finally {
         await mongoose.disconnect();
     }
@@ -339,35 +378,25 @@ async function migrateIssuer(issuerId) {
 
 const MAX_RETRIES = 3; // Maximum number of retry attempts
 
-const askForRetry = async (issuerName, error, attempt) => {
-    console.error(chalk.red(`\nError migrating ${chalk.yellow(issuerName)} (Attempt ${attempt}/${MAX_RETRIES}):`), error);
-
-    if (attempt >= MAX_RETRIES) {
-        console.log(chalk.red(`\nMaximum retry attempts (${MAX_RETRIES}) reached for ${chalk.yellow(issuerName)}`));
-        return false;
-    }
-
-    const answer = await askQuestion(`Would you like to retry migrating ${chalk.yellow(issuerName)}? (y/n): `);
-    return answer.toLowerCase() === "y";
-};
-
 async function main() {
+    const gasReport = createGasReport();
+
     try {
         await connectDB();
-        const issuers = (await readAllIssuers()).filter((i) => {
-            if (i.legal_name.includes("Protelicious USA Corp") || i.legal_name.toLowerCase().includes("fairbnb")) {
-                return false;
-            }
 
-            // Check both database and log file migration status
-            const logFile = path.join(process.cwd(), "migrations", `${i.legal_name}.log.json`);
-            if (fs.existsSync(logFile)) {
-                const log = JSON.parse(fs.readFileSync(logFile, "utf8"));
-                return !i.migrated && !log.migrated;
-            }
+        const skipIssuers = [];
+        const issuers = (await readAllIssuers())
+            .filter((i) => !skipIssuers.includes(i.legal_name))
+            .filter((i) => {
+                // Check both database and log file status
+                const logFile = path.join(process.cwd(), "migrations", `${i.legal_name}.log.json`);
+                if (fs.existsSync(logFile)) {
+                    const log = JSON.parse(fs.readFileSync(logFile, "utf8"));
+                    return !i.migrated && !log.migrated;
+                }
 
-            return !i.migrated;
-        });
+                return !i.migrated;
+            });
 
         console.log(chalk.blue.bold(`Found ${issuers.length} issuers to migrate.\n`));
 
@@ -416,28 +445,50 @@ async function main() {
                 );
 
                 try {
-                    await migrateIssuer(issuer.id);
-                    console.log(chalk.green(`\n✅ Successfully migrated ${chalk.yellow(issuer.legal_name)}`));
+                    const result = await migrateIssuer(issuer.id);
+                    if (result.success) {
+                        console.log(chalk.green(`\n✅ Successfully migrated ${chalk.yellow(issuer.legal_name)}`));
+                        console.log(chalk.blue(`   Gas used: ${result.gasTracker.gasUsed.toString()}`));
+                        console.log(chalk.blue(`   Transactions: ${result.gasTracker.transactionCount}`));
+                        gasReport.issuers.push({
+                            name: issuer.legal_name,
+                            gasUsed: result.gasTracker.gasUsed,
+                            transactionCount: result.gasTracker.transactionCount,
+                        });
+                        gasReport.totalGasUsed += result.gasTracker.gasUsed;
+                    }
                     success = true;
                 } catch (error) {
-                    if (await askForRetry(issuer.legal_name, error, attempt)) {
-                        attempt++;
-                        continue;
-                    } else {
-                        console.log(chalk.yellow(`\nSkipping ${chalk.yellow(issuer.legal_name)} and continuing with next issuer...`));
-                        break;
-                    }
-                }
-            }
+                    console.error(chalk.red(`\n❌ Error migrating ${chalk.yellow(issuer.legal_name)}:`), error);
 
-            if (!success) {
-                console.log(chalk.red(`\n❌ Failed to migrate ${chalk.yellow(issuer.legal_name)} after ${attempt - 1} attempts`));
+                    const answer = await askQuestion(
+                        `\nWould you like to:\n` +
+                            `  ${chalk.yellow("c")} - Continue with next issuer\n` +
+                            `  ${chalk.yellow("r")} - Retry this issuer\n` +
+                            `  ${chalk.yellow("s")} - Stop migration\n` +
+                            `Enter your choice: `
+                    );
+
+                    if (answer.toLowerCase() === "s") {
+                        console.log(chalk.yellow("\nStopping migration process..."));
+                        break;
+                    } else if (answer.toLowerCase() === "r") {
+                        i--; // Retry same issuer
+                        continue;
+                    }
+                    // 'c' continues to next issuer
+                }
             }
 
             console.log(chalk.gray("\n-------------------\n"));
         }
 
+        // Save final gas report
+        const reportPath = saveGasReport(gasReport);
         console.log(chalk.green.bold("\nMigration process completed."));
+        console.log(chalk.blue(`Gas report saved to: ${reportPath}`));
+        console.log(chalk.blue(`Total gas used: ${gasReport.totalGasUsed.toString()}`));
+        console.log(chalk.blue(`Total issuers processed: ${gasReport.issuers.length}`));
     } catch (error) {
         console.error(chalk.red.bold("Error during migration process:"), chalk.red(error));
     } finally {
@@ -453,8 +504,25 @@ async function main() {
 if (process.argv[2]) {
     const issuerId = process.argv[2];
     migrateIssuer(issuerId)
-        .then(() => {
-            console.log(chalk.green("Single issuer migration completed successfully"));
+        .then((result) => {
+            if (result.success) {
+                console.log(chalk.green("Single issuer migration completed successfully"));
+                const reportPath = saveGasReport({
+                    totalGasUsed: result.gasTracker.gasUsed,
+                    issuers: [
+                        {
+                            name: result.issuerName,
+                            gasUsed: result.gasTracker.gasUsed,
+                            transactionCount: result.gasTracker.transactionCount,
+                        },
+                    ],
+                    startTime: new Date().toISOString(),
+                    endTime: new Date().toISOString(),
+                });
+                console.log(chalk.blue(`Gas report saved to: ${reportPath}`));
+            } else {
+                throw result.error;
+            }
             process.exit(0);
         })
         .catch((error) => {
@@ -472,4 +540,32 @@ if (process.argv[2]) {
             console.error(chalk.red("Migration failed:"), error);
             process.exit(1);
         });
+}
+
+function createGasReport() {
+    return {
+        totalGasUsed: BigInt(0),
+        issuers: [],
+        startTime: new Date().toISOString(),
+        endTime: null,
+    };
+}
+
+function saveGasReport(report) {
+    const reportPath = path.join(process.cwd(), "migrations", `migration-report-${new Date().toISOString().split("T")[0]}.json`);
+    report.endTime = new Date().toISOString();
+    fs.writeFileSync(
+        reportPath,
+        JSON.stringify(report, (_, value) => (typeof value === "bigint" ? value.toString() : value), 2)
+    );
+    return reportPath;
+}
+
+function trackGasUsage(receipt, tracker) {
+    if (!receipt) {
+        console.warn(chalk.yellow("Warning: No receipt provided for gas tracking"));
+        return;
+    }
+    tracker.gasUsed += BigInt(receipt.gasUsed);
+    tracker.transactionCount += 1;
 }
