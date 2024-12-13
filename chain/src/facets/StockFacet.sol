@@ -46,16 +46,7 @@ contract StockFacet {
         ds.issuer.shares_issued += params.quantity;
 
         // Store transaction - Include mapping fields in transaction data
-        bytes memory txData = abi.encode(
-            params.stock_class_id,
-            params.share_price,
-            params.quantity,
-            params.stakeholder_id,
-            params.security_id,
-            params.stock_legend_ids_mapping,
-            params.custom_id,
-            params.security_law_exemptions_mapping
-        );
+        bytes memory txData = abi.encode(params);
         TxHelper.createTx(TxType.STOCK_ISSUANCE, txData);
     }
 
