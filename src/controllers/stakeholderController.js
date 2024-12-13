@@ -4,7 +4,8 @@ import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 export const convertAndReflectStakeholderOnchain = async (contract, stakeholderId) => {
     const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholderId);
     const tx = await contract.createStakeholder(stakeholderIdBytes16);
-    await tx.wait();
+    const receipt = await tx.wait();
+    return receipt;
 };
 
 export const addWalletToStakeholder = async (contract, id, wallet) => {
@@ -12,9 +13,8 @@ export const addWalletToStakeholder = async (contract, id, wallet) => {
     const stakeholderIdBytes16 = convertUUIDToBytes16(id);
     // Second: add wallet to stakeholder onchain
     const tx = await contract.addWalletToStakeholder(stakeholderIdBytes16, wallet);
-    await tx.wait();
-
-    console.log("✅ | Wallet added to stakeholder onchain");
+    const receipt = await tx.wait();
+    return receipt;
 };
 
 export const removeWalletFromStakeholder = async (contract, id, wallet) => {
@@ -22,9 +22,10 @@ export const removeWalletFromStakeholder = async (contract, id, wallet) => {
     const stakeholderIdBytes16 = convertUUIDToBytes16(id);
     // Second: remove wallet from stakeholder onchain
     const tx = await contract.removeWalletFromStakeholder(stakeholderIdBytes16, wallet);
-    await tx.wait();
+    const receipt = await tx.wait();
 
     console.log("✅ | Wallet removed from stakeholder onchain");
+    return receipt;
 };
 
 //TODO: to decide if we want to also return offchain data.

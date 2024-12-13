@@ -7,9 +7,6 @@ export const convertAndCreateEquityCompensationExerciseOnchain = async (contract
     const quantityScaled = toScaledBigNumber(quantity);
 
     const tx = await contract.exerciseEquityCompensation(equityCompSecurityIdBytes16, resultingStockSecurityIdBytes16, quantityScaled);
-    await tx.wait();
-    console.log("Transaction hash:", tx.hash);
-
-    console.log("[PENDING] Exercised equity compensation onchain", tx.hash);
-    return tx.hash;
+    const receipt = await tx.wait();
+    return receipt;
 };

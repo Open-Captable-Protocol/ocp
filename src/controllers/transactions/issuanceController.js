@@ -26,11 +26,8 @@ export const convertAndCreateIssuanceStockOnchain = async (
         stock_legend_ids_mapping: "",
         security_law_exemptions_mapping: "",
     });
-    await tx.wait();
-    console.log("Transaction hash:", tx.hash);
-
-    console.log("[PENDING] Issued stock onchain", tx.hash);
-    return tx.hash;
+    const receipt = await tx.wait();
+    return receipt;
 };
 
 // Convertible Issuance
@@ -48,11 +45,8 @@ export const convertAndCreateIssuanceConvertibleOnchain = async (
         security_law_exemptions_mapping: "",
         conversion_triggers_mapping: "",
     });
-    await tx.wait();
-    console.log("Transaction hash:", tx.hash);
-
-    console.log("[PENDING] Issued convertible onchain", tx.hash);
-    return tx.hash;
+    const receipt = await tx.wait();
+    return receipt;
 };
 
 // Warrant Issuance
@@ -69,9 +63,8 @@ export const convertAndCreateIssuanceWarrantOnchain = async (
         security_law_exemptions_mapping: "",
         exercise_triggers_mapping: "",
     });
-    await tx.wait();
-    console.log("[PENDING] Issued warrant onchain", tx.hash);
-    return tx.hash;
+    const receipt = await tx.wait();
+    return receipt;
 };
 
 // Equity Compensation Issuance
@@ -104,7 +97,6 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
         termination_exercise_windows_mapping: "",
         security_law_exemptions_mapping: "",
     });
-    await tx.wait();
-    console.log("[PENDING] Issued equity compensation - Hash:", tx.hash);
-    return tx.hash;
+    const receipt = await tx.wait();
+    return receipt;
 };
