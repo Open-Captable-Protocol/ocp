@@ -40,7 +40,6 @@ contract IssuerFacet {
 
         ds.issuer.shares_authorized = newSharesAuthorized;
 
-        emit IssuerAuthorizedSharesAdjusted(newSharesAuthorized);
-        TxHelper.createTx(TxType.ISSUER_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(newSharesAuthorized));
+        TxHelper.createTx(TxType.ISSUER_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(ds.issuer.id, newSharesAuthorized));
     }
 }

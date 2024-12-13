@@ -82,6 +82,8 @@ contract StockClassFacet {
         stockClass.shares_authorized = newSharesAuthorized;
 
         emit StockClassAuthorizedSharesAdjusted(stockClassId, newSharesAuthorized);
-        TxHelper.createTx(TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(newSharesAuthorized));
+        TxHelper.createTx(
+            TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(stockClassId, newSharesAuthorized)
+        );
     }
 }

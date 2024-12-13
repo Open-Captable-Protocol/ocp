@@ -59,8 +59,6 @@ contract StockPlanFacet {
         StockPlan storage stockPlan = ds.stockPlans[stockPlanIndex - 1];
         stockPlan.shares_reserved = newSharesReserved;
 
-        TxHelper.createTx(TxType.STOCK_PLAN_POOL_ADJUSTMENT, abi.encode(newSharesReserved));
-
-        emit StockPlanSharesReservedAdjusted(stockPlanId, newSharesReserved);
+        TxHelper.createTx(TxType.STOCK_PLAN_POOL_ADJUSTMENT, abi.encode(stockPlanId, newSharesReserved));
     }
 }
