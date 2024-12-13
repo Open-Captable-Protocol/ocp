@@ -60,7 +60,7 @@ async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
 
     console.log("Creating a new cap table...");
     const tx = await capTableFactory.createCapTable(issuerId, toScaledBigNumber(initial_shares_authorized));
-    await tx.wait();
+    const receipt = await tx.wait();
     console.log("Cap table created");
 
     const capTableCount = await capTableFactory.getCapTableCount();
@@ -72,7 +72,8 @@ async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
     return {
         contract: new ethers.Contract(captableAddress, facetsABI, wallet),
         address: captableAddress,
-        deployHash: tx.hash,
+        deployHash: receipt.hash,
+        receipt,
     };
 }
 
