@@ -68,9 +68,9 @@ const contractMiddleware = async (req, res, next) => {
     if (!issuer || !issuer.id) return res.status(404).send("issuer not found ");
 
     // Check if contract instance already exists in cache
-    const cacheKey = `${issuer.chainId}-${req.body.issuerId}`;
+    const cacheKey = `${issuer.chain_id}-${req.body.issuerId}`;
     if (!contractCache[cacheKey]) {
-        const contract = await getContractInstance(issuer.deployed_to, issuer.chainId);
+        const contract = await getContractInstance(issuer.deployed_to, issuer.chain_id);
         contractCache[cacheKey] = { contract };
     }
 
@@ -83,8 +83,8 @@ app.use(urlencoded({ limit: "50mb", extended: true }));
 app.use(json({ limit: "50mb" }));
 app.enable("trust proxy");
 
-app.use("/", chainMiddleware, mainRoutes);
-app.use("/issuer", chainMiddleware, issuerRoutes);
+app.use("/", contractMiddleware, mainRoutes);
+app.use("/issuer", chainMiddleware, contractMiddleware, issuerRoutes);
 app.use("/stakeholder", contractMiddleware, stakeholderRoutes);
 app.use("/stock-class", contractMiddleware, stockClassRoutes);
 
