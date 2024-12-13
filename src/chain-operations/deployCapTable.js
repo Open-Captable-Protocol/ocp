@@ -66,12 +66,12 @@ async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
     const capTableCount = await capTableFactory.getCapTableCount();
     console.log("📄 | Cap table count: ", capTableCount);
 
-    const diamondAddress = await capTableFactory.capTables(capTableCount - BigInt(1));
-    console.log("✅ | Diamond address: ", diamondAddress);
+    const captableAddress = await capTableFactory.capTables(capTableCount - BigInt(1));
+    console.log("✅ | Cap table address: ", captableAddress);
 
     return {
-        contract: new ethers.Contract(diamondAddress, facetsABI, wallet),
-        address: diamondAddress,
+        contract: new ethers.Contract(captableAddress, facetsABI, wallet),
+        address: captableAddress,
         deployHash: tx.hash,
     };
 }
