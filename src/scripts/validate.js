@@ -1,9 +1,22 @@
 import get from "lodash/get.js";
-import { captableStats } from "../rxjs/index.js";
 import { getAllStateMachineObjectsById, readAllIssuers } from "../db/operations/read.js";
 import { connectDB, disconnectDB } from "../db/config/mongoose.ts";
 import readline from "readline";
 import chalk from "chalk";
+import { captableStats } from "../rxjs/index.js";
+/**
+ * Validates issuer data for migration, combining RXJS validation with cap table validation
+ * @param {Object} issuerData - Complete issuer data to validate
+ * @returns {Promise<string[]>} Promise resolving to array of error messages
+ */
+export async function validateIssuerForMigration(issuerData) {
+    const rxjsData = await captableStats(issuerData);
+    if (rxjsData?.errors?.size > 0) {
+        return Array.from(rxjsData.errors);
+    }
+
+    return validateCapTableData(issuerData);
+}
 
 /**
  * Validates that all required fields are present and non-empty in an object
@@ -158,7 +171,7 @@ function validateTransactionByType(tx, referenceSets) {
  * @param {Array} issuerData.transactions - Array of transaction objects
  * @returns {Promise<string[]>} Promise resolving to array of error messages
  */
-async function validateCapTableData(issuerData) {
+export async function validateCapTableData(issuerData) {
     const errors = [];
     const { stakeholders, stockClasses, stockPlans, transactions } = issuerData;
 
@@ -194,20 +207,6 @@ async function validateCapTableData(issuerData) {
 }
 
 /**
- * Validates issuer data for migration, combining RXJS validation with cap table validation
- * @param {Object} issuerData - Complete issuer data to validate
- * @returns {Promise<string[]>} Promise resolving to array of error messages
- */
-export async function validateIssuerForMigration(issuerData) {
-    const rxjsData = await captableStats(issuerData);
-    if (rxjsData?.errors?.size > 0) {
-        return Array.from(rxjsData.errors);
-    }
-
-    return validateCapTableData(issuerData);
-}
-
-/**
  * Creates a readline interface for user input
  */
 const rl = readline.createInterface({
@@ -233,9 +232,8 @@ const main = async () => {
     try {
         await connectDB();
         // Skip Protelicious USA Corp
-        const issuers = (await readAllIssuers()).filter(
-            (i) => !i.legal_name.includes("Protelicious USA Corp") && !i.legal_name.toLowerCase().includes("fairbnb")
-        );
+        const skipIssuers = [];
+        const issuers = (await readAllIssuers()).filter((i) => !skipIssuers.includes(i.legal_name));
         const globalErrors = [];
 
         console.log(chalk.blue.bold(`Found ${issuers.length} issuers to validate.\n`));
@@ -310,4 +308,30 @@ const main = async () => {
     }
 };
 
-main();
+// Only run if this file is being executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+    // To run the script from the command line, use the following command: `npx tsx src/scripts/validate.js`
+    if (process.argv[2]) {
+        // Run validation for specific issuer
+        main(process.argv[2])
+            .then(() => {
+                console.log(chalk.green("Validation completed successfully"));
+                process.exit(0);
+            })
+            .catch((error) => {
+                console.error(chalk.red("Validation failed:"), error);
+                process.exit(1);
+            });
+    } else {
+        // Run validation for all issuers
+        main()
+            .then(() => {
+                console.log(chalk.green("Full validation completed successfully"));
+                process.exit(0);
+            })
+            .catch((error) => {
+                console.error(chalk.red("Validation failed:"), error);
+                process.exit(1);
+            });
+    }
+}
