@@ -3,4 +3,5 @@ export const convertAndAdjustIssuerAuthorizedSharesOnChain = async (contract, { 
     const scaledSharesAuthorized = toScaledBigNumber(new_shares_authorized);
     const tx = await contract.adjustIssuerAuthorizedShares(scaledSharesAuthorized);
     await tx.wait();
+    return tx.hash;
 };

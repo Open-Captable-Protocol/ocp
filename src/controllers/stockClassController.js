@@ -45,4 +45,5 @@ export const convertAndAdjustStockClassAuthorizedSharesOnchain = async (contract
 
     const tx = await contract.adjustAuthorizedShares(stockClassIdBytes16, newSharesAuthorizedScaled);
     await tx.wait();
+    return tx.hash;
 };

@@ -17,6 +17,8 @@ import WarrantIssuance from "../objects/transactions/issuance/WarrantIssuance.js
 import VestingStart from "../objects/transactions/vesting/VestingStart.js";
 import EquityCompensationExercise from "../objects/transactions/exercise/EquityCompensationExercise.js";
 import StockPlanPoolAdjustment from "../objects/transactions/adjustment/StockPlanPoolAdjustment.js";
+import StockClassAuthorizedSharesAdjustment from "../objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
+import IssuerAuthorizedSharesAdjustment from "../objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.js";
 
 export const createIssuer = (issuerData) => {
     return save(new Issuer(issuerData));
@@ -88,4 +90,12 @@ export const createEquityCompensationExercise = (exerciseData) => {
 
 export const createStockPlanPoolAdjustment = (stockPlanPoolAdjustmentData) => {
     return save(new StockPlanPoolAdjustment(stockPlanPoolAdjustmentData));
+};
+
+export const createStockClassAuthorizedSharesAdjustment = (stockClassAuthorizedSharesAdjustmentData) => {
+    return save(new StockClassAuthorizedSharesAdjustment(stockClassAuthorizedSharesAdjustmentData));
+};
+
+export const createIssuerAuthorizedSharesAdjustment = (issuerAuthorizedSharesAdjustmentData) => {
+    return save(new IssuerAuthorizedSharesAdjustment(issuerAuthorizedSharesAdjustmentData));
 };

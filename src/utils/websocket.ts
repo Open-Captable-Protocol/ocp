@@ -13,7 +13,6 @@ const TOPICS = {
     StakeholderCreated: "0x53df47344d1cdf2ddb4901af5df61e37e14606bb7c8cc004d65c7c83ab3d0693",
     StockClassCreated: "0xc7496d70298fcc793e1d058617af680232585e302f0185b14bba498b247a9c1d",
     StockPlanCreated: ethers.id("StockPlanCreated(bytes16,uint256)"),
-    // IssuerCreated: "0xb8cbde9f597f493a1b4d1c4db5fded9cd26293080750a0df6b7e7097f4b680dd", // We don't receive this event because by time an issuer is created and we add it to the listener we have already missed it.
 };
 
 const abiCoder = new AbiCoder();
@@ -160,7 +159,7 @@ const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
 
             if (handleFunc) {
                 console.log("Handling transaction:", txType);
-                await handleFunc(_tx.data, issuerId, _tx.timestamp);
+                await handleFunc(_tx.data, issuerId, _tx.timestamp, log.transactionHash);
                 console.log(" | Transaction handled:", txType);
             } else {
                 console.error("Invalid transaction type: ", txType);

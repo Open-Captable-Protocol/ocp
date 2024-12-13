@@ -10,8 +10,6 @@ import StockAcceptance from "../objects/transactions/acceptance/StockAcceptance.
 import WarrantIssuance from "../objects/transactions/issuance/WarrantIssuance.js";
 import EquityCompensationIssuance from "../objects/transactions/issuance/EquityCompensationIssuance.js";
 import EquityCompensationExercise from "../objects/transactions/exercise/EquityCompensationExercise.js";
-import IssuerAuthorizedSharesAdjustment from "../objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.js";
-import StockClassAuthorizedSharesAdjustment from "../objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
 import StockCancellation from "../objects/transactions/cancellation/StockCancellation.js";
 import StockIssuance from "../objects/transactions/issuance/StockIssuance.js";
 import StockReissuance from "../objects/transactions/reissuance/StockReissuance.js";
@@ -99,14 +97,6 @@ export const upsertStockRepurchaseById = async (id, updatedData) => {
 
 export const upsertStockAcceptanceById = async (id, updatedData) => {
     return await findByIdAndUpdate(StockAcceptance, id, updatedData, { new: true, upsert: true });
-};
-
-export const upsertStockClassAuthorizedSharesAdjustment = async (id, updatedData) => {
-    return await findByIdAndUpdate(StockClassAuthorizedSharesAdjustment, id, updatedData, { new: true, upsert: true });
-};
-
-export const upsertIssuerAuthorizedSharesAdjustment = async (id, updatedData) => {
-    return await findByIdAndUpdate(IssuerAuthorizedSharesAdjustment, id, updatedData, { new: true, upsert: true });
 };
 
 export const upsertFactory = async (updatedData) => {

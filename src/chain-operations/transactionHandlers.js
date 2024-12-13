@@ -1,5 +1,10 @@
+import sleep from "../utils/sleep.js";
 import { convertBytes16ToUUID } from "../utils/convertUUID.js";
-import { createHistoricalTransaction } from "../db/operations/create.js";
+import {
+    createHistoricalTransaction,
+    createIssuerAuthorizedSharesAdjustment,
+    createStockClassAuthorizedSharesAdjustment,
+} from "../db/operations/create.js";
 import { readFairmintDataBySecurityId, readFairmintDataByStakeholderId } from "../db/operations/read.js";
 import {
     upsertStakeholderById,
@@ -10,8 +15,6 @@ import {
     upsertStockReissuanceById,
     upsertStockRepurchaseById,
     upsertStockAcceptanceById,
-    upsertStockClassAuthorizedSharesAdjustment,
-    upsertIssuerAuthorizedSharesAdjustment,
     updateStockPlanById,
     upsertStockIssuanceBySecurityId,
     upsertConvertibleIssuanceBySecurityId,
@@ -25,23 +28,26 @@ import { toDecimal } from "../utils/convertToFixedPointDecimals.js";
 import { SERIES_TYPE } from "../fairmint/enums.js";
 import { reflectStakeholder } from "../fairmint/reflectStakeholder.js";
 import { reflectInvestment } from "../fairmint/reflectInvestment.js";
-import {
-    IssuerAuthorizedSharesAdjustment,
-    StockAcceptance,
-    StockCancellation,
-    StockClassAuthorizedSharesAdjustment,
-    StockIssuance,
-    StockReissuance,
-    StockRepurchase,
-    StockRetraction,
-    StockTransfer,
-    ConvertibleIssuance,
-    WarrantIssuance,
-    EquityCompensationIssuance,
-    EquityCompensationExercise,
-} from "./structs.js";
+import * as structs from "./structs.js";
 import { reflectGrant } from "../fairmint/reflectGrant.js";
 import { reflectGrantExercise } from "../fairmint/reflectGrantExercise.js";
+import { findOne } from "../db/operations/atomic.ts";
+import HistoricalTransaction from "../db/objects/HistoricalTransaction.js";
+import StockPlanPoolAdjustment from "../db/objects/transactions/adjustment/StockPlanPoolAdjustment.js";
+import StockClassAuthorizedSharesAdjustment from "../db/objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
+import IssuerAuthorizedSharesAdjustment from "../db/objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.js";
+
+const retryOnMiss = async (func, maxRetries = 5, waitBase = 1000) => {
+    let tried = 0;
+    while (tried < maxRetries) {
+        const res = await func();
+        if (res !== null) {
+            return res;
+        }
+        tried++;
+        await sleep(tried * waitBase, "Returned null, retrying in ");
+    }
+};
 
 const isUUID = (value) => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -171,7 +177,6 @@ export const handleStockTransfer = async (stock, issuerId) => {
 
 export const handleStakeholder = async (id) => {
     try {
-        console.log("StakeholderCreated Event Emitted!", id);
         const incomingStakeholderId = convertBytes16ToUUID(id);
         const stakeholder = await upsertStakeholderById(incomingStakeholderId, { is_onchain_synced: true });
 
@@ -342,71 +347,77 @@ export const handleStockAcceptance = async (stock, issuerId, timestamp) => {
     );
 };
 
-export const handleStockClassAuthorizedSharesAdjusted = async (stock, issuerId, timestamp) => {
-    console.log("StockClassAuthorizedSharesAdjusted Event Emitted!", stock.id);
-    const id = convertBytes16ToUUID(stock.id);
-    console.log("stock price", stock.price);
+export const handleStockClassAuthorizedSharesAdjusted = async (data, issuerId, timestamp, txHash) => {
+    console.log("StockClassAuthorizedSharesAdjusted Event Received!");
+    const [stock_class_id, new_shares_authorized] = data;
 
-    const dateOCF = new Date(timestamp * 1000).toISOString().split("T")[0];
+    console.log("txHash", txHash);
+    const transactionExists = await retryOnMiss(async () => await HistoricalTransaction.findOne({ hash: txHash }));
+    console.log("transactionExists", transactionExists);
 
-    const upsert = await upsertStockClassAuthorizedSharesAdjustment(id, {
-        _id: id,
-        stock_class_id: convertBytes16ToUUID(stock.stock_class_id),
-        object_type: stock.object_type,
-        comments: stock.comments,
-        security_id: convertBytes16ToUUID(stock.security_id),
-        date: dateOCF,
-        new_shares_authorized: toDecimal(stock.new_shares_authorized).toString(),
-        board_approval_date: stock.board_approval_date,
-        stockholder_approval_date: stock.stockholder_approval_date,
+    if (transactionExists) {
+        // Update
+        const updatedStockClassAdjustment = await StockClassAuthorizedSharesAdjustment.findOneAndUpdate(
+            { _id: transactionExists.transaction },
+            { is_onchain_synced: true },
+            { new: true }
+        );
+        console.log("[UPDATED] StockClassAuthorizedSharesAdjusted", updatedStockClassAdjustment);
+    } else {
+        // create
+        const createdStockClassAdjustment = await createStockClassAuthorizedSharesAdjustment({
+            stock_class_id: convertBytes16ToUUID(stock_class_id),
+            new_shares_authorized: toDecimal(new_shares_authorized).toString(),
+            date: new Date(timestamp * 1000).toISOString().split("T")[0],
+            issuer: issuerId,
+            is_onchain_synced: true,
+        });
+        await createHistoricalTransaction({
+            transaction: createdStockClassAdjustment._id,
+            hash: txHash,
+            issuer: issuerId,
+            transactionType: "StockClassAuthorizedSharesAdjustment",
+        });
 
-        // OCP Native Fields
-        issuer: issuerId,
-        is_onchain_synced: true,
-    });
+        console.log("[CREATED] StockClassAuthorizedSharesAdjusted ", createdStockClassAdjustment);
+    }
 
-    await createHistoricalTransaction({
-        transaction: upsert._id,
-        issuer: issuerId,
-        transactionType: "StockClassAuthorizedSharesAdjustment",
-    });
-    console.log(
-        `✅ | StockClassAuthorizedSharesAdjusted confirmation onchain with date ${new Date(Date.now()).toLocaleDateString("en-US", options)}`,
-        upsert
-    );
+    console.log(`✅ [CONFIRMED] StockClassAuthorizedSharesAdjusted  ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
 };
 
-export const handleIssuerAuthorizedSharesAdjusted = async (issuer, issuerId, timestamp) => {
-    console.log("IssuerAuthorizedSharesAdjusted Event Emitted!", issuer.id);
-    const id = convertBytes16ToUUID(issuer.id);
-    console.log("stock price", issuer.price);
+export const handleIssuerAuthorizedSharesAdjusted = async (data, issuerId, timestamp, txHash) => {
+    console.log("IssuerAuthorizedSharesAdjusted Event Received!");
+    const [, new_shares_authorized] = data;
 
-    const dateOCF = new Date(timestamp * 1000).toISOString().split("T")[0];
+    const transactionExists = await retryOnMiss(async () => await HistoricalTransaction.findOne({ hash: txHash }));
+    console.log("transactionExists", transactionExists);
 
-    const upsert = await upsertIssuerAuthorizedSharesAdjustment(id, {
-        _id: id,
-        object_type: issuer.object_type,
-        comments: issuer.comments,
-        issuer_id: convertBytes16ToUUID(issuer.security_id),
-        date: dateOCF,
-        new_shares_authorized: toDecimal(issuer.new_shares_authorized).toString(),
-        board_approval_date: issuer.board_approval_date,
-        stockholder_approval_date: issuer.stockholder_approval_date,
+    if (transactionExists) {
+        // Update
+        const updatedIssuerAdjustment = await IssuerAuthorizedSharesAdjustment.findOneAndUpdate(
+            { _id: transactionExists.transaction },
+            { is_onchain_synced: true },
+            { new: true }
+        );
+        console.log("[UPDATED] IssuerAuthorizedSharesAdjusted", updatedIssuerAdjustment);
+    } else {
+        // create
+        const createdIssuerAdjustment = await createIssuerAuthorizedSharesAdjustment({
+            issuer: issuerId,
+            new_shares_authorized: toDecimal(new_shares_authorized).toString(),
+            date: new Date(timestamp * 1000).toISOString().split("T")[0],
+            is_onchain_synced: true,
+        });
+        await createHistoricalTransaction({
+            transaction: createdIssuerAdjustment._id,
+            hash: txHash,
+            issuer: issuerId,
+            transactionType: "IssuerAuthorizedSharesAdjustment",
+        });
+        console.log("[CREATED] IssuerAuthorizedSharesAdjusted", createdIssuerAdjustment);
+    }
 
-        // OCP Native Fields
-        issuer: issuerId,
-        is_onchain_synced: true,
-    });
-
-    await createHistoricalTransaction({
-        transaction: upsert._id,
-        issuer: issuerId,
-        transactionType: "IssuerAuthorizedSharesAdjustment",
-    });
-    console.log(
-        `✅ | IssuerAuthorizedSharesAdjusted confirmation onchain with date ${new Date(Date.now()).toLocaleDateString("en-US", options)}`,
-        upsert
-    );
+    console.log(`✅ [CONFIRMED] IssuerAuthorizedSharesAdjusted  ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
 };
 
 export const handleStockPlan = async (id, sharesReserved) => {
@@ -426,9 +437,9 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
         stakeholder_id,
         investment_amount,
         convertible_type,
-        // conversion_triggers_mapping,
+        conversion_triggers_mapping,
         seniority,
-        // security_law_exemptions_mapping,
+        security_law_exemptions_mapping,
         custom_id,
     } = convertible;
     const _security_id = convertBytes16ToUUID(security_id);
@@ -450,7 +461,9 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
         issuer: issuerId,
         is_onchain_synced: true,
         convertible_type,
-        seniority,
+        conversion_triggers_mapping,
+        seniority: Number(toDecimal(seniority).toString()),
+        security_law_exemptions_mapping,
         custom_id,
     });
 
@@ -516,8 +529,8 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
                       currency: "USD",
                   }
                 : undefined,
-        security_law_exemptions: JSON.parse(security_law_exemptions_mapping || "[]"),
-        exercise_triggers: JSON.parse(exercise_triggers_mapping || "[]"),
+        security_law_exemptions: security_law_exemptions_mapping,
+        exercise_triggers: exercise_triggers_mapping,
     });
 
     await createHistoricalTransaction({
@@ -697,28 +710,64 @@ export const handleEquityCompensationExercise = async (exercise, issuerId, times
     );
 };
 
+export const handleStockPlanPoolAdjustment = async (data, issuerId, timestamp, txHash) => {
+    console.log("StockPlanPoolAdjustment Event Received!");
+    const [stockPlanId, newSharesReserved] = data;
+    console.log("txHash", txHash);
+
+    const transactionExists = await retryOnMiss(async () => await findOne(HistoricalTransaction, { hash: txHash }));
+    console.log("transactionExists", transactionExists);
+    const dateOCF = new Date(timestamp * 1000).toISOString().split("T")[0];
+    if (transactionExists) {
+        // update
+        const updatedStockPlanPoolAdjustment = await StockPlanPoolAdjustment.findOneAndUpdate(
+            { _id: transactionExists.transaction },
+            { is_onchain_synced: true },
+            { new: true }
+        );
+        console.log("updatedStockPlanPoolAdjustment", updatedStockPlanPoolAdjustment);
+    } else {
+        // upsert
+        const createdStockPlanPoolAdjustment = await StockPlanPoolAdjustment.create({
+            stock_plan_id: stockPlanId,
+            shares_reserved: toDecimal(newSharesReserved).toString(),
+            date: dateOCF,
+            issuer: issuerId,
+            is_onchain_synced: true,
+        });
+        await createHistoricalTransaction({
+            transaction: createdStockPlanPoolAdjustment._id,
+            hash: txHash,
+            issuer: issuerId,
+            transactionType: "StockPlanPoolAdjustment",
+        });
+        console.log("createdStockPlanPoolAdjustment", createdStockPlanPoolAdjustment);
+    }
+    console.log(`✅ [CONFIRMED] StockPlanPoolAdjustment ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
+};
+
 export const contractFuncs = new Map([
     ["StakeholderCreated", handleStakeholder],
     ["StockClassCreated", handleStockClass],
     ["StockPlanCreated", handleStockPlan],
 ]);
 
-// DANGEROUS DANGEROUS DANGEROUS THIS HAS TO BE IN SAME ORDER AS DiamondTxHelper:TxType Enum
+// DANGEROUS DANGEROUS DANGEROUS THIS HAS TO BE IN SAME ORDER AS TxHelper.sol:TxType Enum
 export const txMapper = {
-    1: [IssuerAuthorizedSharesAdjustment, handleIssuerAuthorizedSharesAdjusted],
-    2: [StockClassAuthorizedSharesAdjustment, handleStockClassAuthorizedSharesAdjusted],
-    3: [StockAcceptance, handleStockAcceptance],
-    4: [StockCancellation, handleStockCancellation],
-    5: [StockIssuance, handleStockIssuance],
-    6: [StockReissuance, handleStockReissuance],
-    7: [StockRepurchase, handleStockRepurchase],
-    8: [StockRetraction, handleStockRetraction],
-    9: [StockTransfer, handleStockTransfer],
-    10: [ConvertibleIssuance, handleConvertibleIssuance],
-    11: [EquityCompensationIssuance, handleEquityCompensationIssuance],
-    // 12: [null, /*TODO: StockPlanPoolAdjustment, handleStockPlanPoolAdjustment*/ null],
-    13: [WarrantIssuance, handleWarrantIssuance],
-    14: [EquityCompensationExercise, handleEquityCompensationExercise],
+    1: [structs.IssuerAuthorizedSharesAdjustment, handleIssuerAuthorizedSharesAdjusted],
+    2: [structs.StockClassAuthorizedSharesAdjustment, handleStockClassAuthorizedSharesAdjusted],
+    3: [structs.StockAcceptance, handleStockAcceptance],
+    4: [structs.StockCancellation, handleStockCancellation],
+    5: [structs.StockIssuance, handleStockIssuance],
+    6: [structs.StockReissuance, handleStockReissuance],
+    7: [structs.StockRepurchase, handleStockRepurchase],
+    8: [structs.StockRetraction, handleStockRetraction],
+    9: [structs.StockTransfer, handleStockTransfer],
+    10: [structs.ConvertibleIssuance, handleConvertibleIssuance],
+    11: [structs.EquityCompensationIssuance, handleEquityCompensationIssuance],
+    12: [structs.StockPlanPoolAdjustment, handleStockPlanPoolAdjustment],
+    13: [structs.WarrantIssuance, handleWarrantIssuance],
+    14: [structs.EquityCompensationExercise, handleEquityCompensationExercise],
 };
 // (idx => type name) derived from txMapper
 export const txTypes = Object.fromEntries(
