@@ -32,16 +32,7 @@ contract ConvertiblesFacet is IConvertiblesFacet {
         ds.convertibleActivePositions.securityToStakeholder[params.security_id] = params.stakeholder_id;
 
         // Store transaction
-        bytes memory txData = abi.encode(
-            params.stakeholder_id,
-            params.investment_amount,
-            params.security_id,
-            params.convertible_type,
-            params.conversion_triggers_mapping,
-            params.seniority,
-            params.security_law_exemptions_mapping,
-            params.custom_id
-        );
+        bytes memory txData = abi.encode(params);
         TxHelper.createTx(TxType.CONVERTIBLE_ISSUANCE, txData);
     }
 

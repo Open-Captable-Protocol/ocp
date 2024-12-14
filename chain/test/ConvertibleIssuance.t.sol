@@ -13,6 +13,7 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
         bytes16 stakeholderId = createStakeholder();
         uint256 investmentAmount = 1_000_000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(
@@ -23,6 +24,7 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
         );
 
         IssueConvertibleParams memory params = IssueConvertibleParams({
+            id: id,
             stakeholder_id: stakeholderId,
             investment_amount: investmentAmount,
             security_id: securityId,
@@ -44,8 +46,10 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
     function testFailInvalidStakeholder() public {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueConvertibleParams memory params = IssueConvertibleParams({
+            id: id,
             stakeholder_id: invalidStakeholderId,
             investment_amount: 1_000_000,
             security_id: securityId,
@@ -61,8 +65,10 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
     function testFailZeroAmount() public {
         bytes16 stakeholderId = createStakeholder();
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueConvertibleParams memory params = IssueConvertibleParams({
+            id: id,
             stakeholder_id: stakeholderId,
             investment_amount: 0,
             security_id: securityId,

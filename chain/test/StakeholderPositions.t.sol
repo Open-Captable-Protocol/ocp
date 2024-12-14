@@ -35,7 +35,9 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue stock
         stockSecurityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 stockId = 0xd3373e0a4dd940000000000000000011;
         IssueStockParams memory params = IssueStockParams({
+            id: stockId,
             stock_class_id: stockClassId,
             share_price: 1e18,
             quantity: 1000,
@@ -49,7 +51,10 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue convertible
         convertibleSecurityId = 0xd3373e0a4dd940000000000000000002;
+        bytes16 convertibleId = 0xd3373e0a4dd940000000000000000012;
+
         IssueConvertibleParams memory convertibleParams = IssueConvertibleParams({
+            id: convertibleId,
             stakeholder_id: stakeholderId,
             investment_amount: 1_000_000,
             security_id: convertibleSecurityId,
@@ -63,7 +68,10 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000003;
+        bytes16 equityCompensationId = 0xd3373e0a4dd940000000000000000013;
+
         IssueEquityCompensationParams memory equityParams = IssueEquityCompensationParams({
+            id: equityCompensationId,
             stakeholder_id: stakeholderId,
             stock_class_id: stockClassId,
             stock_plan_id: stockPlanId,

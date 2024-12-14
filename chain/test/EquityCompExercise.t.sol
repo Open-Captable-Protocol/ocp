@@ -50,7 +50,9 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 equityCompensationId = 0xd3373e0a4dd940000000000000000012;
         IssueEquityCompensationParams memory equityParams = IssueEquityCompensationParams({
+            id: equityCompensationId,
             stakeholder_id: stakeholderId,
             stock_class_id: stockClassId,
             stock_plan_id: stockPlanId,
@@ -68,7 +70,9 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Issue resulting stock
         stockSecurityId = 0xd3373e0a4dd940000000000000000002;
+        bytes16 stockId = 0xd3373e0a4dd940000000000000000011;
         IssueStockParams memory params = IssueStockParams({
+            id: stockId,
             stock_class_id: stockClassId,
             share_price: 1e18,
             quantity: EQUITY_COMP_QUANTITY,
@@ -86,7 +90,9 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Issue new stock position with exact quantity to exercise
         bytes16 newStockSecurityId = 0xd3373e0a4dd940000000000000000003;
+        bytes16 newStockId = 0xd3373e0a4dd940000000000000000013;
         IssueStockParams memory exerciseParams = IssueStockParams({
+            id: newStockId,
             stock_class_id: stockClassId,
             share_price: 1e18,
             quantity: exerciseQuantity,
@@ -165,7 +171,9 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Issue stock to different stakeholder
         bytes16 otherStockSecurityId = 0xd3373e0a4dd940000000000000000003;
+        bytes16 otherStockId = 0xd3373e0a4dd940000000000000000013;
         IssueStockParams memory otherParams = IssueStockParams({
+            id: otherStockId,
             stock_class_id: stockClassId,
             share_price: 1e18,
             quantity: 500,
