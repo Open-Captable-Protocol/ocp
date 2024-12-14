@@ -1,10 +1,6 @@
 import { convertUUIDToBytes16 } from "../../utils/convertUUID.js";
 import { toScaledBigNumber } from "../../utils/convertToFixedPointDecimals.js";
 
-const getContract = async () => {
-    // return getContractInstance(process.env.CAP_TABLE_ADDRESS);
-    return {};
-};
 // Stock Issuance
 export const convertAndCreateIssuanceStockOnchain = async (
     contract,
@@ -72,12 +68,19 @@ export const convertAndCreateIssuanceConvertibleOnchain = async (
 };
 
 // Warrant Issuance
-export const convertAndCreateIssuanceWarrantOnchain = async (contract, { security_id, stakeholder_id, quantity }) => {
+export const convertAndCreateIssuanceWarrantOnchain = async (contract, { security_id, stakeholder_id, quantity, purchase_price, custom_id }) => {
     const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
     const securityIdBytes16 = convertUUIDToBytes16(security_id);
-    const quantityScaled = toScaledBigNumber(quantity);
 
-    const tx = await contract.issueWarrant(stakeholderIdBytes16, quantityScaled, securityIdBytes16);
+    const tx = await contract.issueWarrant(
+        stakeholderIdBytes16,
+        quantity,
+        securityIdBytes16,
+        purchase_price,
+        custom_id,
+        "", // security_law_exemptions_mapping
+        "" // exercise_triggers_mapping
+    );
     await tx.wait();
     console.log("Transaction hash:", tx.hash);
 
@@ -85,23 +88,9 @@ export const convertAndCreateIssuanceWarrantOnchain = async (contract, { securit
         security_id,
         stakeholder_id,
         quantity,
+        purchase_price,
+        custom_id,
     });
-};
-
-export const issueWarrant = async ({ stakeholderId, quantity, securityId, purchasePrice, customId = "" }) => {
-    const contract = await getContract();
-
-    const tx = await contract.issueWarrant(
-        stakeholderId,
-        quantity,
-        securityId,
-        purchasePrice,
-        customId,
-        "", // security_law_exemptions_mapping
-        "" // exercise_triggers_mapping
-    );
-
-    return tx;
 };
 
 // Equity Compensation Issuance

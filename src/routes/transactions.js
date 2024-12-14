@@ -881,6 +881,8 @@ transactions.post("/issuance/warrant", async (req, res) => {
             security_id: incomingWarrantIssuance.security_id,
             stakeholder_id: incomingWarrantIssuance.stakeholder_id,
             quantity: incomingWarrantIssuance.quantity,
+            purchase_price: incomingWarrantIssuance.purchase_price,
+            custom_id: incomingWarrantIssuance.id,
         });
 
         res.status(200).send({ warrantIssuance: createdIssuance });
@@ -959,6 +961,8 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
             security_id: incomingWarrantIssuance.security_id,
             stakeholder_id: incomingWarrantIssuance.stakeholder_id,
             quantity: incomingWarrantIssuance.quantity,
+            purchase_price: incomingWarrantIssuance.purchase_price,
+            custom_id: incomingWarrantIssuance.id,
         });
 
         res.status(200).send({ warrantIssuance: createdIssuance });
