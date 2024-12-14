@@ -93,6 +93,7 @@ transactions.post("/issuance/stock", async (req, res) => {
             share_price: incomingStockIssuance.share_price,
             stock_legend_ids_mapping: incomingStockIssuance.stock_legend_ids_mapping,
             custom_id: incomingStockIssuance.custom_id || "",
+            id: incomingStockIssuance.id,
         });
 
         res.status(200).send({ stockIssuance });
@@ -169,6 +170,8 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
             stakeholder_id: incomingStockIssuance.stakeholder_id,
             quantity: incomingStockIssuance.quantity,
             share_price: incomingStockIssuance.share_price,
+            custom_id: incomingStockIssuance.custom_id || "",
+            id: incomingStockIssuance.id,
         });
 
         res.status(200).send({ stockIssuance });
@@ -512,6 +515,12 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
             stock_class_id: incomingEquityCompensationIssuance.stock_class_id,
             stock_plan_id: incomingEquityCompensationIssuance.stock_plan_id,
             quantity: incomingEquityCompensationIssuance.quantity,
+            compensation_type: incomingEquityCompensationIssuance.compensation_type,
+            exercise_price: incomingEquityCompensationIssuance.exercise_price,
+            base_price: incomingEquityCompensationIssuance.base_price,
+            expiration_date: incomingEquityCompensationIssuance.expiration_date,
+            custom_id: incomingEquityCompensationIssuance.custom_id || "",
+            id: incomingEquityCompensationIssuance.id,
         });
 
         res.status(200).send({ equityCompensationIssuance: createdIssuance });
@@ -611,6 +620,12 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             stock_class_id: incomingEquityCompensationIssuance.stock_class_id,
             stock_plan_id: incomingEquityCompensationIssuance.stock_plan_id,
             quantity: incomingEquityCompensationIssuance.quantity,
+            compensation_type: incomingEquityCompensationIssuance.compensation_type,
+            exercise_price: incomingEquityCompensationIssuance.exercise_price,
+            base_price: incomingEquityCompensationIssuance.base_price,
+            expiration_date: incomingEquityCompensationIssuance.expiration_date,
+            custom_id: incomingEquityCompensationIssuance.custom_id || "",
+            id: incomingEquityCompensationIssuance.id,
         });
 
         res.status(200).send({ equityCompensationIssuance: createdIssuance });
@@ -752,7 +767,11 @@ transactions.post("/issuance/convertible", async (req, res) => {
         await convertAndCreateIssuanceConvertibleOnchain(contract, {
             security_id: incomingConvertibleIssuance.security_id,
             stakeholder_id: incomingConvertibleIssuance.stakeholder_id,
-            investment_amount: incomingConvertibleIssuance.investment_amount.amount,
+            investment_amount: incomingConvertibleIssuance.investment_amount,
+            convertible_type: incomingConvertibleIssuance.convertible_type,
+            seniority: incomingConvertibleIssuance.seniority,
+            custom_id: incomingConvertibleIssuance.custom_id || "",
+            id: incomingConvertibleIssuance.id,
         });
 
         res.status(200).send({ convertibleIssuance: createdIssuance });
@@ -835,7 +854,11 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         await convertAndCreateIssuanceConvertibleOnchain(contract, {
             security_id: incomingConvertibleIssuance.security_id,
             stakeholder_id: incomingConvertibleIssuance.stakeholder_id,
-            investment_amount: incomingConvertibleIssuance.investment_amount.amount,
+            investment_amount: incomingConvertibleIssuance.investment_amount,
+            convertible_type: incomingConvertibleIssuance.convertible_type,
+            seniority: incomingConvertibleIssuance.seniority,
+            custom_id: incomingConvertibleIssuance.custom_id || "",
+            id: incomingConvertibleIssuance.id,
         });
 
         res.status(200).send({ convertibleIssuance: createdIssuance });
@@ -882,7 +905,8 @@ transactions.post("/issuance/warrant", async (req, res) => {
             stakeholder_id: incomingWarrantIssuance.stakeholder_id,
             quantity: incomingWarrantIssuance.quantity,
             purchase_price: incomingWarrantIssuance.purchase_price,
-            custom_id: incomingWarrantIssuance.id,
+            custom_id: incomingWarrantIssuance.custom_id || "",
+            id: incomingWarrantIssuance.id,
         });
 
         res.status(200).send({ warrantIssuance: createdIssuance });
@@ -962,7 +986,8 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
             stakeholder_id: incomingWarrantIssuance.stakeholder_id,
             quantity: incomingWarrantIssuance.quantity,
             purchase_price: incomingWarrantIssuance.purchase_price,
-            custom_id: incomingWarrantIssuance.id,
+            custom_id: incomingWarrantIssuance.custom_id || "",
+            id: incomingWarrantIssuance.id,
         });
 
         res.status(200).send({ warrantIssuance: createdIssuance });
