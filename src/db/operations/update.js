@@ -73,6 +73,10 @@ export const upsertConvertibleIssuanceBySecurityId = async (securityId, updatedD
     return await findBySecurityIdAndUpdate(ConvertibleIssuance, securityId, updatedData, { new: true, upsert: true });
 };
 
+export const upsertConvertibleIssuanceById = async (id, updatedData) => {
+    return await findByIdAndUpdate(ConvertibleIssuance, id, updatedData, { new: true, upsert: true });
+};
+
 export const upsertStockIssuanceById = async (id, updatedData) => {
     return await findByIdAndUpdate(StockIssuance, id, updatedData, { new: true, upsert: true });
 };

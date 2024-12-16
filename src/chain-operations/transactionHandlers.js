@@ -13,11 +13,11 @@ import {
     upsertStockClassAuthorizedSharesAdjustment,
     upsertIssuerAuthorizedSharesAdjustment,
     updateStockPlanById,
-    upsertStockIssuanceBySecurityId,
-    upsertConvertibleIssuanceBySecurityId,
+    upsertStockIssuanceById,
     upsertWarrantIssuanceBySecurityId,
     upsertEquityCompensationIssuanceBySecurityId,
     upsertEquityCompensationExerciseBySecurityId,
+    upsertConvertibleIssuanceById,
 } from "../db/operations/update.js";
 import get from "lodash/get";
 import { reflectSeries } from "../fairmint/reflectSeries.js";
@@ -62,6 +62,7 @@ const options = {
 export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     console.log("StockIssuanceCreated Event Emitted!", stock);
     const {
+        id,
         stock_class_id,
         share_price,
         quantity,
@@ -72,6 +73,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         // _security_law_exemptions_mapping,
     } = stock;
 
+    const _id = convertBytes16ToUUID(id);
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
@@ -80,7 +82,8 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     // If we have fairmint data, get historical date
     const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
 
-    const createdStockIssuance = await upsertStockIssuanceBySecurityId(_security_id, {
+    const createdStockIssuance = await upsertStockIssuanceById(_security_id, {
+        id: _id,
         stock_class_id: convertBytes16ToUUID(stock_class_id),
         share_price: {
             amount: toDecimal(share_price).toString(),
@@ -93,12 +96,6 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         issuer: issuerId,
         is_onchain_synced: true,
         custom_id,
-    });
-
-    await createHistoricalTransaction({
-        transaction: createdStockIssuance._id,
-        issuer: issuerId,
-        transactionType: "StockIssuance",
     });
 
     if (isUUID(get(fairmintData, "series_id")) && fairmintData && fairmintData._id) {
@@ -422,6 +419,7 @@ export const handleStockPlan = async (id, sharesReserved) => {
 export const handleConvertibleIssuance = async (convertible, issuerId, timestamp) => {
     console.log("ConvertibleIssuanceCreated Event Emitted!", convertible);
     const {
+        id,
         security_id,
         stakeholder_id,
         investment_amount,
@@ -432,6 +430,7 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
         custom_id,
     } = convertible;
     const _security_id = convertBytes16ToUUID(security_id);
+    const _id = convertBytes16ToUUID(id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
     const _stakeholder_id = convertBytes16ToUUID(stakeholder_id);
@@ -439,7 +438,8 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
     // If we have fairmint data, get historical date
     const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
 
-    const createdConvertibleIssuance = await upsertConvertibleIssuanceBySecurityId(_security_id, {
+    const createdConvertibleIssuance = await upsertConvertibleIssuanceById(_security_id, {
+        id: _id,
         investment_amount: {
             amount: toDecimal(investment_amount).toString(),
             currency: "USD",
@@ -491,9 +491,11 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
 
 export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
     console.log("WarrantIssuanceCreated Event Emitted!", warrant);
-    const { stakeholder_id, quantity, security_id, purchase_price, custom_id, security_law_exemptions_mapping, exercise_triggers_mapping } = warrant;
+    const { id, stakeholder_id, quantity, security_id, purchase_price, custom_id, security_law_exemptions_mapping, exercise_triggers_mapping } =
+        warrant;
 
     const _security_id = convertBytes16ToUUID(security_id);
+    const _id = convertBytes16ToUUID(id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
     const _stakeholder_id = convertBytes16ToUUID(stakeholder_id);
@@ -502,6 +504,7 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
     const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
 
     const createdWarrantIssuance = await upsertWarrantIssuanceBySecurityId(_security_id, {
+        _id: _id,
         date: dateToUse,
         stakeholder_id: _stakeholder_id,
         quantity: toDecimal(quantity).toString(),
