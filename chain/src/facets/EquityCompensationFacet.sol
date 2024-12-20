@@ -2,7 +2,11 @@
 pragma solidity ^0.8.0;
 
 import { StorageLib, Storage } from "@core/Storage.sol";
-import { EquityCompensationActivePosition, StockActivePosition, IssueEquityCompensationParams } from "@libraries/Structs.sol";
+import {
+    EquityCompensationActivePosition,
+    StockActivePosition,
+    IssueEquityCompensationParams
+} from "@libraries/Structs.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
@@ -44,7 +48,14 @@ contract EquityCompensationFacet is IEquityCompensationFacet {
 
     /// @notice Exercise equity compensation to convert it into stock
     /// @dev Only OPERATOR_ROLE can exercise equity compensation
-    function exerciseEquityCompensation(bytes16 id, bytes16 equity_comp_security_id, bytes16 resulting_stock_security_id, uint256 quantity) external {
+    function exerciseEquityCompensation(
+        bytes16 id,
+        bytes16 equity_comp_security_id,
+        bytes16 resulting_stock_security_id,
+        uint256 quantity
+    )
+        external
+    {
         Storage storage ds = StorageLib.get();
 
         // Check that caller is an operator
@@ -53,7 +64,8 @@ contract EquityCompensationFacet is IEquityCompensationFacet {
         }
 
         // Validate equity compensation security exists and has sufficient quantity
-        EquityCompensationActivePosition memory equityPosition = ds.equityCompensationActivePositions.securities[equity_comp_security_id];
+        EquityCompensationActivePosition memory equityPosition =
+            ds.equityCompensationActivePositions.securities[equity_comp_security_id];
 
         if (quantity == 0) {
             revert ValidationLib.InvalidQuantity();
@@ -86,7 +98,8 @@ contract EquityCompensationFacet is IEquityCompensationFacet {
             delete ds.equityCompensationActivePositions.securityToStakeholder[equity_comp_security_id];
 
             // Find and remove the security ID from stakeholder's list
-            bytes16[] storage stakeholderSecurities = ds.equityCompensationActivePositions.stakeholderToSecurities[equityPosition.stakeholder_id];
+            bytes16[] storage stakeholderSecurities =
+                ds.equityCompensationActivePositions.stakeholderToSecurities[equityPosition.stakeholder_id];
             for (uint256 i = 0; i < stakeholderSecurities.length; i++) {
                 if (stakeholderSecurities[i] == equity_comp_security_id) {
                     stakeholderSecurities[i] = stakeholderSecurities[stakeholderSecurities.length - 1];
