@@ -11,15 +11,11 @@ interface IEquityCompensationFacet {
 
     /// @notice Exercise equity compensation to convert it into stock
     /// @dev Only the stakeholder who owns the equity compensation can exercise it
+    /// @param id The ID of the equity compensation security
     /// @param equity_comp_security_id The ID of the equity compensation security to exercise
     /// @param resulting_stock_security_id The ID of the stock security that will result from the exercise
     /// @param quantity The number of shares to exercise
-    function exerciseEquityCompensation(
-        bytes16 equity_comp_security_id,
-        bytes16 resulting_stock_security_id,
-        uint256 quantity
-    )
-        external;
+    function exerciseEquityCompensation(bytes16 id, bytes16 equity_comp_security_id, bytes16 resulting_stock_security_id, uint256 quantity) external;
 
     /// @notice Get details of an equity compensation position
     /// @dev Only OPERATOR_ROLE or the stakeholder who owns the position can view it
