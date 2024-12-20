@@ -673,6 +673,7 @@ transactions.post("/exercise/equity-compensation", async (req, res) => {
             equity_comp_security_id: incomingEquityCompensationExercise.security_id,
             resulting_stock_security_id: incomingEquityCompensationExercise.resulting_security_ids[0],
             quantity: incomingEquityCompensationExercise.quantity,
+            id: incomingEquityCompensationExercise.id,
         });
 
         res.status(200).send({ equityCompensationExercise: createdExercise });
