@@ -159,10 +159,22 @@ export const upsertWarrantIssuanceBySecurityId = async (securityId, updatedData)
     return await findBySecurityIdAndUpdate(WarrantIssuance, securityId, updatedData, { new: true, upsert: true });
 };
 
+export const upsertWarrantIssuanceById = async (id, updatedData) => {
+    return await findByIdAndUpdate(WarrantIssuance, id, updatedData, { new: true, upsert: true });
+};
+
 export const upsertEquityCompensationIssuanceBySecurityId = async (securityId, updatedData) => {
     return await findBySecurityIdAndUpdate(EquityCompensationIssuance, securityId, updatedData, { new: true, upsert: true });
 };
 
+export const upsertEquityCompensationIssuanceById = async (id, updatedData) => {
+    return await findByIdAndUpdate(EquityCompensationIssuance, id, updatedData, { new: true, upsert: true });
+};
+
 export const upsertEquityCompensationExerciseBySecurityId = async (securityId, updatedData) => {
     return await findBySecurityIdAndUpdate(EquityCompensationExercise, securityId, updatedData, { new: true, upsert: true });
+};
+
+export const upsertEquityCompensationExerciseById = async (id, updatedData) => {
+    return await findByIdAndUpdate(EquityCompensationExercise, id, updatedData, { new: true, upsert: true });
 };
