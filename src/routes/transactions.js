@@ -57,6 +57,7 @@ import get from "lodash/get";
 import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
 import { upsertFairmintDataBySecurityId } from "../db/operations/update";
 import { convertAndCreateEquityCompensationExerciseOnchain } from "../controllers/transactions/exerciseController";
+import { adjustStockPlanPool } from "../controllers/stockPlanController";
 
 const transactions = Router();
 
@@ -379,7 +380,7 @@ transactions.post("/adjust/issuer/authorized-shares", async (req, res) => {
 
         await validateInputAgainstOCF(issuerAuthorizedSharesAdj, issuerAuthorizedSharesAdjustmentSchema);
 
-        await convertAndAdjustIssuerAuthorizedSharesOnChain(contract, issuerAuthorizedSharesAdj);
+        await convertAndAdjustIssuerAuthorizedSharesOnChain(contract, { id: issuerAuthorizedSharesAdj.id, issuerAuthorizedSharesAdj });
 
         res.status(200).send({ issuerAuthorizedSharesAdj });
     } catch (error) {
@@ -424,7 +425,7 @@ transactions.post("/adjust/stock-class/authorized-shares", async (req, res) => {
 });
 
 transactions.post("/adjust/stock-plan-pool", async (req, res) => {
-    // const { contract } = req;
+    const { contract } = req;
     const { data, issuerId } = req.body;
 
     try {
@@ -447,7 +448,12 @@ transactions.post("/adjust/stock-plan-pool", async (req, res) => {
             return res.status(404).send({ error: "Stock plan not found on OCP" });
         }
 
-        // TODO: implement Chain OP
+        await adjustStockPlanPool(
+            contract,
+            stockPlanPoolAdjustment.id,
+            stockPlanPoolAdjustment.stock_plan_id,
+            stockPlanPoolAdjustment.shares_reserved
+        );
 
         await createStockPlanPoolAdjustment({
             ...stockPlanPoolAdjustment,

@@ -28,7 +28,8 @@ interface IStockPlanFacet {
 
     /// @notice Adjust the number of shares reserved in a stock plan
     /// @dev Only OPERATOR_ROLE can adjust stock plan pools
+    /// @param id Unique identifier for the stock plan
     /// @param stockPlanId ID of the stock plan to adjust
     /// @param newSharesReserved New number of shares reserved for the plan
-    function adjustStockPlanPool(bytes16 stockPlanId, uint256 newSharesReserved) external;
+    function adjustStockPlanPool(bytes16 id, bytes16 stockPlanId, uint256 newSharesReserved) external;
 }

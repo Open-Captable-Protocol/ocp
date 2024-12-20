@@ -8,9 +8,7 @@ import { LibDiamond } from "diamond-3-hardhat/libraries/LibDiamond.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 
 contract StockClassFacet {
-    event StockClassCreated(
-        bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized
-    );
+    event StockClassCreated(bytes16 indexed id, string indexed classType, uint256 indexed pricePerShare, uint256 initialSharesAuthorized);
     event StockClassAuthorizedSharesAdjusted(bytes16 indexed stockClassId, uint256 newSharesAuthorized);
 
     error StockClassAlreadyExists(bytes16 stock_class_id);
@@ -19,14 +17,7 @@ contract StockClassFacet {
 
     /// @notice Create a new stock class
     /// @dev Only DEFAULT_ADMIN_ROLE can create stock classes
-    function createStockClass(
-        bytes16 _id,
-        string memory _class_type,
-        uint256 _price_per_share,
-        uint256 _initial_share_authorized
-    )
-        external
-    {
+    function createStockClass(bytes16 _id, string memory _class_type, uint256 _price_per_share, uint256 _initial_share_authorized) external {
         Storage storage ds = StorageLib.get();
 
         // Check that caller has admin role
@@ -58,7 +49,7 @@ contract StockClassFacet {
 
     /// @notice Adjust the authorized shares for a stock class
     /// @dev Only DEFAULT_ADMIN_ROLE can adjust authorized shares
-    function adjustAuthorizedShares(bytes16 stockClassId, uint256 newSharesAuthorized) external {
+    function adjustAuthorizedShares(bytes16 id, bytes16 stockClassId, uint256 newSharesAuthorized) external {
         Storage storage ds = StorageLib.get();
 
         // Check that caller has admin role
@@ -82,6 +73,7 @@ contract StockClassFacet {
         stockClass.shares_authorized = newSharesAuthorized;
 
         emit StockClassAuthorizedSharesAdjusted(stockClassId, newSharesAuthorized);
-        TxHelper.createTx(TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(newSharesAuthorized));
+        // stock class id was missing, any reason?
+        TxHelper.createTx(TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(id, stockClassId, newSharesAuthorized));
     }
 }

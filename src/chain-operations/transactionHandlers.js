@@ -376,7 +376,6 @@ export const handleStockClassAuthorizedSharesAdjusted = async (stock, issuerId, 
 export const handleIssuerAuthorizedSharesAdjusted = async (issuer, issuerId, timestamp) => {
     console.log("IssuerAuthorizedSharesAdjusted Event Emitted!", issuer.id);
     const id = convertBytes16ToUUID(issuer.id);
-    console.log("stock price", issuer.price);
 
     const dateOCF = new Date(timestamp * 1000).toISOString().split("T")[0];
 
