@@ -39,5 +39,9 @@ tsconfig.tsbuildinfo
 .env.*
 chain/out
 chain/lib/*
+solana/*
+dump/*
+*migration*/*
+*.ignore.js
 
 .windsurf
