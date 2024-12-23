@@ -31,7 +31,7 @@ contract ConvertiblesFacet is IConvertiblesFacet {
         // Add reverse mapping
         ds.convertibleActivePositions.securityToStakeholder[params.security_id] = params.stakeholder_id;
 
-        // Store transaction
+        // Emit transaction
         bytes memory txData = abi.encode(params);
         TxHelper.createTx(TxType.CONVERTIBLE_ISSUANCE, txData);
     }

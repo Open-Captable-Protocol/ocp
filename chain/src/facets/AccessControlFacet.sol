@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import { Storage, StorageLib } from "@core/Storage.sol";
 import { AccessControlUpgradeable } from
     "openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
-import "forge-std/console.sol";
 import { IAccessControlFacet } from "@interfaces/IAccessControlFacet.sol";
 
 contract AccessControlFacet is AccessControlUpgradeable, IAccessControlFacet {
@@ -144,7 +143,6 @@ contract AccessControlFacet is AccessControlUpgradeable, IAccessControlFacet {
     /// @notice Initiates transfer of admin role to a new account
     /// @dev Only current admin can initiate transfer
     function transferAdmin(address newAdmin) public virtual {
-        console.log("Transferring admin t: ", newAdmin);
         Storage storage ds = StorageLib.get();
 
         // Check zero address first
@@ -161,13 +159,11 @@ contract AccessControlFacet is AccessControlUpgradeable, IAccessControlFacet {
         _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
 
         ds.pendingAdmin = newAdmin;
-        console.log("Pending admin set to: ", newAdmin);
     }
 
     /// @notice Accepts admin role transfer
     /// @dev Must be called by the pending admin
     function acceptAdmin() public virtual {
-        console.log("Accepting admin...");
         Storage storage ds = StorageLib.get();
         if (msg.sender != ds.pendingAdmin) {
             revert AccessControlInvalidTransfer();
@@ -184,7 +180,6 @@ contract AccessControlFacet is AccessControlUpgradeable, IAccessControlFacet {
 
         // Clear pending state
         ds.pendingAdmin = address(0);
-        console.log("Accepted admin...");
     }
 
     /// @notice Returns the current admin address

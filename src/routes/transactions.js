@@ -37,6 +37,8 @@ import {
     createEquityCompensationExercise,
     createStockIssuance,
     createFairmintData,
+    createStockClassAuthorizedSharesAdjustment,
+    createIssuerAuthorizedSharesAdjustment,
 } from "../db/operations/create.js";
 
 import {
@@ -57,7 +59,7 @@ import get from "lodash/get";
 import { checkStakeholderExistsOnFairmint } from "../fairmint/checkStakeholder.js";
 import { upsertFairmintDataBySecurityId } from "../db/operations/update";
 import { convertAndCreateEquityCompensationExerciseOnchain } from "../controllers/transactions/exerciseController";
-import { adjustStockPlanPool } from "../controllers/stockPlanController";
+import { adjustStockPlanPoolOnchain } from "../controllers/stockPlanController";
 
 const transactions = Router();
 
@@ -96,6 +98,8 @@ transactions.post("/issuance/stock", async (req, res) => {
             custom_id: incomingStockIssuance.custom_id || "",
             id: incomingStockIssuance.id,
         });
+
+        // TODO: Store Historical Transactions
 
         res.status(200).send({ stockIssuance });
     } catch (error) {
@@ -175,6 +179,7 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
             id: incomingStockIssuance.id,
         });
 
+        // TODO: Store Historical Transactions
         res.status(200).send({ stockIssuance });
     } catch (error) {
         console.error(error);
@@ -191,6 +196,8 @@ transactions.post("/transfer/stock", async (req, res) => {
 
         // @dev: Transfer Validation is not possible through schema because it validates that the transfer has occurred,at this stage it has not yet.
         await convertAndCreateTransferStockOnchain(contract, data);
+
+        // TODO: store historical transaction
 
         res.status(200).send("success");
     } catch (error) {
@@ -379,10 +386,14 @@ transactions.post("/adjust/issuer/authorized-shares", async (req, res) => {
         };
 
         await validateInputAgainstOCF(issuerAuthorizedSharesAdj, issuerAuthorizedSharesAdjustmentSchema);
+        // TODO: store tranaction on db  + historical transactions
+        const createdIssuerAdjustment = await createIssuerAuthorizedSharesAdjustment({
+            ...issuerAuthorizedSharesAdj,
+            issuer: issuerId,
+        });
 
-        await convertAndAdjustIssuerAuthorizedSharesOnChain(contract, { id: issuerAuthorizedSharesAdj.id, issuerAuthorizedSharesAdj });
-
-        res.status(200).send({ issuerAuthorizedSharesAdj });
+        const receipt = await convertAndAdjustIssuerAuthorizedSharesOnChain(contract, createdIssuerAdjustment);
+        res.status(200).send({ ...issuerAuthorizedSharesAdj, txhash: receipt.hash });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -413,11 +424,14 @@ transactions.post("/adjust/stock-class/authorized-shares", async (req, res) => {
             return res.status(404).send({ error: "Stock class not found on OCP" });
         }
 
-        await convertAndAdjustStockClassAuthorizedSharesOnchain(contract, {
+        const createdStockClassAdjustment = await createStockClassAuthorizedSharesAdjustment({
             ...stockClassAuthorizedSharesAdjustment,
+            issuer: issuerId,
         });
 
-        res.status(200).send({ stockClassAdjustment: stockClassAuthorizedSharesAdjustment });
+        const receipt = await convertAndAdjustStockClassAuthorizedSharesOnchain(contract, createdStockClassAdjustment);
+
+        res.status(200).send({ stockClassAdjustment: { ...stockClassAuthorizedSharesAdjustment, txhash: receipt.hash } });
     } catch (error) {
         console.error(`error: ${error.stack}`);
         res.status(500).send(`${error}`);
@@ -448,19 +462,14 @@ transactions.post("/adjust/stock-plan-pool", async (req, res) => {
             return res.status(404).send({ error: "Stock plan not found on OCP" });
         }
 
-        await adjustStockPlanPool(
-            contract,
-            stockPlanPoolAdjustment.id,
-            stockPlanPoolAdjustment.stock_plan_id,
-            stockPlanPoolAdjustment.shares_reserved
-        );
-
         await createStockPlanPoolAdjustment({
             ...stockPlanPoolAdjustment,
             issuer: issuerId,
         });
 
-        res.status(200).send({ stockPlanAdjustment: stockPlanPoolAdjustment });
+        const receipt = await adjustStockPlanPoolOnchain(contract, stockPlanPoolAdjustment);
+
+        res.status(200).send({ stockPlanAdjustment: { ...stockPlanPoolAdjustment, txhash: receipt.hash } });
     } catch (error) {
         console.error(`error: ${error.stack}`);
         res.status(500).send(`${error}`);
@@ -528,6 +537,8 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
             custom_id: incomingEquityCompensationIssuance.custom_id || "",
             id: incomingEquityCompensationIssuance.id,
         });
+
+        // TODO: Store Historical Transactions
 
         res.status(200).send({ equityCompensationIssuance: createdIssuance });
     } catch (error) {
@@ -634,6 +645,8 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             id: incomingEquityCompensationIssuance.id,
         });
 
+        // TODO: Store Historical Transactions
+
         res.status(200).send({ equityCompensationIssuance: createdIssuance });
     } catch (error) {
         console.error(error);
@@ -681,6 +694,8 @@ transactions.post("/exercise/equity-compensation", async (req, res) => {
             quantity: incomingEquityCompensationExercise.quantity,
             id: incomingEquityCompensationExercise.id,
         });
+
+        // TODO: Store Historical Transactions
 
         res.status(200).send({ equityCompensationExercise: createdExercise });
     } catch (error) {
@@ -732,6 +747,8 @@ transactions.post("/exercise/equity-compensation-fairmint-reflection", async (re
             quantity: incomingEquityCompensationExercise.quantity,
         });
 
+        // TODO: Store Historical Transactions
+
         res.status(200).send({ equityCompensationExercise: createdExercise });
     } catch (error) {
         console.error(error);
@@ -771,15 +788,9 @@ transactions.post("/issuance/convertible", async (req, res) => {
         const createdIssuance = await createConvertibleIssuance({ ...incomingConvertibleIssuance, issuer: issuerId });
 
         // Create convertible onchain
-        await convertAndCreateIssuanceConvertibleOnchain(contract, {
-            security_id: incomingConvertibleIssuance.security_id,
-            stakeholder_id: incomingConvertibleIssuance.stakeholder_id,
-            investment_amount: incomingConvertibleIssuance.investment_amount,
-            convertible_type: incomingConvertibleIssuance.convertible_type,
-            seniority: incomingConvertibleIssuance.seniority,
-            custom_id: incomingConvertibleIssuance.custom_id || "",
-            id: incomingConvertibleIssuance.id,
-        });
+        await convertAndCreateIssuanceConvertibleOnchain(contract, createdIssuance);
+
+        // TODO: Store Historical Transactions
 
         res.status(200).send({ convertibleIssuance: createdIssuance });
     } catch (error) {
@@ -868,6 +879,8 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
             id: incomingConvertibleIssuance.id,
         });
 
+        // TODO: Store Historical Transactions
+
         res.status(200).send({ convertibleIssuance: createdIssuance });
     } catch (error) {
         console.error(error);
@@ -915,6 +928,8 @@ transactions.post("/issuance/warrant", async (req, res) => {
             custom_id: incomingWarrantIssuance.custom_id || "",
             id: incomingWarrantIssuance.id,
         });
+
+        // TODO: Store Historical Transactions
 
         res.status(200).send({ warrantIssuance: createdIssuance });
     } catch (error) {
@@ -996,6 +1011,8 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
             custom_id: incomingWarrantIssuance.custom_id || "",
             id: incomingWarrantIssuance.id,
         });
+
+        // TODO: Store Historical Transactions
 
         res.status(200).send({ warrantIssuance: createdIssuance });
     } catch (error) {

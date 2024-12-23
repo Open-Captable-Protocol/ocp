@@ -82,7 +82,6 @@ contract StockClassFacet {
         stockClass.shares_authorized = newSharesAuthorized;
 
         emit StockClassAuthorizedSharesAdjusted(stockClassId, newSharesAuthorized);
-        // stock class id was missing, any reason?
         TxHelper.createTx(
             TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(id, stockClassId, newSharesAuthorized)
         );

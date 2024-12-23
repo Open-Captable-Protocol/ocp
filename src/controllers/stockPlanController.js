@@ -13,9 +13,9 @@ export const convertAndReflectStockPlanOnchain = async (contract, stockPlan) => 
 
     // Create stock plan onchain
     const tx = await contract.createStockPlan(stockPlanIdBytes16, stockClassIdsBytes16, sharesReserved);
-    await tx.wait();
+    const receipt = await tx.wait();
 
-    console.log("✅ | Stock Plan created onchain");
+    return receipt;
 };
 
 export const adjustStockPlanPool = async (contract, id, stockPlanId, newSharesReserved) => {
@@ -24,7 +24,6 @@ export const adjustStockPlanPool = async (contract, id, stockPlanId, newSharesRe
     const scaledShares = toScaledBigNumber(newSharesReserved);
 
     const tx = await contract.adjustStockPlanPool(idBytes16, stockPlanIdBytes16, scaledShares);
-    await tx.wait();
-
-    console.log("✅ | Stock Plan pool adjusted onchain");
+    const receipt = await tx.wait();
+    return receipt;
 };

@@ -168,7 +168,7 @@ export const getAllStateMachineObjectsById = async (issuerId) => {
         return typeCompare !== 0 ? typeCompare : new Date(a.createdAt) - new Date(b.createdAt);
     });
 
-    console.log("allTransactions", allTransactions);
+    console.log("All Transactions:", allTransactions.length);
 
     return {
         issuer,
