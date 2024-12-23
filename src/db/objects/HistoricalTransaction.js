@@ -26,10 +26,6 @@ const HistoricalTransactionSchema = new mongoose.Schema(
             ], // List of possible models
             required: true,
         },
-        hash: {
-            type: String,
-            required: false,
-        },
         issuer: {
             type: String,
             ref: "Issuer",
