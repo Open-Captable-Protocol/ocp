@@ -18,6 +18,7 @@ export const convertAndCreateIssuanceStockOnchain = async (
         security_law_exemptions_mapping: "",
     });
     const tx = await contract.issueStock({
+        id: convertUUIDToBytes16(id),
         stock_class_id: convertUUIDToBytes16(stock_class_id),
         share_price: toScaledBigNumber(share_price.amount),
         quantity: toScaledBigNumber(quantity),
