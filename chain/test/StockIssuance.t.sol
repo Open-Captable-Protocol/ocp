@@ -30,22 +30,6 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         uint256 sharePrice = 10_000_000_000;
         uint256 quantity = 1000;
 
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(
-            TxType.STOCK_ISSUANCE,
-            abi.encode(
-                id,
-                stockClassId,
-                sharePrice,
-                quantity,
-                stakeholderId,
-                securityId,
-                "LEGEND_1", // stock_legend_ids_mapping
-                "STOCK_001", // custom_id
-                "REG_D" // security_law_exemptions_mapping
-            )
-        );
-
         IssueStockParams memory params = IssueStockParams({
             id: id,
             stock_class_id: stockClassId,
@@ -57,6 +41,9 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             stock_legend_ids_mapping: "LEGEND_1",
             security_law_exemptions_mapping: "REG_D"
         });
+
+        vm.expectEmit(true, true, false, true, address(capTable));
+        emit TxHelper.TxCreated(TxType.STOCK_ISSUANCE, abi.encode(params));
 
         IStockFacet(address(capTable)).issueStock(params);
     }

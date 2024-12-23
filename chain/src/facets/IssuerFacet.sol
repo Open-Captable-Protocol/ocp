@@ -6,6 +6,7 @@ import { StorageLib, Storage } from "@core/Storage.sol";
 import { Issuer } from "@libraries/Structs.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
+import { console } from "forge-std/console.sol";
 
 contract IssuerFacet {
     error IssuerAlreadyInitialized();
@@ -45,6 +46,6 @@ contract IssuerFacet {
 
         ds.issuer.shares_authorized = newSharesAuthorized;
 
-        TxHelper.createTx(TxType.ISSUER_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(ds.issuer.id, newSharesAuthorized));
+        TxHelper.createTx(TxType.ISSUER_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(id, ds.issuer.id, newSharesAuthorized));
     }
 }

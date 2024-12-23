@@ -15,14 +15,6 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(
-            TxType.CONVERTIBLE_ISSUANCE,
-            abi.encode(
-                stakeholderId, investmentAmount, securityId, "SAFE", "CONVERSION_ON_NEXT_EQUITY", 1, "REG_D", "CONV_001"
-            )
-        );
-
         IssueConvertibleParams memory params = IssueConvertibleParams({
             id: id,
             stakeholder_id: stakeholderId,
@@ -34,6 +26,9 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
         });
+        vm.expectEmit(true, true, false, true, address(capTable));
+        emit TxHelper.TxCreated(TxType.CONVERTIBLE_ISSUANCE, abi.encode(params));
+
         IConvertiblesFacet(address(capTable)).issueConvertible(params);
 
         // Verify position was created correctly
