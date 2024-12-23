@@ -6,7 +6,7 @@ export const convertAndCreateIssuanceStockOnchain = async (
     contract,
     { id, security_id, stock_class_id, stakeholder_id, quantity, share_price, custom_id = "" }
 ) => {
-    console.log("Data to Save ", {
+    console.log("data to save", {
         id: convertUUIDToBytes16(id),
         stock_class_id: convertUUIDToBytes16(stock_class_id),
         share_price: toScaledBigNumber(share_price.amount),
@@ -18,7 +18,6 @@ export const convertAndCreateIssuanceStockOnchain = async (
         security_law_exemptions_mapping: "",
     });
     const tx = await contract.issueStock({
-        id: convertUUIDToBytes16(id),
         stock_class_id: convertUUIDToBytes16(stock_class_id),
         share_price: toScaledBigNumber(share_price.amount),
         quantity: toScaledBigNumber(quantity),
@@ -37,33 +36,16 @@ export const convertAndCreateIssuanceConvertibleOnchain = async (
     contract,
     { id, security_id, stakeholder_id, investment_amount, convertible_type, seniority, custom_id = "" }
 ) => {
-    const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
-    const securityIdBytes16 = convertUUIDToBytes16(security_id);
-    const investmentAmountScaled = toScaledBigNumber(investment_amount);
-    const idBytes16 = convertUUIDToBytes16(id);
-
-    const tx = await contract.issueConvertible(
-        idBytes16,
-        stakeholderIdBytes16,
-        investmentAmountScaled,
-        securityIdBytes16,
+    const tx = await contract.issueConvertible({
+        id: convertUUIDToBytes16(id),
+        stakeholder_id: convertUUIDToBytes16(stakeholder_id),
+        investment_amount: toScaledBigNumber(investment_amount.amount),
+        security_id: convertUUIDToBytes16(security_id),
         convertible_type,
-        seniority,
+        seniority: toScaledBigNumber(seniority),
         custom_id,
-        "", // security_law_exemptions_mapping
-        "" // conversion_triggers_mapping
-    );
-    await tx.wait();
-    console.log("Transaction hash:", tx.hash);
-
-    console.log("✅ | Issued convertible onchain, unconfirmed: ", {
-        security_id,
-        stakeholder_id,
-        investment_amount,
-        convertible_type,
-        seniority,
-        custom_id,
-        id,
+        security_law_exemptions_mapping: "",
+        conversion_triggers_mapping: "",
     });
     const receipt = await tx.wait();
     return receipt;
@@ -92,6 +74,7 @@ export const convertAndCreateIssuanceWarrantOnchain = async (
 export const convertAndCreateIssuanceEquityCompensationOnchain = async (
     contract,
     {
+        id,
         security_id,
         stakeholder_id,
         stock_class_id,
@@ -102,7 +85,6 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
         base_price,
         expiration_date,
         custom_id = "",
-        id,
     }
 ) => {
     const tx = await contract.issueEquityCompensation({
