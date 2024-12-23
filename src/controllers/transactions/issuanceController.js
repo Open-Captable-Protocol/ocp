@@ -1,113 +1,81 @@
 import { convertUUIDToBytes16 } from "../../utils/convertUUID.js";
 import { toScaledBigNumber } from "../../utils/convertToFixedPointDecimals.js";
 
-const getContract = async () => {
-    // return getContractInstance(process.env.CAP_TABLE_ADDRESS);
-    return {};
-};
 // Stock Issuance
 export const convertAndCreateIssuanceStockOnchain = async (
     contract,
-    { security_id, stock_class_id, stakeholder_id, quantity, share_price, custom_id = "" }
+    { id, security_id, stock_class_id, stakeholder_id, quantity, share_price, custom_id = "" }
 ) => {
-    const stockClassIdBytes16 = convertUUIDToBytes16(stock_class_id);
-    const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
-    const securityIdBytes16 = convertUUIDToBytes16(security_id);
-    const quantityScaled = toScaledBigNumber(quantity);
-    const sharePriceScaled = toScaledBigNumber(share_price.amount);
-
-    const tx = await contract.issueStock(
-        stockClassIdBytes16,
-        sharePriceScaled,
-        quantityScaled,
-        stakeholderIdBytes16,
-        securityIdBytes16,
+    console.log("data to save", {
+        id: convertUUIDToBytes16(id),
+        stock_class_id: convertUUIDToBytes16(stock_class_id),
+        share_price: toScaledBigNumber(share_price.amount),
+        quantity: toScaledBigNumber(quantity),
+        stakeholder_id: convertUUIDToBytes16(stakeholder_id),
+        security_id: convertUUIDToBytes16(security_id),
         custom_id,
-        "", // stock_legend_ids_mapping
-        "" // security_law_exemptions_mapping
-    );
-    await tx.wait();
-    console.log("Transaction hash:", tx.hash);
-
-    console.log("✅ | Issued stock onchain, unconfirmed: ", {
-        security_id,
-        stock_class_id,
-        stakeholder_id,
-        quantity,
-        share_price,
-        custom_id,
+        stock_legend_ids_mapping: "",
+        security_law_exemptions_mapping: "",
     });
+    const tx = await contract.issueStock({
+        id: convertUUIDToBytes16(id),
+        stock_class_id: convertUUIDToBytes16(stock_class_id),
+        share_price: toScaledBigNumber(share_price.amount),
+        quantity: toScaledBigNumber(quantity),
+        stakeholder_id: convertUUIDToBytes16(stakeholder_id),
+        security_id: convertUUIDToBytes16(security_id),
+        custom_id,
+        stock_legend_ids_mapping: "",
+        security_law_exemptions_mapping: "",
+    });
+    const receipt = await tx.wait();
+    return receipt;
 };
 
 // Convertible Issuance
 export const convertAndCreateIssuanceConvertibleOnchain = async (
     contract,
-    { security_id, stakeholder_id, investment_amount, convertible_type, seniority, custom_id = "" }
+    { id, security_id, stakeholder_id, investment_amount, convertible_type, seniority, custom_id = "" }
 ) => {
-    const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
-    const securityIdBytes16 = convertUUIDToBytes16(security_id);
-    const investmentAmountScaled = toScaledBigNumber(investment_amount);
-
-    const tx = await contract.issueConvertible(
-        stakeholderIdBytes16,
-        investmentAmountScaled,
-        securityIdBytes16,
+    const tx = await contract.issueConvertible({
+        id: convertUUIDToBytes16(id),
+        stakeholder_id: convertUUIDToBytes16(stakeholder_id),
+        investment_amount: toScaledBigNumber(investment_amount.amount),
+        security_id: convertUUIDToBytes16(security_id),
         convertible_type,
-        seniority,
+        seniority: toScaledBigNumber(seniority),
         custom_id,
-        "", //  security_law_exemptions_mapping
-        "" // conversion_triggers_mapping
-    );
-    await tx.wait();
-    console.log("Transaction hash:", tx.hash);
-
-    console.log("✅ | Issued convertible onchain, unconfirmed: ", {
-        security_id,
-        stakeholder_id,
-        investment_amount,
-        convertible_type,
-        seniority,
-        custom_id,
+        security_law_exemptions_mapping: "",
+        conversion_triggers_mapping: "",
     });
+    const receipt = await tx.wait();
+    return receipt;
 };
 
 // Warrant Issuance
-export const convertAndCreateIssuanceWarrantOnchain = async (contract, { security_id, stakeholder_id, quantity }) => {
-    const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
-    const securityIdBytes16 = convertUUIDToBytes16(security_id);
-    const quantityScaled = toScaledBigNumber(quantity);
-
-    const tx = await contract.issueWarrant(stakeholderIdBytes16, quantityScaled, securityIdBytes16);
-    await tx.wait();
-    console.log("Transaction hash:", tx.hash);
-
-    console.log("✅ | Issued warrant onchain, unconfirmed: ", {
-        security_id,
-        stakeholder_id,
-        quantity,
+export const convertAndCreateIssuanceWarrantOnchain = async (
+    contract,
+    { id, security_id, stakeholder_id, quantity, purchase_price = { amount: 0 }, custom_id = "" }
+) => {
+    const tx = await contract.issueWarrant({
+        id: convertUUIDToBytes16(id),
+        stakeholder_id: convertUUIDToBytes16(stakeholder_id),
+        quantity: toScaledBigNumber(quantity),
+        security_id: convertUUIDToBytes16(security_id),
+        purchase_price: toScaledBigNumber(purchase_price.amount),
+        custom_id,
+        security_law_exemptions_mapping: "",
+        exercise_triggers_mapping: "",
     });
-};
-
-export const issueWarrant = async ({ stakeholderId, quantity, securityId, purchasePrice, customId = "" }) => {
-    const contract = await getContract();
-
-    const tx = await contract.issueWarrant(
-        stakeholderId,
-        quantity,
-        securityId,
-        purchasePrice,
-        customId,
-        "", // security_law_exemptions_mapping
-        "" // exercise_triggers_mapping
-    );
-
-    return tx;
+    const receipt = await tx.wait();
+    return receipt;
 };
 
 // Equity Compensation Issuance
 export const convertAndCreateIssuanceEquityCompensationOnchain = async (
     contract,
     {
+        id,
         security_id,
         stakeholder_id,
         stock_class_id,
@@ -120,41 +88,21 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
         custom_id = "",
     }
 ) => {
-    const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholder_id);
-    const securityIdBytes16 = convertUUIDToBytes16(security_id);
-    const stockClassIdBytes16 = convertUUIDToBytes16(stock_class_id);
-    const stockPlanIdBytes16 = convertUUIDToBytes16(stock_plan_id);
-    const quantityScaled = toScaledBigNumber(quantity);
-    const exercisePriceScaled = toScaledBigNumber(exercise_price?.amount || 0);
-    const basePriceScaled = toScaledBigNumber(base_price?.amount || 0);
-
-    const tx = await contract.issueEquityCompensation(
-        stakeholderIdBytes16,
-        stockClassIdBytes16,
-        stockPlanIdBytes16,
-        quantityScaled,
-        securityIdBytes16,
+    const tx = await contract.issueEquityCompensation({
+        id: convertUUIDToBytes16(id),
+        stakeholder_id: convertUUIDToBytes16(stakeholder_id),
+        stock_class_id: convertUUIDToBytes16(stock_class_id),
+        stock_plan_id: convertUUIDToBytes16(stock_plan_id),
+        quantity: toScaledBigNumber(quantity),
+        security_id: convertUUIDToBytes16(security_id),
         compensation_type,
-        exercisePriceScaled,
-        basePriceScaled,
+        exercise_price: toScaledBigNumber(exercise_price?.amount || 0),
+        base_price: toScaledBigNumber(base_price?.amount || 0),
         expiration_date,
         custom_id,
-        "", // termination_exercise_windows_mapping
-        "" // security_law_exemptions_mapping
-    );
-    await tx.wait();
-    console.log("Transaction hash:", tx.hash);
-
-    console.log("✅ | Issued equity compensation onchain, unconfirmed: ", {
-        security_id,
-        stakeholder_id,
-        stock_class_id,
-        stock_plan_id,
-        quantity,
-        compensation_type,
-        exercise_price,
-        base_price,
-        expiration_date,
-        custom_id,
+        termination_exercise_windows_mapping: "",
+        security_law_exemptions_mapping: "",
     });
+    const receipt = await tx.wait();
+    return receipt;
 };

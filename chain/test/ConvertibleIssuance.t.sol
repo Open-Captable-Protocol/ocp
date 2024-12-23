@@ -13,16 +13,10 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
         bytes16 stakeholderId = createStakeholder();
         uint256 investmentAmount = 1_000_000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
-
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(
-            TxType.CONVERTIBLE_ISSUANCE,
-            abi.encode(
-                stakeholderId, investmentAmount, securityId, "SAFE", "CONVERSION_ON_NEXT_EQUITY", 1, "REG_D", "CONV_001"
-            )
-        );
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueConvertibleParams memory params = IssueConvertibleParams({
+            id: id,
             stakeholder_id: stakeholderId,
             investment_amount: investmentAmount,
             security_id: securityId,
@@ -32,6 +26,9 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
         });
+        vm.expectEmit(true, true, false, true, address(capTable));
+        emit TxHelper.TxCreated(TxType.CONVERTIBLE_ISSUANCE, abi.encode(params));
+
         IConvertiblesFacet(address(capTable)).issueConvertible(params);
 
         // Verify position was created correctly
@@ -44,8 +41,10 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
     function testFailInvalidStakeholder() public {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueConvertibleParams memory params = IssueConvertibleParams({
+            id: id,
             stakeholder_id: invalidStakeholderId,
             investment_amount: 1_000_000,
             security_id: securityId,
@@ -61,8 +60,10 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
     function testFailZeroAmount() public {
         bytes16 stakeholderId = createStakeholder();
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueConvertibleParams memory params = IssueConvertibleParams({
+            id: id,
             stakeholder_id: stakeholderId,
             investment_amount: 0,
             security_id: securityId,

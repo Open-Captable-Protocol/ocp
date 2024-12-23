@@ -74,7 +74,7 @@ issuer.post("/create", async (req, res) => {
         };
 
         const issuer = await createIssuer(incomingIssuerForDB);
-        addAddressesToWatch(address, Number(chain_id));
+        addAddressesToWatch(Number(chain_id), address);
 
         console.log("✅ | Issuer created offchain:", issuer);
 
@@ -122,7 +122,7 @@ issuer.post("/create-fairmint-reflection", async (req, res) => {
         // saving Fairmint Obj by issuer id so we can retrieve it later on event listener
         console.log("🔥 | Creating Fairmint Data for issuer:", issuer._id);
         await createFairmintData({ id: issuer._id });
-        addAddressesToWatch(address);
+        addAddressesToWatch(Number(issuer.chain_id), issuer.deployed_to);
 
         await reflectPortal({ portalId: issuer._id });
 

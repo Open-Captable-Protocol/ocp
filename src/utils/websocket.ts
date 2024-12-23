@@ -13,7 +13,6 @@ const TOPICS = {
     StakeholderCreated: "0x53df47344d1cdf2ddb4901af5df61e37e14606bb7c8cc004d65c7c83ab3d0693",
     StockClassCreated: "0xc7496d70298fcc793e1d058617af680232585e302f0185b14bba498b247a9c1d",
     StockPlanCreated: ethers.id("StockPlanCreated(bytes16,uint256)"),
-    // IssuerCreated: "0xb8cbde9f597f493a1b4d1c4db5fded9cd26293080750a0df6b7e7097f4b680dd", // We don't receive this event because by time an issuer is created and we add it to the listener we have already missed it.
 };
 
 const abiCoder = new AbiCoder();
@@ -32,7 +31,7 @@ const getChainProvider = (chainId: number): ethers.Provider => {
 };
 
 // Function to add new addresses to watch for a specific chain
-export const addAddressesToWatch = async (addresses: string | string[], chainId: number) => {
+export const addAddressesToWatch = async (chainId: number, addresses: string | string[]) => {
     const addressArray = Array.isArray(addresses) ? addresses : [addresses];
 
     if (!watchedAddressesByChain.has(chainId)) {
@@ -42,16 +41,14 @@ export const addAddressesToWatch = async (addresses: string | string[], chainId:
     const chainAddresses = watchedAddressesByChain.get(chainId)!;
     addressArray.forEach((address) => chainAddresses.add(address.toLowerCase()));
 
-    // Only update filter if we don't have an active listener for this chain
-    if (!activeListeners.get(chainId)) {
-        await setupChainListener(chainId);
-    }
+    // Always reload the listener with all addresses
+    await setupChainListener(chainId, Array.from(chainAddresses));
 };
 
 // Function to setup a single chain listener
-const setupChainListener = async (chainId: number) => {
+const setupChainListener = async (chainId: number, addresses: string[]) => {
+    console.log("Setting up chain listener for chain", chainId, "with addresses", addresses);
     const provider = getChainProvider(chainId);
-    const addresses = Array.from(watchedAddressesByChain.get(chainId) || []);
 
     if (addresses.length > 0) {
         // Remove any existing listener for this chain
@@ -96,8 +93,18 @@ export const startListener = async (contracts: { address: string; chain_id: numb
         }
         addresses.forEach((addr) => watchedAddressesByChain.get(numericChainId)!.add(addr.toLowerCase()));
 
+        const contracts = Array.from(watchedAddressesByChain.get(numericChainId) || []);
         // Setup single listener for this chain
-        await setupChainListener(numericChainId);
+        await setupChainListener(numericChainId, contracts);
+    }
+};
+
+export const reamoveAllListeners = async () => {
+    for (const [chainId, provider] of providers.entries()) {
+        console.log(`Removing listeners for chain ${chainId}...`);
+        await provider.removeAllListeners();
+        providers.delete(chainId);
+        activeListeners.set(chainId, false);
     }
 };
 
@@ -152,7 +159,7 @@ const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
 
             if (handleFunc) {
                 console.log("Handling transaction:", txType);
-                await handleFunc(_tx.data, issuerId, _tx.timestamp);
+                await handleFunc(_tx.data, issuerId, _tx.timestamp, log.transactionHash);
                 console.log(" | Transaction handled:", txType);
             } else {
                 console.error("Invalid transaction type: ", txType);

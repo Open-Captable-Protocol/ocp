@@ -63,10 +63,13 @@ contract AccessControlTest is DiamondTestBase {
         // Create a stakeholder and stock class first
         bytes16 stakeholderId = createStakeholder();
         bytes16 stockClassId = createStockClass();
+        bytes16 id1 = 0xd3373e0a4dd940000000000000000002;
+        bytes16 id2 = 0xd3373e0a4dd940000000000000000003;
 
         // Test issueStock with operator role
         vm.startPrank(operator);
         IssueStockParams memory params = IssueStockParams({
+            id: id1,
             stock_class_id: stockClassId,
             share_price: 1,
             quantity: 100,
@@ -87,6 +90,7 @@ contract AccessControlTest is DiamondTestBase {
             )
         );
         IssueStockParams memory params2 = IssueStockParams({
+            id: id2,
             stock_class_id: stockClassId,
             share_price: 1,
             quantity: 100,
@@ -121,9 +125,13 @@ contract AccessControlTest is DiamondTestBase {
         StockPlanFacet(address(capTable)).createStockPlan(stockPlanId, stockClassIds, 1000);
         vm.stopPrank();
 
+        bytes16 id1 = 0xd3373e0a4dd940000000000000000002;
+        bytes16 id2 = 0xd3373e0a4dd940000000000000000003;
+
         // Test issueEquityCompensation
         vm.startPrank(operator);
         IssueEquityCompensationParams memory params = IssueEquityCompensationParams({
+            id: id1,
             stakeholder_id: stakeholderId,
             stock_class_id: stockClassId,
             stock_plan_id: stockPlanId,
@@ -148,6 +156,7 @@ contract AccessControlTest is DiamondTestBase {
             )
         );
         IssueEquityCompensationParams memory params2 = IssueEquityCompensationParams({
+            id: id2,
             stakeholder_id: stakeholderId,
             stock_class_id: stockClassId,
             stock_plan_id: stockPlanId,

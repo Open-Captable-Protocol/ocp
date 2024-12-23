@@ -20,49 +20,61 @@ contract DiamondAdjustmentTest is DiamondTestBase {
     }
 
     function test_AdjustIssuerAuthorizedShares() public {
+        bytes16 issuerAdjustmentId = bytes16(keccak256("ADJUSTMENT_1"));
         uint256 newSharesAuthorized = 2_000_000;
 
-        vm.expectEmit(true, false, false, true, address(capTable));
-        emit IssuerAuthorizedSharesAdjusted(newSharesAuthorized);
-
         vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(TxType.ISSUER_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(newSharesAuthorized));
+        emit TxHelper.TxCreated(
+            TxType.ISSUER_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(issuerAdjustmentId, issuerId, newSharesAuthorized)
+        );
 
-        IIssuerFacet(address(capTable)).adjustIssuerAuthorizedShares(newSharesAuthorized);
+        IIssuerFacet(address(capTable)).adjustIssuerAuthorizedShares(issuerAdjustmentId, newSharesAuthorized);
     }
 
     function test_AdjustStockClassAuthorizedShares() public {
         uint256 newSharesAuthorized = 2_000_000;
+        bytes16 stockClassAdjustmentId = bytes16(keccak256("ADJUSTMENT_1"));
 
-        IIssuerFacet(address(capTable)).adjustIssuerAuthorizedShares(newSharesAuthorized);
+        IIssuerFacet(address(capTable)).adjustIssuerAuthorizedShares(stockClassAdjustmentId, newSharesAuthorized);
 
         uint256 newStockClassSharesAuthorized = 1_999_999;
 
-        IStockClassFacet(address(capTable)).adjustAuthorizedShares(stockClassId, newStockClassSharesAuthorized);
+        IStockClassFacet(address(capTable)).adjustAuthorizedShares(
+            stockClassAdjustmentId, stockClassId, newStockClassSharesAuthorized
+        );
     }
 
     function test_AdjustStockPlanPool() public {
         uint256 newSharesReserved = 200_000;
+        bytes16 stockPlanAdjustmentId = bytes16(keccak256("STOCK_PLAN_ADJ_1"));
 
         vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(TxType.STOCK_PLAN_POOL_ADJUSTMENT, abi.encode(newSharesReserved));
+        emit TxHelper.TxCreated(
+            TxType.STOCK_PLAN_POOL_ADJUSTMENT, abi.encode(stockPlanAdjustmentId, stockPlanId, newSharesReserved)
+        );
 
-        IStockPlanFacet(address(capTable)).adjustStockPlanPool(stockPlanId, newSharesReserved);
+        IStockPlanFacet(address(capTable)).adjustStockPlanPool(stockPlanAdjustmentId, stockPlanId, newSharesReserved);
     }
 
     function test_RevertWhen_AdjustingNonExistentStockClass() public {
         bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
+        bytes16 stockClassAdjustmentId = bytes16(keccak256("INVALID_ADJ_1"));
         uint256 newSharesAuthorized = 2_000_000;
 
         vm.expectRevert(abi.encodeWithSelector(IStockClassFacet.StockClassNotFound.selector, invalidStockClassId));
-        IStockClassFacet(address(capTable)).adjustAuthorizedShares(invalidStockClassId, newSharesAuthorized);
+        IStockClassFacet(address(capTable)).adjustAuthorizedShares(
+            stockClassAdjustmentId, invalidStockClassId, newSharesAuthorized
+        );
     }
 
     function test_RevertWhen_AdjustingNonExistentStockPlan() public {
         bytes16 invalidStockPlanId = 0xd3373e0a4dd940000000000000000099;
+        bytes16 stockPlanAdjustmentId = bytes16(keccak256("INVALID_PLAN_ADJ_1"));
         uint256 newSharesReserved = 200_000;
 
         vm.expectRevert(abi.encodeWithSelector(IStockPlanFacet.StockPlanNotFound.selector, invalidStockPlanId));
-        IStockPlanFacet(address(capTable)).adjustStockPlanPool(invalidStockPlanId, newSharesReserved);
+        IStockPlanFacet(address(capTable)).adjustStockPlanPool(
+            stockPlanAdjustmentId, invalidStockPlanId, newSharesReserved
+        );
     }
 }

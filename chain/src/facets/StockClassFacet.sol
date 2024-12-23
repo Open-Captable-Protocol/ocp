@@ -58,7 +58,7 @@ contract StockClassFacet {
 
     /// @notice Adjust the authorized shares for a stock class
     /// @dev Only DEFAULT_ADMIN_ROLE can adjust authorized shares
-    function adjustAuthorizedShares(bytes16 stockClassId, uint256 newSharesAuthorized) external {
+    function adjustAuthorizedShares(bytes16 id, bytes16 stockClassId, uint256 newSharesAuthorized) external {
         Storage storage ds = StorageLib.get();
 
         // Check that caller has admin role
@@ -82,6 +82,8 @@ contract StockClassFacet {
         stockClass.shares_authorized = newSharesAuthorized;
 
         emit StockClassAuthorizedSharesAdjusted(stockClassId, newSharesAuthorized);
-        TxHelper.createTx(TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(newSharesAuthorized));
+        TxHelper.createTx(
+            TxType.STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(id, stockClassId, newSharesAuthorized)
+        );
     }
 }

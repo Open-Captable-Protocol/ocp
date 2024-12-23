@@ -43,7 +43,7 @@ contract StockPlanFacet {
 
     /// @notice Adjust the number of shares reserved in a stock plan
     /// @dev Only OPERATOR_ROLE can adjust stock plan pools
-    function adjustStockPlanPool(bytes16 stockPlanId, uint256 newSharesReserved) external {
+    function adjustStockPlanPool(bytes16 id, bytes16 stockPlanId, uint256 newSharesReserved) external {
         Storage storage ds = StorageLib.get();
 
         if (!AccessControl.hasOperatorRole(msg.sender)) {
@@ -59,8 +59,6 @@ contract StockPlanFacet {
         StockPlan storage stockPlan = ds.stockPlans[stockPlanIndex - 1];
         stockPlan.shares_reserved = newSharesReserved;
 
-        TxHelper.createTx(TxType.STOCK_PLAN_POOL_ADJUSTMENT, abi.encode(newSharesReserved));
-
-        emit StockPlanSharesReservedAdjusted(stockPlanId, newSharesReserved);
+        TxHelper.createTx(TxType.STOCK_PLAN_POOL_ADJUSTMENT, abi.encode(id, stockPlanId, newSharesReserved));
     }
 }

@@ -10,8 +10,6 @@ import StockAcceptance from "../objects/transactions/acceptance/StockAcceptance.
 import WarrantIssuance from "../objects/transactions/issuance/WarrantIssuance.js";
 import EquityCompensationIssuance from "../objects/transactions/issuance/EquityCompensationIssuance.js";
 import EquityCompensationExercise from "../objects/transactions/exercise/EquityCompensationExercise.js";
-import IssuerAuthorizedSharesAdjustment from "../objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.js";
-import StockClassAuthorizedSharesAdjustment from "../objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
 import StockCancellation from "../objects/transactions/cancellation/StockCancellation.js";
 import StockIssuance from "../objects/transactions/issuance/StockIssuance.js";
 import StockReissuance from "../objects/transactions/reissuance/StockReissuance.js";
@@ -73,6 +71,10 @@ export const upsertConvertibleIssuanceBySecurityId = async (securityId, updatedD
     return await findBySecurityIdAndUpdate(ConvertibleIssuance, securityId, updatedData, { new: true, upsert: true });
 };
 
+export const upsertConvertibleIssuanceById = async (id, updatedData) => {
+    return await findByIdAndUpdate(ConvertibleIssuance, id, updatedData, { new: true, upsert: true });
+};
+
 export const upsertStockIssuanceById = async (id, updatedData) => {
     return await findByIdAndUpdate(StockIssuance, id, updatedData, { new: true, upsert: true });
 };
@@ -99,14 +101,6 @@ export const upsertStockRepurchaseById = async (id, updatedData) => {
 
 export const upsertStockAcceptanceById = async (id, updatedData) => {
     return await findByIdAndUpdate(StockAcceptance, id, updatedData, { new: true, upsert: true });
-};
-
-export const upsertStockClassAuthorizedSharesAdjustment = async (id, updatedData) => {
-    return await findByIdAndUpdate(StockClassAuthorizedSharesAdjustment, id, updatedData, { new: true, upsert: true });
-};
-
-export const upsertIssuerAuthorizedSharesAdjustment = async (id, updatedData) => {
-    return await findByIdAndUpdate(IssuerAuthorizedSharesAdjustment, id, updatedData, { new: true, upsert: true });
 };
 
 export const upsertFactory = async (updatedData) => {
@@ -155,10 +149,22 @@ export const upsertWarrantIssuanceBySecurityId = async (securityId, updatedData)
     return await findBySecurityIdAndUpdate(WarrantIssuance, securityId, updatedData, { new: true, upsert: true });
 };
 
+export const upsertWarrantIssuanceById = async (id, updatedData) => {
+    return await findByIdAndUpdate(WarrantIssuance, id, updatedData, { new: true, upsert: true });
+};
+
 export const upsertEquityCompensationIssuanceBySecurityId = async (securityId, updatedData) => {
     return await findBySecurityIdAndUpdate(EquityCompensationIssuance, securityId, updatedData, { new: true, upsert: true });
 };
 
+export const upsertEquityCompensationIssuanceById = async (id, updatedData) => {
+    return await findByIdAndUpdate(EquityCompensationIssuance, id, updatedData, { new: true, upsert: true });
+};
+
 export const upsertEquityCompensationExerciseBySecurityId = async (securityId, updatedData) => {
     return await findBySecurityIdAndUpdate(EquityCompensationExercise, securityId, updatedData, { new: true, upsert: true });
+};
+
+export const upsertEquityCompensationExerciseById = async (id, updatedData) => {
+    return await findByIdAndUpdate(EquityCompensationExercise, id, updatedData, { new: true, upsert: true });
 };

@@ -50,7 +50,9 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Issue equity compensation
         equityCompSecurityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 equityCompensationId = 0xd3373e0a4dd940000000000000000012;
         IssueEquityCompensationParams memory equityParams = IssueEquityCompensationParams({
+            id: equityCompensationId,
             stakeholder_id: stakeholderId,
             stock_class_id: stockClassId,
             stock_plan_id: stockPlanId,
@@ -68,7 +70,9 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         // Issue resulting stock
         stockSecurityId = 0xd3373e0a4dd940000000000000000002;
+        bytes16 stockId = 0xd3373e0a4dd940000000000000000011;
         IssueStockParams memory params = IssueStockParams({
+            id: stockId,
             stock_class_id: stockClassId,
             share_price: 1e18,
             quantity: EQUITY_COMP_QUANTITY,
@@ -83,10 +87,13 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
     function testExerciseEquityCompensation() public {
         uint256 exerciseQuantity = 500;
+        bytes16 exerciseId = 0xd3373e0a4dd940000000000000000113;
 
         // Issue new stock position with exact quantity to exercise
         bytes16 newStockSecurityId = 0xd3373e0a4dd940000000000000000003;
+        bytes16 newStockId = 0xd3373e0a4dd940000000000000000013;
         IssueStockParams memory exerciseParams = IssueStockParams({
+            id: newStockId,
             stock_class_id: stockClassId,
             share_price: 1e18,
             quantity: exerciseQuantity,
@@ -100,12 +107,13 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
 
         vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(
-            TxType.EQUITY_COMPENSATION_EXERCISE, abi.encode(equityCompSecurityId, newStockSecurityId, exerciseQuantity)
+            TxType.EQUITY_COMPENSATION_EXERCISE,
+            abi.encode(exerciseId, equityCompSecurityId, newStockSecurityId, exerciseQuantity)
         );
 
         // Exercise as operator
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
-            equityCompSecurityId, newStockSecurityId, exerciseQuantity
+            exerciseId, equityCompSecurityId, newStockSecurityId, exerciseQuantity
         );
 
         // Verify equity comp position was updated
@@ -115,14 +123,17 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
     }
 
     function testExerciseEquityCompensationFull() public {
+        bytes16 exerciseId = bytes16(keccak256("EXERCISE_FULL"));
+
         vm.expectEmit(true, true, false, true, address(capTable));
         emit TxHelper.TxCreated(
-            TxType.EQUITY_COMPENSATION_EXERCISE, abi.encode(equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY)
+            TxType.EQUITY_COMPENSATION_EXERCISE,
+            abi.encode(exerciseId, equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY)
         );
 
         // Exercise as operator
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
-            equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY
+            exerciseId, equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY
         );
 
         // Verify position was removed
@@ -134,38 +145,48 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
     function testFailNonOperatorExercise() public {
         address nonOperator = address(0x129);
         vm.prank(nonOperator);
+        bytes16 exerciseId = bytes16(keccak256("NON_OPERATOR"));
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
-            equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY
+            exerciseId, equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY
         );
     }
 
     function testFailInvalidEquityCompSecurity() public {
         bytes16 invalidSecurityId = 0xd3373e0a4dd940000000000000000099;
+        bytes16 exerciseId = bytes16(keccak256("INVALID_EXERCISE_1"));
 
-        IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(invalidSecurityId, stockSecurityId, 500);
+        IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
+            exerciseId, invalidSecurityId, stockSecurityId, 500
+        );
     }
 
     function testFailInvalidStockSecurity() public {
         bytes16 invalidStockId = 0xd3373e0a4dd940000000000000000099;
+        bytes16 exerciseId = bytes16(keccak256("INVALID_EXERCISE_2"));
 
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
-            equityCompSecurityId, invalidStockId, 500
+            exerciseId, equityCompSecurityId, invalidStockId, 500
         );
     }
 
     function testFailInsufficientShares() public {
+        bytes16 exerciseId = bytes16(keccak256("INSUFFICIENT_SHARES"));
+
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
-            equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY + 1
+            exerciseId, equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY + 1
         );
     }
 
     function testFailWrongStakeholder() public {
         // Create a different stakeholder with unique ID
         bytes16 otherStakeholderId = createStakeholder();
+        bytes16 exerciseId = bytes16(keccak256("WRONG_STAKEHOLDER"));
 
         // Issue stock to different stakeholder
         bytes16 otherStockSecurityId = 0xd3373e0a4dd940000000000000000003;
+        bytes16 otherStockId = 0xd3373e0a4dd940000000000000000013;
         IssueStockParams memory otherParams = IssueStockParams({
+            id: otherStockId,
             stock_class_id: stockClassId,
             share_price: 1e18,
             quantity: 500,
@@ -185,7 +206,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
             )
         );
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
-            equityCompSecurityId, otherStockSecurityId, 500
+            exerciseId, equityCompSecurityId, otherStockSecurityId, 500
         );
     }
 }

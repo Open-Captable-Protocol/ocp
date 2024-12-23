@@ -18,6 +18,7 @@ const HistoricalTransactionSchema = new mongoose.Schema(
                 "StockAcceptance",
                 "IssuerAuthorizedSharesAdjustment",
                 "StockClassAuthorizedSharesAdjustment",
+                "StockPlanPoolAdjustment",
                 "EquityCompensationIssuance",
                 "EquityCompensationExercise",
                 "ConvertibleIssuance",
