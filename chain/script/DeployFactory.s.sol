@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
+import { MockFacet, MockFacetV2 } from "../test/mocks/MockFacet.sol";
 import { CapTableFactory } from "@core/CapTableFactory.sol";
 import { CapTable } from "@core/CapTable.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
@@ -19,129 +20,242 @@ import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
+import { DummyFacet } from "@facets/Dummy.sol";
 
 library LibDeployment {
-    struct FacetDeployment {
-        address facetAddress;
+    uint256 constant FACET_COUNT = 11; // Number of enum values FacetType
+
+    enum FacetType {
+        DiamondLoupe,
+        Issuer,
+        Stakeholder,
+        StockClass,
+        Stock,
+        Convertibles,
+        EquityCompensation,
+        StockPlan,
+        Warrant,
+        StakeholderNFT,
+        AccessControl,
+        MockFacet,
+        MockFacetV2
+    }
+
+    struct FacetCutInfo {
+        string name;
         bytes4[] selectors;
+    }
+
+    function getFacetCutInfo(FacetType facetType) internal pure returns (FacetCutInfo memory info) {
+        if (facetType == FacetType.DiamondLoupe) {
+            bytes4[] memory selectors = new bytes4[](5);
+            selectors[0] = DiamondLoupeFacet.facets.selector;
+            selectors[1] = DiamondLoupeFacet.facetFunctionSelectors.selector;
+            selectors[2] = DiamondLoupeFacet.facetAddresses.selector;
+            selectors[3] = DiamondLoupeFacet.facetAddress.selector;
+            selectors[4] = DiamondLoupeFacet.supportsInterface.selector;
+            return FacetCutInfo({ name: "DiamondLoupeFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.Issuer) {
+            bytes4[] memory selectors = new bytes4[](2);
+            selectors[0] = IssuerFacet.initializeIssuer.selector;
+            selectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
+            return FacetCutInfo({ name: "IssuerFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.Stakeholder) {
+            bytes4[] memory selectors = new bytes4[](3);
+            selectors[0] = StakeholderFacet.createStakeholder.selector;
+            selectors[1] = StakeholderFacet.getStakeholderPositions.selector;
+            selectors[2] = StakeholderFacet.linkStakeholderAddress.selector;
+            return FacetCutInfo({ name: "StakeholderFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.StockClass) {
+            bytes4[] memory selectors = new bytes4[](2);
+            selectors[0] = StockClassFacet.createStockClass.selector;
+            selectors[1] = StockClassFacet.adjustAuthorizedShares.selector;
+            return FacetCutInfo({ name: "StockClassFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.Stock) {
+            bytes4[] memory selectors = new bytes4[](2);
+            selectors[0] = StockFacet.issueStock.selector;
+            selectors[1] = StockFacet.getStockPosition.selector;
+            return FacetCutInfo({ name: "StockFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.Convertibles) {
+            bytes4[] memory selectors = new bytes4[](2);
+            selectors[0] = ConvertiblesFacet.issueConvertible.selector;
+            selectors[1] = ConvertiblesFacet.getConvertiblePosition.selector;
+            return FacetCutInfo({ name: "ConvertiblesFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.EquityCompensation) {
+            bytes4[] memory selectors = new bytes4[](3);
+            selectors[0] = EquityCompensationFacet.issueEquityCompensation.selector;
+            selectors[1] = EquityCompensationFacet.getPosition.selector;
+            selectors[2] = EquityCompensationFacet.exerciseEquityCompensation.selector;
+            return FacetCutInfo({ name: "EquityCompensationFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.StockPlan) {
+            bytes4[] memory selectors = new bytes4[](2);
+            selectors[0] = StockPlanFacet.createStockPlan.selector;
+            selectors[1] = StockPlanFacet.adjustStockPlanPool.selector;
+            return FacetCutInfo({ name: "StockPlanFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.Warrant) {
+            bytes4[] memory selectors = new bytes4[](2);
+            selectors[0] = WarrantFacet.issueWarrant.selector;
+            selectors[1] = WarrantFacet.getWarrantPosition.selector;
+            return FacetCutInfo({ name: "WarrantFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.StakeholderNFT) {
+            bytes4[] memory selectors = new bytes4[](2);
+            selectors[0] = StakeholderNFTFacet.mint.selector;
+            selectors[1] = StakeholderNFTFacet.tokenURI.selector;
+            return FacetCutInfo({ name: "StakeholderNFTFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.AccessControl) {
+            bytes4[] memory selectors = new bytes4[](8);
+            selectors[0] = AccessControlFacet.grantRole.selector;
+            selectors[1] = AccessControlFacet.revokeRole.selector;
+            selectors[2] = AccessControlFacet.hasRole.selector;
+            selectors[3] = AccessControlFacet.initializeAccessControl.selector;
+            selectors[4] = AccessControlFacet.transferAdmin.selector;
+            selectors[5] = AccessControlFacet.acceptAdmin.selector;
+            selectors[6] = AccessControlFacet.getAdmin.selector;
+            selectors[7] = AccessControlFacet.getPendingAdmin.selector;
+            return FacetCutInfo({ name: "AccessControlFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.MockFacet) {
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = MockFacet.getValuePlusOne.selector;
+            return FacetCutInfo({ name: "MockFacet", selectors: selectors });
+        }
+        if (facetType == FacetType.MockFacetV2) {
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = MockFacetV2.getValuePlusTwo.selector;
+            return FacetCutInfo({ name: "MockFacetV2", selectors: selectors });
+        }
+        revert("Unknown facet type");
+    }
+
+    function getFacetTypeFromSelector(bytes4 selector) internal pure returns (FacetType) {
+        if (selector == DiamondLoupeFacet.facets.selector) return FacetType.DiamondLoupe;
+        if (selector == IssuerFacet.initializeIssuer.selector) return FacetType.Issuer;
+        if (selector == StakeholderFacet.createStakeholder.selector) return FacetType.Stakeholder;
+        if (selector == StockClassFacet.createStockClass.selector) return FacetType.StockClass;
+        if (selector == StockFacet.issueStock.selector) return FacetType.Stock;
+        if (selector == ConvertiblesFacet.issueConvertible.selector) return FacetType.Convertibles;
+        if (selector == EquityCompensationFacet.issueEquityCompensation.selector) return FacetType.EquityCompensation;
+        if (selector == StockPlanFacet.createStockPlan.selector) return FacetType.StockPlan;
+        if (selector == WarrantFacet.issueWarrant.selector) return FacetType.Warrant;
+        if (selector == StakeholderNFTFacet.mint.selector) return FacetType.StakeholderNFT;
+        if (selector == AccessControlFacet.grantRole.selector) return FacetType.AccessControl;
+        if (selector == MockFacet.getValuePlusOne.selector) return FacetType.MockFacet;
+        if (selector == MockFacetV2.getValuePlusTwo.selector) return FacetType.MockFacetV2;
+        revert("Unknown selector");
+    }
+
+    function deployFacet(FacetType facetType) internal returns (address) {
+        if (facetType == FacetType.DiamondLoupe) return address(new DiamondLoupeFacet());
+        if (facetType == FacetType.Issuer) return address(new IssuerFacet());
+        if (facetType == FacetType.Stakeholder) return address(new StakeholderFacet());
+        if (facetType == FacetType.StockClass) return address(new StockClassFacet());
+        if (facetType == FacetType.Stock) return address(new StockFacet());
+        if (facetType == FacetType.Convertibles) return address(new ConvertiblesFacet());
+        if (facetType == FacetType.EquityCompensation) return address(new EquityCompensationFacet());
+        if (facetType == FacetType.StockPlan) return address(new StockPlanFacet());
+        if (facetType == FacetType.Warrant) return address(new WarrantFacet());
+        if (facetType == FacetType.StakeholderNFT) return address(new StakeholderNFTFacet());
+        if (facetType == FacetType.AccessControl) return address(new AccessControlFacet());
+        if (facetType == FacetType.MockFacet) return address(new MockFacet());
+        if (facetType == FacetType.MockFacetV2) return address(new MockFacetV2());
+        revert("Unknown facet type");
     }
 
     function deployInitialFacets(address owner) internal returns (address) {
         console.log("\n\nDeploying facets...");
-        console.log("address(this): ", address(this));
+        console.log("owner(this): ", address(this));
+
         // Deploy all facets
-        console.log("Deploying facets...");
-        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](11);
+        IDiamondCut.FacetCut[] memory cuts = new IDiamondCut.FacetCut[](FACET_COUNT); // Change from FACET_COUNT to actual number of cuts
 
         // ------------------- Diamond Loupe Facet -------------------
-        bytes4[] memory loupeSelectors = new bytes4[](5);
-        loupeSelectors[0] = DiamondLoupeFacet.facets.selector;
-        loupeSelectors[1] = DiamondLoupeFacet.facetFunctionSelectors.selector;
-        loupeSelectors[2] = DiamondLoupeFacet.facetAddresses.selector;
-        loupeSelectors[3] = DiamondLoupeFacet.facetAddress.selector;
-        loupeSelectors[4] = DiamondLoupeFacet.supportsInterface.selector;
         cuts[0] = IDiamondCut.FacetCut({
-            facetAddress: address(new DiamondLoupeFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.DiamondLoupe),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: loupeSelectors
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.DiamondLoupe).selectors
         });
 
         // ------------------- Issuer Facet -------------------
         cuts[1] = IDiamondCut.FacetCut({
-            facetAddress: address(new IssuerFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.Issuer),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](2)
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.Issuer).selectors
         });
-        cuts[1].functionSelectors[0] = IssuerFacet.initializeIssuer.selector;
-        cuts[1].functionSelectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
 
         // ------------------- Stakeholder Facet -------------------
         cuts[2] = IDiamondCut.FacetCut({
-            facetAddress: address(new StakeholderFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.Stakeholder),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](3)
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.Stakeholder).selectors
         });
-        cuts[2].functionSelectors[0] = StakeholderFacet.createStakeholder.selector;
-        cuts[2].functionSelectors[1] = StakeholderFacet.getStakeholderPositions.selector;
-        cuts[2].functionSelectors[2] = StakeholderFacet.linkStakeholderAddress.selector;
 
         // ------------------- Stock Class Facet -------------------
         cuts[3] = IDiamondCut.FacetCut({
-            facetAddress: address(new StockClassFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.StockClass),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](2)
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.StockClass).selectors
         });
-        cuts[3].functionSelectors[0] = StockClassFacet.createStockClass.selector;
-        cuts[3].functionSelectors[1] = StockClassFacet.adjustAuthorizedShares.selector;
 
         // ------------------- Stock Facet -------------------
         cuts[4] = IDiamondCut.FacetCut({
-            facetAddress: address(new StockFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.Stock),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](1)
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.Stock).selectors
         });
-        cuts[4].functionSelectors[0] = StockFacet.issueStock.selector;
 
         // ------------------- Convertibles Facet -------------------
         cuts[5] = IDiamondCut.FacetCut({
-            facetAddress: address(new ConvertiblesFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.Convertibles),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](2)
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.Convertibles).selectors
         });
         cuts[5].functionSelectors[0] = ConvertiblesFacet.issueConvertible.selector;
         cuts[5].functionSelectors[1] = ConvertiblesFacet.getConvertiblePosition.selector;
 
         // ------------------- Equity Compensation Facet -------------------
         cuts[6] = IDiamondCut.FacetCut({
-            facetAddress: address(new EquityCompensationFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.EquityCompensation),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](3)
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.EquityCompensation).selectors
         });
-        cuts[6].functionSelectors[0] = EquityCompensationFacet.issueEquityCompensation.selector;
-        cuts[6].functionSelectors[1] = EquityCompensationFacet.getPosition.selector;
-        cuts[6].functionSelectors[2] = EquityCompensationFacet.exerciseEquityCompensation.selector;
 
         // ------------------- Stock Plan Facet -------------------
         cuts[7] = IDiamondCut.FacetCut({
-            facetAddress: address(new StockPlanFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.StockPlan),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](2)
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.StockPlan).selectors
         });
-        cuts[7].functionSelectors[0] = StockPlanFacet.createStockPlan.selector;
-        cuts[7].functionSelectors[1] = StockPlanFacet.adjustStockPlanPool.selector;
 
         // ------------------- Warrant Facet -------------------
         cuts[8] = IDiamondCut.FacetCut({
-            facetAddress: address(new WarrantFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.Warrant),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](2)
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.Warrant).selectors
         });
-        cuts[8].functionSelectors[0] = WarrantFacet.issueWarrant.selector;
-        cuts[8].functionSelectors[1] = WarrantFacet.getWarrantPosition.selector;
 
         // ------------------- Stakeholder NFT Facet -------------------
         cuts[9] = IDiamondCut.FacetCut({
-            facetAddress: address(new StakeholderNFTFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.StakeholderNFT),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](2)
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.StakeholderNFT).selectors
         });
-        cuts[9].functionSelectors[0] = StakeholderNFTFacet.mint.selector;
-        cuts[9].functionSelectors[1] = StakeholderNFTFacet.tokenURI.selector;
 
         // ------------------- Access Control Facet -------------------
         cuts[10] = IDiamondCut.FacetCut({
-            facetAddress: address(new AccessControlFacet()),
+            facetAddress: LibDeployment.deployFacet(FacetType.AccessControl),
             action: IDiamondCut.FacetCutAction.Add,
-            functionSelectors: new bytes4[](8)
+            functionSelectors: LibDeployment.getFacetCutInfo(FacetType.AccessControl).selectors
         });
-        cuts[10].functionSelectors[0] = AccessControlFacet.grantRole.selector;
-        cuts[10].functionSelectors[1] = AccessControlFacet.revokeRole.selector;
-        cuts[10].functionSelectors[2] = AccessControlFacet.hasRole.selector;
-        cuts[10].functionSelectors[3] = AccessControlFacet.initializeAccessControl.selector;
-        cuts[10].functionSelectors[4] = AccessControlFacet.transferAdmin.selector;
-        cuts[10].functionSelectors[5] = AccessControlFacet.acceptAdmin.selector;
-        cuts[10].functionSelectors[6] = AccessControlFacet.getAdmin.selector;
-        cuts[10].functionSelectors[7] = AccessControlFacet.getPendingAdmin.selector;
 
         // Create reference diamond
         CapTable referenceDiamond = new CapTable(owner, address(new DiamondCutFacet()));
