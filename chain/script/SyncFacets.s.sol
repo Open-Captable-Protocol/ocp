@@ -17,7 +17,6 @@ import { StockPlanFacet } from "@facets/StockPlanFacet.sol";
 import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
-import { DummyFacet } from "@facets/Dummy.sol";
 
 library FacetHelper {
     enum ChangeType {

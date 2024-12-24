@@ -20,7 +20,6 @@ import { WarrantFacet } from "@facets/WarrantFacet.sol";
 import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
-import { DummyFacet } from "@facets/Dummy.sol";
 
 library LibDeployment {
     uint256 constant FACET_COUNT = 11; // Number of enum values FacetType
