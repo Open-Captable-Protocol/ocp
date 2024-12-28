@@ -37,7 +37,8 @@ interface IStockClassFacet {
 
     /// @notice Adjust the authorized shares for a stock class
     /// @dev Only DEFAULT_ADMIN_ROLE can adjust authorized shares
+    /// @param id The unique identifier for the tx
     /// @param stockClassId ID of the stock class to adjust
     /// @param newSharesAuthorized New total number of authorized shares
-    function adjustAuthorizedShares(bytes16 stockClassId, uint256 newSharesAuthorized) external;
+    function adjustAuthorizedShares(bytes16 id, bytes16 stockClassId, uint256 newSharesAuthorized) external;
 }

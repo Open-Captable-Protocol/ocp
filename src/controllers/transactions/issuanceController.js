@@ -4,9 +4,10 @@ import { toScaledBigNumber } from "../../utils/convertToFixedPointDecimals.js";
 // Stock Issuance
 export const convertAndCreateIssuanceStockOnchain = async (
     contract,
-    { security_id, stock_class_id, stakeholder_id, quantity, share_price, custom_id = "" }
+    { id, security_id, stock_class_id, stakeholder_id, quantity, share_price, custom_id = "" }
 ) => {
     console.log("data to save", {
+        id: convertUUIDToBytes16(id),
         stock_class_id: convertUUIDToBytes16(stock_class_id),
         share_price: toScaledBigNumber(share_price.amount),
         quantity: toScaledBigNumber(quantity),
@@ -17,6 +18,7 @@ export const convertAndCreateIssuanceStockOnchain = async (
         security_law_exemptions_mapping: "",
     });
     const tx = await contract.issueStock({
+        id: convertUUIDToBytes16(id),
         stock_class_id: convertUUIDToBytes16(stock_class_id),
         share_price: toScaledBigNumber(share_price.amount),
         quantity: toScaledBigNumber(quantity),
@@ -33,9 +35,10 @@ export const convertAndCreateIssuanceStockOnchain = async (
 // Convertible Issuance
 export const convertAndCreateIssuanceConvertibleOnchain = async (
     contract,
-    { security_id, stakeholder_id, investment_amount, convertible_type, seniority, custom_id = "" }
+    { id, security_id, stakeholder_id, investment_amount, convertible_type, seniority, custom_id = "" }
 ) => {
     const tx = await contract.issueConvertible({
+        id: convertUUIDToBytes16(id),
         stakeholder_id: convertUUIDToBytes16(stakeholder_id),
         investment_amount: toScaledBigNumber(investment_amount.amount),
         security_id: convertUUIDToBytes16(security_id),
@@ -52,9 +55,10 @@ export const convertAndCreateIssuanceConvertibleOnchain = async (
 // Warrant Issuance
 export const convertAndCreateIssuanceWarrantOnchain = async (
     contract,
-    { security_id, stakeholder_id, quantity, purchase_price = { amount: 0 }, custom_id = "" }
+    { id, security_id, stakeholder_id, quantity, purchase_price = { amount: 0 }, custom_id = "" }
 ) => {
     const tx = await contract.issueWarrant({
+        id: convertUUIDToBytes16(id),
         stakeholder_id: convertUUIDToBytes16(stakeholder_id),
         quantity: toScaledBigNumber(quantity),
         security_id: convertUUIDToBytes16(security_id),
@@ -71,6 +75,7 @@ export const convertAndCreateIssuanceWarrantOnchain = async (
 export const convertAndCreateIssuanceEquityCompensationOnchain = async (
     contract,
     {
+        id,
         security_id,
         stakeholder_id,
         stock_class_id,
@@ -84,6 +89,7 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
     }
 ) => {
     const tx = await contract.issueEquityCompensation({
+        id: convertUUIDToBytes16(id),
         stakeholder_id: convertUUIDToBytes16(stakeholder_id),
         stock_class_id: convertUUIDToBytes16(stock_class_id),
         stock_plan_id: convertUUIDToBytes16(stock_plan_id),

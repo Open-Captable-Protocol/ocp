@@ -13,8 +13,10 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         bytes16 stakeholderId = createStakeholder();
         uint256 quantity = 1000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueWarrantParams memory params = IssueWarrantParams({
+            id: id,
             stakeholder_id: stakeholderId,
             quantity: quantity,
             security_id: securityId,
@@ -37,8 +39,10 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
     function testFailInvalidStakeholder() public {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueWarrantParams memory params = IssueWarrantParams({
+            id: id,
             stakeholder_id: invalidStakeholderId,
             quantity: 1000,
             security_id: securityId,
@@ -53,8 +57,10 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
     function testFailZeroQuantity() public {
         bytes16 stakeholderId = createStakeholder();
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueWarrantParams memory params = IssueWarrantParams({
+            id: id,
             stakeholder_id: stakeholderId,
             quantity: 0,
             security_id: securityId,

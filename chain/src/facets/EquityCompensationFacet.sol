@@ -49,6 +49,7 @@ contract EquityCompensationFacet is IEquityCompensationFacet {
     /// @notice Exercise equity compensation to convert it into stock
     /// @dev Only OPERATOR_ROLE can exercise equity compensation
     function exerciseEquityCompensation(
+        bytes16 id,
         bytes16 equity_comp_security_id,
         bytes16 resulting_stock_security_id,
         uint256 quantity
@@ -112,7 +113,7 @@ contract EquityCompensationFacet is IEquityCompensationFacet {
         }
 
         // Emit transaction
-        bytes memory txData = abi.encode(equity_comp_security_id, resulting_stock_security_id, quantity);
+        bytes memory txData = abi.encode(id, equity_comp_security_id, resulting_stock_security_id, quantity);
         TxHelper.createTx(TxType.EQUITY_COMPENSATION_EXERCISE, txData);
     }
 

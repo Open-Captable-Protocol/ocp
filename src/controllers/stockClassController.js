@@ -31,11 +31,12 @@ export const getTotalNumberOfStockClasses = async (contract) => {
     return totalStockClasses.toString();
 };
 
-export const convertAndAdjustStockClassAuthorizedSharesOnchain = async (contract, { stock_class_id, new_shares_authorized }) => {
+export const convertAndAdjustStockClassAuthorizedSharesOnchain = async (contract, { id, stock_class_id, new_shares_authorized }) => {
+    const idBytes16 = convertUUIDToBytes16(id);
     const stockClassIdBytes16 = convertUUIDToBytes16(stock_class_id);
     const newSharesAuthorizedScaled = toScaledBigNumber(new_shares_authorized);
 
-    const tx = await contract.adjustAuthorizedShares(stockClassIdBytes16, newSharesAuthorizedScaled);
+    const tx = await contract.adjustAuthorizedShares(idBytes16, stockClassIdBytes16, newSharesAuthorizedScaled);
     const receipt = await tx.wait();
     return receipt;
 };

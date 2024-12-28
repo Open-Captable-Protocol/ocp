@@ -84,6 +84,7 @@ struct StakeholderPositions {
 }
 
 struct IssueStockParams {
+    bytes16 id;
     bytes16 stock_class_id;
     uint256 share_price;
     uint256 quantity;
@@ -95,6 +96,7 @@ struct IssueStockParams {
 }
 
 struct IssueConvertibleParams {
+    bytes16 id;
     bytes16 stakeholder_id;
     uint256 investment_amount;
     bytes16 security_id;
@@ -106,6 +108,7 @@ struct IssueConvertibleParams {
 }
 
 struct IssueEquityCompensationParams {
+    bytes16 id;
     bytes16 stakeholder_id;
     bytes16 stock_class_id;
     bytes16 stock_plan_id;
@@ -121,6 +124,7 @@ struct IssueEquityCompensationParams {
 }
 
 struct IssueWarrantParams {
+    bytes16 id;
     bytes16 stakeholder_id;
     uint256 quantity;
     bytes16 security_id;

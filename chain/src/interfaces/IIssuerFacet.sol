@@ -21,6 +21,7 @@ interface IIssuerFacet {
 
     /// @notice Adjust the total number of authorized shares for the issuer
     /// @dev Only DEFAULT_ADMIN_ROLE can adjust authorized shares
+    /// @param id The unique identifier for the tx
     /// @param newSharesAuthorized New total number of authorized shares
-    function adjustIssuerAuthorizedShares(uint256 newSharesAuthorized) external;
+    function adjustIssuerAuthorizedShares(bytes16 id, uint256 newSharesAuthorized) external;
 }

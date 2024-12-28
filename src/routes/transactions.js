@@ -37,7 +37,6 @@ import {
     createEquityCompensationExercise,
     createStockIssuance,
     createFairmintData,
-    createHistoricalTransaction,
     createStockClassAuthorizedSharesAdjustment,
     createIssuerAuthorizedSharesAdjustment,
 } from "../db/operations/create.js";
@@ -97,6 +96,7 @@ transactions.post("/issuance/stock", async (req, res) => {
             share_price: incomingStockIssuance.share_price,
             stock_legend_ids_mapping: incomingStockIssuance.stock_legend_ids_mapping,
             custom_id: incomingStockIssuance.custom_id || "",
+            id: incomingStockIssuance.id,
         });
 
         // TODO: Store Historical Transactions
@@ -175,6 +175,8 @@ transactions.post("/issuance/stock-fairmint-reflection", async (req, res) => {
             stakeholder_id: incomingStockIssuance.stakeholder_id,
             quantity: incomingStockIssuance.quantity,
             share_price: incomingStockIssuance.share_price,
+            custom_id: incomingStockIssuance.custom_id || "",
+            id: incomingStockIssuance.id,
         });
 
         // TODO: Store Historical Transactions
@@ -390,14 +392,8 @@ transactions.post("/adjust/issuer/authorized-shares", async (req, res) => {
             issuer: issuerId,
         });
 
-        const txhash = await convertAndAdjustIssuerAuthorizedSharesOnChain(contract, createdIssuerAdjustment);
-        await createHistoricalTransaction({
-            transaction: createdIssuerAdjustment._id,
-            hash: txhash,
-            transactionType: "IssuerAuthorizedSharesAdjustment",
-            issuer: issuerId,
-        });
-        res.status(200).send({ ...issuerAuthorizedSharesAdj, txhash });
+        const receipt = await convertAndAdjustIssuerAuthorizedSharesOnChain(contract, createdIssuerAdjustment);
+        res.status(200).send({ ...issuerAuthorizedSharesAdj, txhash: receipt.hash });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -433,16 +429,9 @@ transactions.post("/adjust/stock-class/authorized-shares", async (req, res) => {
             issuer: issuerId,
         });
 
-        const txhash = await convertAndAdjustStockClassAuthorizedSharesOnchain(contract, createdStockClassAdjustment);
+        const receipt = await convertAndAdjustStockClassAuthorizedSharesOnchain(contract, createdStockClassAdjustment);
 
-        await createHistoricalTransaction({
-            transaction: createdStockClassAdjustment._id,
-            hash: txhash,
-            transactionType: "StockClassAuthorizedSharesAdjustment",
-            issuer: issuerId,
-        });
-
-        res.status(200).send({ stockClassAdjustment: { ...stockClassAuthorizedSharesAdjustment, txhash } });
+        res.status(200).send({ stockClassAdjustment: { ...stockClassAuthorizedSharesAdjustment, txhash: receipt.hash } });
     } catch (error) {
         console.error(`error: ${error.stack}`);
         res.status(500).send(`${error}`);
@@ -478,19 +467,9 @@ transactions.post("/adjust/stock-plan-pool", async (req, res) => {
             issuer: issuerId,
         });
 
-        const txhash = await adjustStockPlanPoolOnchain(contract, {
-            stock_plan_id: stockPlanPoolAdjustment.stock_plan_id,
-            shares_reserved: stockPlanPoolAdjustment.shares_reserved,
-        });
+        const receipt = await adjustStockPlanPoolOnchain(contract, stockPlanPoolAdjustment);
 
-        await createHistoricalTransaction({
-            transaction: stockPlanPoolAdjustment.id,
-            hash: txhash,
-            transactionType: "StockPlanPoolAdjustment",
-            issuer: issuerId,
-        });
-
-        res.status(200).send({ stockPlanAdjustment: { ...stockPlanPoolAdjustment, txhash } });
+        res.status(200).send({ stockPlanAdjustment: { ...stockPlanPoolAdjustment, txhash: receipt.hash } });
     } catch (error) {
         console.error(`error: ${error.stack}`);
         res.status(500).send(`${error}`);
@@ -551,6 +530,12 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
             stock_class_id: incomingEquityCompensationIssuance.stock_class_id,
             stock_plan_id: incomingEquityCompensationIssuance.stock_plan_id,
             quantity: incomingEquityCompensationIssuance.quantity,
+            compensation_type: incomingEquityCompensationIssuance.compensation_type,
+            exercise_price: incomingEquityCompensationIssuance.exercise_price,
+            base_price: incomingEquityCompensationIssuance.base_price,
+            expiration_date: incomingEquityCompensationIssuance.expiration_date,
+            custom_id: incomingEquityCompensationIssuance.custom_id || "",
+            id: incomingEquityCompensationIssuance.id,
         });
 
         // TODO: Store Historical Transactions
@@ -652,6 +637,12 @@ transactions.post("/issuance/equity-compensation-fairmint-reflection", async (re
             stock_class_id: incomingEquityCompensationIssuance.stock_class_id,
             stock_plan_id: incomingEquityCompensationIssuance.stock_plan_id,
             quantity: incomingEquityCompensationIssuance.quantity,
+            compensation_type: incomingEquityCompensationIssuance.compensation_type,
+            exercise_price: incomingEquityCompensationIssuance.exercise_price,
+            base_price: incomingEquityCompensationIssuance.base_price,
+            expiration_date: incomingEquityCompensationIssuance.expiration_date,
+            custom_id: incomingEquityCompensationIssuance.custom_id || "",
+            id: incomingEquityCompensationIssuance.id,
         });
 
         // TODO: Store Historical Transactions
@@ -701,6 +692,7 @@ transactions.post("/exercise/equity-compensation", async (req, res) => {
             equity_comp_security_id: incomingEquityCompensationExercise.security_id,
             resulting_stock_security_id: incomingEquityCompensationExercise.resulting_security_ids[0],
             quantity: incomingEquityCompensationExercise.quantity,
+            id: incomingEquityCompensationExercise.id,
         });
 
         // TODO: Store Historical Transactions
@@ -880,7 +872,11 @@ transactions.post("/issuance/convertible-fairmint-reflection", async (req, res) 
         await convertAndCreateIssuanceConvertibleOnchain(contract, {
             security_id: incomingConvertibleIssuance.security_id,
             stakeholder_id: incomingConvertibleIssuance.stakeholder_id,
-            investment_amount: incomingConvertibleIssuance.investment_amount.amount,
+            investment_amount: incomingConvertibleIssuance.investment_amount,
+            convertible_type: incomingConvertibleIssuance.convertible_type,
+            seniority: incomingConvertibleIssuance.seniority,
+            custom_id: incomingConvertibleIssuance.custom_id || "",
+            id: incomingConvertibleIssuance.id,
         });
 
         // TODO: Store Historical Transactions
@@ -928,6 +924,9 @@ transactions.post("/issuance/warrant", async (req, res) => {
             security_id: incomingWarrantIssuance.security_id,
             stakeholder_id: incomingWarrantIssuance.stakeholder_id,
             quantity: incomingWarrantIssuance.quantity,
+            purchase_price: incomingWarrantIssuance.purchase_price,
+            custom_id: incomingWarrantIssuance.custom_id || "",
+            id: incomingWarrantIssuance.id,
         });
 
         // TODO: Store Historical Transactions
@@ -1008,6 +1007,9 @@ transactions.post("/issuance/warrant-fairmint-reflection", async (req, res) => {
             security_id: incomingWarrantIssuance.security_id,
             stakeholder_id: incomingWarrantIssuance.stakeholder_id,
             quantity: incomingWarrantIssuance.quantity,
+            purchase_price: incomingWarrantIssuance.purchase_price,
+            custom_id: incomingWarrantIssuance.custom_id || "",
+            id: incomingWarrantIssuance.id,
         });
 
         // TODO: Store Historical Transactions

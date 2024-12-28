@@ -26,25 +26,12 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
     function testIssueStock() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000010;
         uint256 sharePrice = 10_000_000_000;
         uint256 quantity = 1000;
 
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(
-            TxType.STOCK_ISSUANCE,
-            abi.encode(
-                stockClassId,
-                sharePrice,
-                quantity,
-                stakeholderId,
-                securityId,
-                "LEGEND_1", // stock_legend_ids_mapping
-                "STOCK_001", // custom_id
-                "REG_D" // security_law_exemptions_mapping
-            )
-        );
-
         IssueStockParams memory params = IssueStockParams({
+            id: id,
             stock_class_id: stockClassId,
             share_price: sharePrice,
             quantity: quantity,
@@ -55,6 +42,9 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D"
         });
 
+        vm.expectEmit(true, true, false, true, address(capTable));
+        emit TxHelper.TxCreated(TxType.STOCK_ISSUANCE, abi.encode(params));
+
         IStockFacet(address(capTable)).issueStock(params);
     }
 
@@ -62,8 +52,10 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 stockClassId = 0xd3373e0a4dd940000000000000000000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueStockParams memory params = IssueStockParams({
+            id: id,
             stock_class_id: stockClassId,
             share_price: 10_000_000_000,
             quantity: 1000,
@@ -81,8 +73,10 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         (, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
         bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueStockParams memory params = IssueStockParams({
+            id: id,
             stock_class_id: invalidStockClassId,
             share_price: 10_000_000_000,
             quantity: 1000,
@@ -99,8 +93,10 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
     function testFailInsufficientIssuerShares() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100);
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueStockParams memory params = IssueStockParams({
+            id: id,
             stock_class_id: stockClassId,
             share_price: 10_000_000_000,
             quantity: 1000,
@@ -117,8 +113,10 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
     function testFailInsufficientStockClassShares() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100);
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueStockParams memory params = IssueStockParams({
+            id: id,
             stock_class_id: stockClassId,
             share_price: 10_000_000_000,
             quantity: 101,

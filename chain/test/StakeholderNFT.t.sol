@@ -32,7 +32,9 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         // Create a stock class and issue some stock for the NFT metadata
         bytes16 stockClassId = createStockClass();
         bytes16 stockSecurityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 stockId = 0xd3373e0a4dd940000000000000000011;
         IssueStockParams memory params = IssueStockParams({
+            id: stockId,
             stock_class_id: stockClassId,
             share_price: 1e18,
             quantity: 1000,

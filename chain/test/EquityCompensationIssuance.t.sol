@@ -34,7 +34,9 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
     function testIssueEquityCompensation() public {
         uint256 quantity = 1000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
         IssueEquityCompensationParams memory params = IssueEquityCompensationParams({
+            id: id,
             stakeholder_id: stakeholderId,
             stock_class_id: stockClassId,
             stock_plan_id: stockPlanId,
@@ -66,8 +68,10 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
     function testFailInvalidStakeholder() public {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueEquityCompensationParams memory params = IssueEquityCompensationParams({
+            id: id,
             stakeholder_id: invalidStakeholderId,
             stock_class_id: stockClassId,
             stock_plan_id: stockPlanId,
@@ -87,8 +91,10 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
     function testFailInvalidStockClass() public {
         bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueEquityCompensationParams memory params = IssueEquityCompensationParams({
+            id: id,
             stakeholder_id: stakeholderId,
             stock_class_id: invalidStockClassId,
             stock_plan_id: stockPlanId,
@@ -107,8 +113,10 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
 
     function testFailZeroQuantity() public {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
+        bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
         IssueEquityCompensationParams memory params = IssueEquityCompensationParams({
+            id: id,
             stakeholder_id: stakeholderId,
             stock_class_id: stockClassId,
             stock_plan_id: stockPlanId,

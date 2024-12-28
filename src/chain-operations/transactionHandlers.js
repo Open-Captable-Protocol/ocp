@@ -1,4 +1,3 @@
-import sleep from "../utils/sleep.js";
 import { convertBytes16ToUUID } from "../utils/convertUUID.js";
 import {
     createHistoricalTransaction,
@@ -16,11 +15,11 @@ import {
     upsertStockRepurchaseById,
     upsertStockAcceptanceById,
     updateStockPlanById,
-    upsertStockIssuanceBySecurityId,
-    upsertConvertibleIssuanceBySecurityId,
-    upsertWarrantIssuanceBySecurityId,
-    upsertEquityCompensationIssuanceBySecurityId,
-    upsertEquityCompensationExerciseBySecurityId,
+    upsertStockIssuanceById,
+    upsertConvertibleIssuanceById,
+    upsertEquityCompensationIssuanceById,
+    upsertWarrantIssuanceById,
+    upsertEquityCompensationExerciseById,
 } from "../db/operations/update.js";
 import get from "lodash/get";
 import { reflectSeries } from "../fairmint/reflectSeries.js";
@@ -31,23 +30,9 @@ import { reflectInvestment } from "../fairmint/reflectInvestment.js";
 import * as structs from "./structs.js";
 import { reflectGrant } from "../fairmint/reflectGrant.js";
 import { reflectGrantExercise } from "../fairmint/reflectGrantExercise.js";
-import { findOne } from "../db/operations/atomic.ts";
-import HistoricalTransaction from "../db/objects/HistoricalTransaction.js";
 import StockPlanPoolAdjustment from "../db/objects/transactions/adjustment/StockPlanPoolAdjustment.js";
 import StockClassAuthorizedSharesAdjustment from "../db/objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
 import IssuerAuthorizedSharesAdjustment from "../db/objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.js";
-
-const retryOnMiss = async (func, maxRetries = 5, waitBase = 1000) => {
-    let tried = 0;
-    while (tried < maxRetries) {
-        const res = await func();
-        if (res !== null) {
-            return res;
-        }
-        tried++;
-        await sleep(tried * waitBase, "Returned null, retrying in ");
-    }
-};
 
 const isUUID = (value) => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -68,6 +53,7 @@ const options = {
 export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     console.log("StockIssuanceCreated Event Emitted!", stock);
     const {
+        id,
         stock_class_id,
         share_price,
         quantity,
@@ -78,6 +64,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         // _security_law_exemptions_mapping,
     } = stock;
 
+    const _id = convertBytes16ToUUID(id);
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
@@ -86,7 +73,8 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     // If we have fairmint data, get historical date
     const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
 
-    const createdStockIssuance = await upsertStockIssuanceBySecurityId(_security_id, {
+    const createdStockIssuance = await upsertStockIssuanceById(_id, {
+        id: _id,
         stock_class_id: convertBytes16ToUUID(stock_class_id),
         share_price: {
             amount: toDecimal(share_price).toString(),
@@ -99,12 +87,6 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         issuer: issuerId,
         is_onchain_synced: true,
         custom_id,
-    });
-
-    await createHistoricalTransaction({
-        transaction: createdStockIssuance._id,
-        issuer: issuerId,
-        transactionType: "StockIssuance",
     });
 
     if (isUUID(get(fairmintData, "series_id")) && fairmintData && fairmintData._id) {
@@ -347,75 +329,73 @@ export const handleStockAcceptance = async (stock, issuerId, timestamp) => {
     );
 };
 
-export const handleStockClassAuthorizedSharesAdjusted = async (data, issuerId, timestamp, txHash) => {
+export const handleStockClassAuthorizedSharesAdjusted = async (data, issuerId, timestamp) => {
     console.log("StockClassAuthorizedSharesAdjusted Event Received!");
-    const [stock_class_id, new_shares_authorized] = data;
+    const [id, stock_class_id, new_shares_authorized] = data;
+    const _id = convertBytes16ToUUID(id);
 
-    console.log("txHash", txHash);
-    const transactionExists = await retryOnMiss(async () => await HistoricalTransaction.findOne({ hash: txHash }));
-    console.log("transactionExists", transactionExists);
-
-    if (transactionExists) {
-        // Update
-        const updatedStockClassAdjustment = await StockClassAuthorizedSharesAdjustment.findOneAndUpdate(
-            { _id: transactionExists.transaction },
-            { is_onchain_synced: true },
-            { new: true }
-        );
-        console.log("[UPDATED] StockClassAuthorizedSharesAdjusted", updatedStockClassAdjustment);
+    // Update
+    let result;
+    const existingStockClassAdjustment = await StockClassAuthorizedSharesAdjustment.findById({ _id: _id });
+    if (existingStockClassAdjustment) {
+        result = await StockClassAuthorizedSharesAdjustment.findByIdAndUpdate({ _id: _id }, { is_onchain_synced: true }, { new: true });
+        console.log("[UPDATED] StockClassAuthorizedSharesAdjusted", result);
     } else {
         // create
-        const createdStockClassAdjustment = await createStockClassAuthorizedSharesAdjustment({
+        result = await createStockClassAuthorizedSharesAdjustment({
             stock_class_id: convertBytes16ToUUID(stock_class_id),
             new_shares_authorized: toDecimal(new_shares_authorized).toString(),
             date: new Date(timestamp * 1000).toISOString().split("T")[0],
             issuer: issuerId,
             is_onchain_synced: true,
         });
-        await createHistoricalTransaction({
-            transaction: createdStockClassAdjustment._id,
-            hash: txHash,
-            issuer: issuerId,
-            transactionType: "StockClassAuthorizedSharesAdjustment",
-        });
-
-        console.log("[CREATED] StockClassAuthorizedSharesAdjusted ", createdStockClassAdjustment);
+        console.log("[CREATED] StockClassAuthorizedSharesAdjusted", result);
     }
+
+    await createHistoricalTransaction({
+        transaction: result._id,
+        issuer: issuerId,
+        transactionType: "StockClassAuthorizedSharesAdjustment",
+    });
 
     console.log(`✅ [CONFIRMED] StockClassAuthorizedSharesAdjusted  ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
 };
 
-export const handleIssuerAuthorizedSharesAdjusted = async (data, issuerId, timestamp, txHash) => {
+export const handleIssuerAuthorizedSharesAdjusted = async (data, issuerId, timestamp) => {
     console.log("IssuerAuthorizedSharesAdjusted Event Received!");
-    const [, new_shares_authorized] = data;
+    const [id, new_shares_authorized] = data;
+    const _id = convertBytes16ToUUID(id);
 
-    const transactionExists = await retryOnMiss(async () => await HistoricalTransaction.findOne({ hash: txHash }));
-    console.log("transactionExists", transactionExists);
+    // Try to find existing record first
+    const existingAdjustment = await IssuerAuthorizedSharesAdjustment.findOne({ _id: _id });
 
-    if (transactionExists) {
-        // Update
-        const updatedIssuerAdjustment = await IssuerAuthorizedSharesAdjustment.findOneAndUpdate(
-            { _id: transactionExists.transaction },
-            { is_onchain_synced: true },
+    const adjustmentData = {
+        issuer: issuerId,
+        issuer_id: issuerId,
+        new_shares_authorized: toDecimal(new_shares_authorized).toString(),
+        date: new Date(timestamp * 1000).toISOString().split("T")[0],
+        is_onchain_synced: true,
+    };
+
+    let result;
+    if (existingAdjustment) {
+        // Update existing record
+        result = await IssuerAuthorizedSharesAdjustment.findOneAndUpdate(
+            { _id: _id },
+            { ...existingAdjustment, is_onchain_synced: true },
             { new: true }
         );
-        console.log("[UPDATED] IssuerAuthorizedSharesAdjusted", updatedIssuerAdjustment);
+        console.log("[UPDATED] IssuerAuthorizedSharesAdjusted", result);
     } else {
-        // create
-        const createdIssuerAdjustment = await createIssuerAuthorizedSharesAdjustment({
-            issuer: issuerId,
-            new_shares_authorized: toDecimal(new_shares_authorized).toString(),
-            date: new Date(timestamp * 1000).toISOString().split("T")[0],
-            is_onchain_synced: true,
-        });
-        await createHistoricalTransaction({
-            transaction: createdIssuerAdjustment._id,
-            hash: txHash,
-            issuer: issuerId,
-            transactionType: "IssuerAuthorizedSharesAdjustment",
-        });
-        console.log("[CREATED] IssuerAuthorizedSharesAdjusted", createdIssuerAdjustment);
+        // Create new record
+        result = await createIssuerAuthorizedSharesAdjustment(adjustmentData);
+        console.log("[CREATED] IssuerAuthorizedSharesAdjusted", result);
     }
+    await createHistoricalTransaction({
+        transaction: result._id,
+        issuer: issuerId,
+        transactionType: "IssuerAuthorizedSharesAdjustment",
+    });
 
     console.log(`✅ [CONFIRMED] IssuerAuthorizedSharesAdjusted  ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
 };
@@ -433,6 +413,7 @@ export const handleStockPlan = async (id, sharesReserved) => {
 export const handleConvertibleIssuance = async (convertible, issuerId, timestamp) => {
     console.log("ConvertibleIssuanceCreated Event Emitted!", convertible);
     const {
+        id,
         security_id,
         stakeholder_id,
         investment_amount,
@@ -443,6 +424,7 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
         custom_id,
     } = convertible;
     const _security_id = convertBytes16ToUUID(security_id);
+    const _id = convertBytes16ToUUID(id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
     const _stakeholder_id = convertBytes16ToUUID(stakeholder_id);
@@ -450,7 +432,8 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
     // If we have fairmint data, get historical date
     const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
 
-    const createdConvertibleIssuance = await upsertConvertibleIssuanceBySecurityId(_security_id, {
+    const createdConvertibleIssuance = await upsertConvertibleIssuanceById(_id, {
+        id: _id,
         investment_amount: {
             amount: toDecimal(investment_amount).toString(),
             currency: "USD",
@@ -504,9 +487,11 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
 
 export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
     console.log("WarrantIssuanceCreated Event Emitted!", warrant);
-    const { stakeholder_id, quantity, security_id, purchase_price, custom_id, security_law_exemptions_mapping, exercise_triggers_mapping } = warrant;
+    const { id, stakeholder_id, quantity, security_id, purchase_price, custom_id, security_law_exemptions_mapping, exercise_triggers_mapping } =
+        warrant;
 
     const _security_id = convertBytes16ToUUID(security_id);
+    const _id = convertBytes16ToUUID(id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
     const _stakeholder_id = convertBytes16ToUUID(stakeholder_id);
@@ -514,7 +499,8 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
     // If we have fairmint data, get historical date
     const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
 
-    const createdWarrantIssuance = await upsertWarrantIssuanceBySecurityId(_security_id, {
+    const createdWarrantIssuance = await upsertWarrantIssuanceById(_id, {
+        _id: _id,
         date: dateToUse,
         stakeholder_id: _stakeholder_id,
         quantity: toDecimal(quantity).toString(),
@@ -573,6 +559,7 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
 export const handleEquityCompensationIssuance = async (equity, issuerId, timestamp) => {
     console.log("EquityCompensationIssuanceCreated Event Emitted!", equity);
     const {
+        id,
         stakeholder_id,
         stock_class_id,
         stock_plan_id,
@@ -587,6 +574,7 @@ export const handleEquityCompensationIssuance = async (equity, issuerId, timesta
         security_law_exemptions_mapping,
     } = equity;
 
+    const _id = convertBytes16ToUUID(id);
     const _security_id = convertBytes16ToUUID(security_id);
     const fairmintData = await readFairmintDataBySecurityId(_security_id);
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
@@ -595,7 +583,8 @@ export const handleEquityCompensationIssuance = async (equity, issuerId, timesta
     // If we have fairmint data, get historical date
     const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
 
-    const createdEquityCompIssuance = await upsertEquityCompensationIssuanceBySecurityId(_security_id, {
+    const createdEquityCompIssuance = await upsertEquityCompensationIssuanceById(_id, {
+        _id: _id,
         date: dateToUse,
         stakeholder_id: _stakeholder_id,
         stock_class_id: convertBytes16ToUUID(stock_class_id),
@@ -667,8 +656,9 @@ export const handleEquityCompensationIssuance = async (equity, issuerId, timesta
 
 export const handleEquityCompensationExercise = async (exercise, issuerId, timestamp) => {
     console.log("EquityCompensationExerciseCreated Event Emitted!", exercise);
-    const { equity_comp_security_id, resulting_stock_security_id, quantity } = exercise;
+    const { id, equity_comp_security_id, resulting_stock_security_id, quantity } = exercise;
 
+    const _id = convertBytes16ToUUID(id);
     const _equity_comp_security_id = convertBytes16ToUUID(equity_comp_security_id);
     const fairmintData = await readFairmintDataBySecurityId(_equity_comp_security_id);
     const chainDate = new Date(timestamp * 1000).toISOString().split("T")[0];
@@ -677,7 +667,8 @@ export const handleEquityCompensationExercise = async (exercise, issuerId, times
     // If we have fairmint data, get historical date
     const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
 
-    const createdExercise = await upsertEquityCompensationExerciseBySecurityId(_equity_comp_security_id, {
+    const createdExercise = await upsertEquityCompensationExerciseById(_id, {
+        id: _id,
         date: dateToUse,
         equity_comp_security_id: _equity_comp_security_id,
         resulting_security_ids: [_resulting_stock_security_id],
@@ -710,39 +701,34 @@ export const handleEquityCompensationExercise = async (exercise, issuerId, times
     );
 };
 
-export const handleStockPlanPoolAdjustment = async (data, issuerId, timestamp, txHash) => {
+export const handleStockPlanPoolAdjustment = async (data, issuerId, timestamp) => {
     console.log("StockPlanPoolAdjustment Event Received!");
-    const [stockPlanId, newSharesReserved] = data;
-    console.log("txHash", txHash);
+    const [id, stockPlanId, newSharesReserved] = data;
 
-    const transactionExists = await retryOnMiss(async () => await findOne(HistoricalTransaction, { hash: txHash }));
-    console.log("transactionExists", transactionExists);
     const dateOCF = new Date(timestamp * 1000).toISOString().split("T")[0];
-    if (transactionExists) {
+    const _id = convertBytes16ToUUID(id);
+    let result;
+    const exists = await StockPlanPoolAdjustment.findOne({ _id: _id });
+    if (exists) {
         // update
-        const updatedStockPlanPoolAdjustment = await StockPlanPoolAdjustment.findOneAndUpdate(
-            { _id: transactionExists.transaction },
-            { is_onchain_synced: true },
-            { new: true }
-        );
-        console.log("updatedStockPlanPoolAdjustment", updatedStockPlanPoolAdjustment);
+        result = await StockPlanPoolAdjustment.findOneAndUpdate({ _id: _id }, { is_onchain_synced: true });
+        console.log("[UPDATED] StockPlanPoolAdjustment", result);
     } else {
         // upsert
-        const createdStockPlanPoolAdjustment = await StockPlanPoolAdjustment.create({
+        result = await StockPlanPoolAdjustment.create({
             stock_plan_id: stockPlanId,
             shares_reserved: toDecimal(newSharesReserved).toString(),
             date: dateOCF,
             issuer: issuerId,
             is_onchain_synced: true,
         });
-        await createHistoricalTransaction({
-            transaction: createdStockPlanPoolAdjustment._id,
-            hash: txHash,
-            issuer: issuerId,
-            transactionType: "StockPlanPoolAdjustment",
-        });
-        console.log("createdStockPlanPoolAdjustment", createdStockPlanPoolAdjustment);
+        console.log("[CREATED] StockPlanPoolAdjustment", result);
     }
+    await createHistoricalTransaction({
+        transaction: result._id,
+        issuer: issuerId,
+        transactionType: "StockPlanPoolAdjustment",
+    });
     console.log(`✅ [CONFIRMED] StockPlanPoolAdjustment ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
 };
 
