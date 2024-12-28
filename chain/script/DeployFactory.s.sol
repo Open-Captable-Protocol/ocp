@@ -154,19 +154,72 @@ library LibDeployment {
     }
 
     function deployFacet(FacetType facetType) internal returns (address) {
-        if (facetType == FacetType.DiamondLoupe) return address(new DiamondLoupeFacet());
-        if (facetType == FacetType.Issuer) return address(new IssuerFacet());
-        if (facetType == FacetType.Stakeholder) return address(new StakeholderFacet());
-        if (facetType == FacetType.StockClass) return address(new StockClassFacet());
-        if (facetType == FacetType.Stock) return address(new StockFacet());
-        if (facetType == FacetType.Convertibles) return address(new ConvertiblesFacet());
-        if (facetType == FacetType.EquityCompensation) return address(new EquityCompensationFacet());
-        if (facetType == FacetType.StockPlan) return address(new StockPlanFacet());
-        if (facetType == FacetType.Warrant) return address(new WarrantFacet());
-        if (facetType == FacetType.StakeholderNFT) return address(new StakeholderNFTFacet());
-        if (facetType == FacetType.AccessControl) return address(new AccessControlFacet());
-        if (facetType == FacetType.MockFacet) return address(new MockFacet());
-        if (facetType == FacetType.MockFacetV2) return address(new MockFacetV2());
+        address facetAddress;
+        if (facetType == FacetType.DiamondLoupe) {
+            facetAddress = address(new DiamondLoupeFacet());
+            console.log("DIAMOND_LOUPE_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.Issuer) {
+            facetAddress = address(new IssuerFacet());
+            console.log("ISSUER_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.Stakeholder) {
+            facetAddress = address(new StakeholderFacet());
+            console.log("STAKEHOLDER_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.StockClass) {
+            facetAddress = address(new StockClassFacet());
+            console.log("STOCK_CLASS_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.Stock) {
+            facetAddress = address(new StockFacet());
+            console.log("STOCK_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.Convertibles) {
+            facetAddress = address(new ConvertiblesFacet());
+            console.log("CONVERTIBLES_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.EquityCompensation) {
+            facetAddress = address(new EquityCompensationFacet());
+            console.log("EQUITY_COMPENSATION_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.StockPlan) {
+            facetAddress = address(new StockPlanFacet());
+            console.log("STOCK_PLAN_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.Warrant) {
+            facetAddress = address(new WarrantFacet());
+            console.log("WARRANT_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.StakeholderNFT) {
+            facetAddress = address(new StakeholderNFTFacet());
+            console.log("STAKEHOLDER_NFT_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.AccessControl) {
+            facetAddress = address(new AccessControlFacet());
+            console.log("ACCESS_CONTROL_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.MockFacet) {
+            facetAddress = address(new MockFacet());
+            console.log("MOCK_FACET=", facetAddress);
+            return facetAddress;
+        }
+        if (facetType == FacetType.MockFacetV2) {
+            facetAddress = address(new MockFacetV2());
+            console.log("MOCK_FACET_V2=", facetAddress);
+            return facetAddress;
+        }
         revert("Unknown facet type");
     }
 
@@ -270,10 +323,15 @@ contract DeployFactoryScript is Script {
     // runs locally on anvil
     function run() external {
         console.log("Deploying factory on anvil");
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        if (deployerPrivateKey == 0) {
+        string memory privateKeyStr = vm.envString("PRIVATE_KEY");
+        if (bytes(privateKeyStr).length == 0) {
             revert("Missing PRIVATE_KEY in .env");
         }
+        // Remove any whitespace and ensure 0x prefix
+        if (bytes(privateKeyStr)[0] != "0" || bytes(privateKeyStr)[1] != "x") {
+            revert("PRIVATE_KEY must start with 0x");
+        }
+        uint256 deployerPrivateKey = vm.parseUint(privateKeyStr);
         address deployerWallet = vm.addr(deployerPrivateKey);
 
         vm.startBroadcast(deployerWallet);
