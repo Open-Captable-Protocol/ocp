@@ -82,6 +82,7 @@ library LibSyncDiamonds {
 
 contract SyncDiamondsScript is Script {
     function run() external {
+        console.log("SyncDiamondsScript started");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address referenceDiamond = vm.envAddress("REFERENCE_DIAMOND");
         address factory = vm.envAddress("FACTORY_ADDRESS");
@@ -100,5 +101,6 @@ contract SyncDiamondsScript is Script {
         }
 
         vm.stopBroadcast();
+        console.log("SyncDiamondsScript completed");
     }
 }

@@ -94,7 +94,7 @@ library FacetHelper {
         BytecodeHash[] memory remoteHashes
     )
         internal
-        pure
+        view
         returns (FacetChange[] memory changes, uint256 changeCount)
     {
         changes = new FacetChange[](localFacets.length + deployedFacets.length);
@@ -103,22 +103,43 @@ library FacetHelper {
         for (uint256 i = 0; i < deployedFacets.length; i++) {
             // Skip diamond cut facet
             if (deployedFacets[i].functionSelectors[0] == IDiamondCut.diamondCut.selector) {
+                console.log("Skipping DiamondCut facet");
                 continue;
             }
 
-            // Find matching facet in local
+            // Find matching facet by first selector
             bool found = false;
             for (uint256 j = 0; j < localFacets.length; j++) {
-                // Match by first selector
                 if (deployedFacets[i].functionSelectors[0] == localFacets[j].functionSelectors[0]) {
                     found = true;
 
-                    // Get hashes for comparison
+                    // Check if selectors match exactly
+                    bool selectorsMatch =
+                        deployedFacets[i].functionSelectors.length == localFacets[j].functionSelectors.length;
+                    if (selectorsMatch) {
+                        for (uint256 k = 0; k < deployedFacets[i].functionSelectors.length; k++) {
+                            if (deployedFacets[i].functionSelectors[k] != localFacets[j].functionSelectors[k]) {
+                                selectorsMatch = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Force update if selectors don't match or if code hash is different
                     bytes32 localHash = getHash(localHashes, localFacets[j].facetAddress);
                     bytes32 remoteHash = getHash(remoteHashes, deployedFacets[i].facetAddress);
 
-                    // If hashes are different, it's an update
-                    if (localHash != remoteHash) {
+                    if (!selectorsMatch || localHash != remoteHash) {
+                        LibDeployment.FacetType facetType =
+                            LibDeployment.getFacetTypeFromSelector(deployedFacets[i].functionSelectors[0]);
+                        string memory facetName = LibDeployment.getFacetCutInfo(facetType).name;
+                        console.log(
+                            "\nForce updating facet",
+                            facetName,
+                            "due to:",
+                            !selectorsMatch ? "selector mismatch" : "code change"
+                        );
+
                         changes[changeCount] = FacetChange({
                             selector: deployedFacets[i].functionSelectors[0],
                             currentAddress: deployedFacets[i].facetAddress,
@@ -198,7 +219,16 @@ contract SyncFacetsScript is Script {
             action: IDiamondCut.FacetCutAction.Replace,
             functionSelectors: selectors
         });
-        IDiamondCut(diamond).diamondCut(cut, address(0), "");
+
+        try IDiamondCut(diamond).diamondCut(cut, address(0), "") {
+            console.log("Facet replaced successfully");
+        } catch Error(string memory reason) {
+            console.log("Failed to replace facet:", reason);
+            revert(reason);
+        } catch (bytes memory) {
+            console.log("Failed to replace facet (no reason)");
+            revert("Unknown error during facet replacement");
+        }
     }
 
     function removeFacet(address diamond, bytes4[] memory selectors) public {
