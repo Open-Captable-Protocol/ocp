@@ -58,6 +58,7 @@ const chainMiddleware = (req, res, next) => {
 // Middleware to get or create contract instance
 // the listener is first started on deployment, then here as a backup
 const contractMiddleware = async (req, res, next) => {
+    // Log route information
     if (!req.body.issuerId) {
         console.log("❌ | No issuer ID");
         return res.status(400).send("issuerId is required");
@@ -83,8 +84,8 @@ app.use(urlencoded({ limit: "50mb", extended: true }));
 app.use(json({ limit: "50mb" }));
 app.enable("trust proxy");
 
-app.use("/", contractMiddleware, mainRoutes);
-app.use("/issuer", chainMiddleware, contractMiddleware, issuerRoutes);
+app.use("/", mainRoutes);
+app.use("/issuer", chainMiddleware, issuerRoutes);
 app.use("/stakeholder", contractMiddleware, stakeholderRoutes);
 app.use("/stock-class", contractMiddleware, stockClassRoutes);
 

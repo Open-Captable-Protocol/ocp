@@ -53,24 +53,34 @@ cd chain
 echo $RPC_URL
 echo $CHAIN_ID
 
-# Deploy contracts
-DEPLOY_OUTPUT=$(forge script script/DeployFactory.s.sol --broadcast --rpc-url $RPC_URL --private-key $PRIVATE_KEY --chain-id $CHAIN_ID)
-echo "$DEPLOY_OUTPUT"
-
 # Extract all addresses
-FACTORY_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep "FACTORY_ADDRESS=" | cut -d'=' -f2 | tr -d ' ')
-REFERENCE_DIAMOND=$(echo "$DEPLOY_OUTPUT" | grep "REFERENCE_DIAMOND=" | cut -d'=' -f2 | tr -d ' ')
-DIAMOND_LOUPE_FACET=$(echo "$DEPLOY_OUTPUT" | grep "DIAMOND_LOUPE_FACET=" | cut -d'=' -f2 | tr -d ' ')
-ISSUER_FACET=$(echo "$DEPLOY_OUTPUT" | grep "ISSUER_FACET=" | cut -d'=' -f2 | tr -d ' ')
-STAKEHOLDER_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STAKEHOLDER_FACET=" | cut -d'=' -f2 | tr -d ' ')
-STOCK_CLASS_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STOCK_CLASS_FACET=" | cut -d'=' -f2 | tr -d ' ')
-STOCK_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STOCK_FACET=" | cut -d'=' -f2 | tr -d ' ')
-CONVERTIBLES_FACET=$(echo "$DEPLOY_OUTPUT" | grep "CONVERTIBLES_FACET=" | cut -d'=' -f2 | tr -d ' ')
-EQUITY_COMPENSATION_FACET=$(echo "$DEPLOY_OUTPUT" | grep "EQUITY_COMPENSATION_FACET=" | cut -d'=' -f2 | tr -d ' ')
-STOCK_PLAN_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STOCK_PLAN_FACET=" | cut -d'=' -f2 | tr -d ' ')
-WARRANT_FACET=$(echo "$DEPLOY_OUTPUT" | grep "WARRANT_FACET=" | cut -d'=' -f2 | tr -d ' ')
-STAKEHOLDER_NFT_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STAKEHOLDER_NFT_FACET=" | cut -d'=' -f2 | tr -d ' ')
-ACCESS_CONTROL_FACET=$(echo "$DEPLOY_OUTPUT" | grep "ACCESS_CONTROL_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# FACTORY_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep "FACTORY_ADDRESS=" | cut -d'=' -f2 | tr -d ' ')
+# REFERENCE_DIAMOND=$(echo "$DEPLOY_OUTPUT" | grep "REFERENCE_DIAMOND=" | cut -d'=' -f2 | tr -d ' ')
+# DIAMOND_LOUPE_FACET=$(echo "$DEPLOY_OUTPUT" | grep "DIAMOND_LOUPE_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# ISSUER_FACET=$(echo "$DEPLOY_OUTPUT" | grep "ISSUER_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# STAKEHOLDER_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STAKEHOLDER_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# STOCK_CLASS_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STOCK_CLASS_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# STOCK_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STOCK_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# CONVERTIBLES_FACET=$(echo "$DEPLOY_OUTPUT" | grep "CONVERTIBLES_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# EQUITY_COMPENSATION_FACET=$(echo "$DEPLOY_OUTPUT" | grep "EQUITY_COMPENSATION_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# STOCK_PLAN_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STOCK_PLAN_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# WARRANT_FACET=$(echo "$DEPLOY_OUTPUT" | grep "WARRANT_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# STAKEHOLDER_NFT_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STAKEHOLDER_NFT_FACET=" | cut -d'=' -f2 | tr -d ' ')
+# ACCESS_CONTROL_FACET=$(echo "$DEPLOY_OUTPUT" | grep "ACCESS_CONTROL_FACET=" | cut -d'=' -f2 | tr -d ' ')
+
+FACTORY_ADDRESS=0x8BD1b1b01F10aa23715951E556a10e16D8fbeBF6
+REFERENCE_DIAMOND=0xe213A65245deFeDC063adF3bbC1a93F7DCf3389b
+DIAMOND_LOUPE_FACET=0x97bEC0687B73DA89c9584da4b977CcC30919FB3D
+ISSUER_FACET=0x6C802F7Ca87F2B0008EEe7281D53a9f562112397
+STAKEHOLDER_FACET=0xDACffcA48c705e34e6742195BA09407df03274C3
+STOCK_CLASS_FACET=0x6b2a592FA5416Ce9Dc47A704627327A4FA70b6d3
+STOCK_FACET=0x67312EeB97625BEb5c3f95E749D18E8DCD2575Ab
+CONVERTIBLES_FACET=0x80263F0c2a7Eaf6bF9CeF082Ec30FA3AbE5Dc7fC
+EQUITY_COMPENSATION_FACET=0x1A8707897021d64B3d7F03301B22c15995E14Bd8
+STOCK_PLAN_FACET=0x22D42425Db6ce12c99080d0012fff86d19AAb765
+WARRANT_FACET=0x157e62Bd607f8bF95623007b67Eea4540c7F0adF
+STAKEHOLDER_NFT_FACET=0x4Da7475D2ef43B6a5AE60Dade686487bEdA91104
+ACCESS_CONTROL_FACET=0xbBA2F4592f1647193f52f743eE28b8cE286783Cb
 
 
 echo "FACTORY_ADDRESS: $FACTORY_ADDRESS"
@@ -97,7 +107,6 @@ if [ "$ENVIRONMENT" != "local" ]; then
     forge verify-contract $FACTORY_ADDRESS src/core/CapTableFactory.sol:CapTableFactory \
         --chain-id $CHAIN_ID \
         --etherscan-api-key $ETHERSCAN_API_KEY \
-        --verifier-url https://api-sepolia.basescan.org/api \
         --constructor-args $(cast abi-encode "constructor(address)" $REFERENCE_DIAMOND)
     
     # Verify Diamond

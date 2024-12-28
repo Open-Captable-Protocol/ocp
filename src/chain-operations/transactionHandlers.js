@@ -124,7 +124,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     );
 };
 
-export const handleStockTransfer = async (stock, issuerId) => {
+export const handleStockTransfer = async (stock, issuerId, hash) => {
     console.log(`Stock Transfer with quantity ${toDecimal(stock.quantity).toString()} received at `, new Date(Date.now()).toLocaleDateString());
 
     const id = convertBytes16ToUUID(stock.id);
@@ -149,6 +149,7 @@ export const handleStockTransfer = async (stock, issuerId) => {
         transaction: createdStockTransfer._id,
         issuer: createdStockTransfer.issuer,
         transactionType: "StockTransfer",
+        hash,
     });
 
     console.log(
@@ -329,7 +330,7 @@ export const handleStockAcceptance = async (stock, issuerId, timestamp) => {
     );
 };
 
-export const handleStockClassAuthorizedSharesAdjusted = async (data, issuerId, timestamp) => {
+export const handleStockClassAuthorizedSharesAdjusted = async (data, issuerId, timestamp, hash) => {
     console.log("StockClassAuthorizedSharesAdjusted Event Received!");
     const [id, stock_class_id, new_shares_authorized] = data;
     const _id = convertBytes16ToUUID(id);
@@ -356,12 +357,13 @@ export const handleStockClassAuthorizedSharesAdjusted = async (data, issuerId, t
         transaction: result._id,
         issuer: issuerId,
         transactionType: "StockClassAuthorizedSharesAdjustment",
+        hash,
     });
 
     console.log(`✅ [CONFIRMED] StockClassAuthorizedSharesAdjusted  ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
 };
 
-export const handleIssuerAuthorizedSharesAdjusted = async (data, issuerId, timestamp) => {
+export const handleIssuerAuthorizedSharesAdjusted = async (data, issuerId, timestamp, hash) => {
     console.log("IssuerAuthorizedSharesAdjusted Event Received!");
     const [id, new_shares_authorized] = data;
     const _id = convertBytes16ToUUID(id);
@@ -395,6 +397,7 @@ export const handleIssuerAuthorizedSharesAdjusted = async (data, issuerId, times
         transaction: result._id,
         issuer: issuerId,
         transactionType: "IssuerAuthorizedSharesAdjustment",
+        hash,
     });
 
     console.log(`✅ [CONFIRMED] IssuerAuthorizedSharesAdjusted  ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
@@ -410,7 +413,7 @@ export const handleStockPlan = async (id, sharesReserved) => {
     console.log("✅ | StockPlan confirmation onchain ", stockPlan);
 };
 
-export const handleConvertibleIssuance = async (convertible, issuerId, timestamp) => {
+export const handleConvertibleIssuance = async (convertible, issuerId, timestamp, hash) => {
     console.log("ConvertibleIssuanceCreated Event Emitted!", convertible);
     const {
         id,
@@ -454,6 +457,7 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
         transaction: createdConvertibleIssuance._id,
         issuer: issuerId,
         transactionType: "ConvertibleIssuance",
+        hash,
     });
 
     if (fairmintData && fairmintData._id) {
@@ -485,7 +489,7 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
     );
 };
 
-export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
+export const handleWarrantIssuance = async (warrant, issuerId, timestamp, hash) => {
     console.log("WarrantIssuanceCreated Event Emitted!", warrant);
     const { id, stakeholder_id, quantity, security_id, purchase_price, custom_id, security_law_exemptions_mapping, exercise_triggers_mapping } =
         warrant;
@@ -523,6 +527,7 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
         transaction: createdWarrantIssuance._id,
         issuer: issuerId,
         transactionType: "WarrantIssuance",
+        hash,
     });
 
     if (fairmintData && fairmintData._id) {
@@ -556,7 +561,7 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp) => {
     );
 };
 
-export const handleEquityCompensationIssuance = async (equity, issuerId, timestamp) => {
+export const handleEquityCompensationIssuance = async (equity, issuerId, timestamp, hash) => {
     console.log("EquityCompensationIssuanceCreated Event Emitted!", equity);
     const {
         id,
@@ -618,6 +623,7 @@ export const handleEquityCompensationIssuance = async (equity, issuerId, timesta
         transaction: createdEquityCompIssuance._id,
         issuer: issuerId,
         transactionType: "EquityCompensationIssuance",
+        hash,
     });
 
     if (fairmintData && fairmintData._id) {
@@ -654,7 +660,7 @@ export const handleEquityCompensationIssuance = async (equity, issuerId, timesta
     }
 };
 
-export const handleEquityCompensationExercise = async (exercise, issuerId, timestamp) => {
+export const handleEquityCompensationExercise = async (exercise, issuerId, timestamp, hash) => {
     console.log("EquityCompensationExerciseCreated Event Emitted!", exercise);
     const { id, equity_comp_security_id, resulting_stock_security_id, quantity } = exercise;
 
@@ -681,6 +687,7 @@ export const handleEquityCompensationExercise = async (exercise, issuerId, times
         transaction: createdExercise._id,
         issuer: issuerId,
         transactionType: "EquityCompensationExercise",
+        hash,
     });
 
     if (fairmintData && fairmintData._id) {
@@ -701,7 +708,7 @@ export const handleEquityCompensationExercise = async (exercise, issuerId, times
     );
 };
 
-export const handleStockPlanPoolAdjustment = async (data, issuerId, timestamp) => {
+export const handleStockPlanPoolAdjustment = async (data, issuerId, timestamp, hash) => {
     console.log("StockPlanPoolAdjustment Event Received!");
     const [id, stockPlanId, newSharesReserved] = data;
 
@@ -728,6 +735,7 @@ export const handleStockPlanPoolAdjustment = async (data, issuerId, timestamp) =
         transaction: result._id,
         issuer: issuerId,
         transactionType: "StockPlanPoolAdjustment",
+        hash,
     });
     console.log(`✅ [CONFIRMED] StockPlanPoolAdjustment ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
 };
