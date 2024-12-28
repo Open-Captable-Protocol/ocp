@@ -19,6 +19,7 @@
     "typecheck": "concurrently --raw yarn:typecheck:*",
     "typecheck:app": "tsc --noEmit",
     "prepare": "husky",
+    "verify:prod": "sh ./scripts/verify_contracts.sh --env=prod",
     "deploy:local": "sh ./scripts/deploy_factory.sh --env=local",
     "deploy:testnet": "sh ./scripts/deploy_factory.sh --env=dev",
     "deploy:mainnet": "sh ./scripts/deploy_factory.sh --env=prod",
