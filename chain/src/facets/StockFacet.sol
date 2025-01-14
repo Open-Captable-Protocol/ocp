@@ -14,7 +14,6 @@ contract StockFacet {
 
     /// @dev Add these custom errors at the contract level
     error NoPositionsToConsolidate();
-    error StakeholderMismatch(bytes16 expected, bytes16 actual);
     error StockClassMismatch(bytes16 expected, bytes16 actual);
     error ZeroQuantityPosition(bytes16 security_id);
 
@@ -178,11 +177,6 @@ contract StockFacet {
             // Check if position exists and has valid quantity
             if (position.quantity == 0) {
                 revert ZeroQuantityPosition(security_id);
-            }
-
-            // Validate stakeholder ownership
-            if (position.stakeholder_id != stakeholder_id) {
-                revert StakeholderMismatch(stakeholder_id, position.stakeholder_id);
             }
 
             // Validate stock class
