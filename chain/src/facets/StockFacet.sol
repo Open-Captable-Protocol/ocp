@@ -10,6 +10,14 @@ import { AccessControl } from "@libraries/AccessControl.sol";
 contract StockFacet {
     /// @notice Issue new stock to a stakeholder
     /// @dev Only OPERATOR_ROLE can issue stock
+    error InvalidSecurityId(bytes16 security_id);
+
+    /// @dev Add these custom errors at the contract level
+    error NoPositionsToConsolidate();
+    error StakeholderMismatch(bytes16 expected, bytes16 actual);
+    error StockClassMismatch(bytes16 expected, bytes16 actual);
+    error ZeroQuantityPosition(bytes16 security_id);
+
     function issueStock(IssueStockParams calldata params) external {
         Storage storage ds = StorageLib.get();
 
@@ -150,23 +158,47 @@ contract StockFacet {
     {
         Storage storage ds = StorageLib.get();
 
-        // Generate resulting security ID
-        bytes16 resulting_security_id =
-            bytes16(keccak256(abi.encodePacked(block.timestamp, stakeholder_id, "CONSOLIDATION")));
+        // Check if there are positions to consolidate
+        if (security_ids.length == 0) {
+            revert NoPositionsToConsolidate();
+        }
+
+        // Initialize hash with base components
+        bytes32 running_hash =
+            keccak256(abi.encodePacked(block.timestamp, stakeholder_id, stock_class_id, "CONSOLIDATION"));
 
         uint256 total_quantity = 0;
         uint256 weighted_share_price = 0;
 
         // Calculate totals and weighted average price
         for (uint256 i = 0; i < security_ids.length; i++) {
-            StockActivePosition storage position = ds.stockActivePositions.securities[security_ids[i]];
-            require(position.quantity > 0, "Invalid security ID");
-            require(position.stakeholder_id == stakeholder_id, "Must be same stakeholder");
-            require(position.stock_class_id == stock_class_id, "Must be same stock class");
+            bytes16 security_id = security_ids[i];
+            StockActivePosition storage position = ds.stockActivePositions.securities[security_id];
+
+            // Check if position exists and has valid quantity
+            if (position.quantity == 0) {
+                revert ZeroQuantityPosition(security_id);
+            }
+
+            // Validate stakeholder ownership
+            if (position.stakeholder_id != stakeholder_id) {
+                revert StakeholderMismatch(stakeholder_id, position.stakeholder_id);
+            }
+
+            // Validate stock class
+            if (position.stock_class_id != stock_class_id) {
+                revert StockClassMismatch(stock_class_id, position.stock_class_id);
+            }
+
+            // Update running hash with each security ID
+            running_hash = keccak256(abi.encodePacked(running_hash, security_id));
 
             weighted_share_price += position.share_price * position.quantity;
             total_quantity += position.quantity;
         }
+
+        // Convert final hash to bytes16 for security ID
+        bytes16 resulting_security_id = bytes16(running_hash);
 
         // Create consolidated position
         ds.stockActivePositions.securities[resulting_security_id] = StockActivePosition({
@@ -250,8 +282,11 @@ contract StockFacet {
         require(consolidated_position.quantity >= quantity, "Insufficient shares for transfer");
 
         // Generate new security IDs
-        bytes16 transferee_security_id =
-            bytes16(keccak256(abi.encodePacked(block.timestamp, transferee_stakeholder_id, "TRANSFER")));
+        bytes16 transferee_security_id = bytes16(
+            keccak256(
+                abi.encodePacked(block.timestamp, consolidated_security_id, transferee_stakeholder_id, "TRANSFER")
+            )
+        );
         bytes16 remainder_security_id;
 
         // Create transferee position
@@ -268,8 +303,11 @@ contract StockFacet {
 
         // Handle remainder if partial transfer
         if (consolidated_position.quantity > quantity) {
-            remainder_security_id =
-                bytes16(keccak256(abi.encodePacked(block.timestamp, transferor_stakeholder_id, "REMAINDER")));
+            remainder_security_id = bytes16(
+                keccak256(
+                    abi.encodePacked(block.timestamp, consolidated_security_id, transferor_stakeholder_id, "REMAINDER")
+                )
+            );
 
             ds.stockActivePositions.securities[remainder_security_id] = StockActivePosition({
                 stakeholder_id: transferor_stakeholder_id,
