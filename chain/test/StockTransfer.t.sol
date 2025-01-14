@@ -6,6 +6,8 @@ import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { IssueStockParams, StockActivePosition } from "@libraries/Structs.sol";
 import { IStockFacet } from "@interfaces/IStockFacet.sol";
+import { IIssuerFacet } from "@interfaces/IIssuerFacet.sol";
+import { IStockClassFacet } from "@interfaces/IStockClassFacet.sol";
 
 contract DiamondStockTransferTest is DiamondTestBase {
     bytes16 public transferorId;
@@ -139,5 +141,184 @@ contract DiamondStockTransferTest is DiamondTestBase {
         );
 
         vm.stopPrank();
+    }
+
+    function testConsolidationHash() public {
+        // Issue a second position to the same transferor
+        bytes16 secondSecurityId = bytes16(uint128(transferorId) + 4);
+        IssueStockParams memory params = IssueStockParams({
+            id: bytes16(uint128(transferorId) + 5),
+            stock_class_id: stockClassId,
+            share_price: SHARE_PRICE * 2, // Different price
+            quantity: INITIAL_SHARES,
+            stakeholder_id: transferorId,
+            security_id: secondSecurityId,
+            custom_id: "STOCK_002",
+            stock_legend_ids_mapping: "LEGEND_1",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        IStockFacet(address(capTable)).issueStock(params);
+
+        // Get initial securities
+        bytes16[] memory initialSecurities =
+            IStockFacet(address(capTable)).getStakeholderSecurities(transferorId, stockClassId);
+        assertEq(initialSecurities.length, 2, "Should have two initial securities");
+
+        // Perform transfer to trigger consolidation
+        IStockFacet(address(capTable)).transferStock(
+            transferorId, transfereeId, stockClassId, INITIAL_SHARES, SHARE_PRICE
+        );
+
+        // Get resulting securities after consolidation
+        bytes16[] memory resultingSecurities =
+            IStockFacet(address(capTable)).getStakeholderSecurities(transferorId, stockClassId);
+        assertEq(resultingSecurities.length, 1, "Should have one remaining security after partial transfer");
+
+        // The resulting security ID should be different from both initial securities
+        assertTrue(
+            resultingSecurities[0] != initialSecurities[0] && resultingSecurities[0] != initialSecurities[1],
+            "Consolidated security ID should be unique"
+        );
+    }
+
+    function testFailConsolidateEmptyPositions() public {
+        // Create a stakeholder with no positions
+        bytes16 emptyStakeholderId = bytes16(uint128(transferorId) + 6);
+        IStakeholderFacet(address(capTable)).createStakeholder(emptyStakeholderId);
+
+        // Attempt transfer with stakeholder that has no positions
+        vm.expectRevert("NoPositionsToConsolidate()");
+        IStockFacet(address(capTable)).transferStock(
+            emptyStakeholderId, transfereeId, stockClassId, INITIAL_SHARES, SHARE_PRICE
+        );
+    }
+
+    function testFailConsolidateZeroQuantityPosition() public {
+        // First transfer all shares to make position zero
+        IStockFacet(address(capTable)).transferStock(
+            transferorId, transfereeId, stockClassId, INITIAL_SHARES, SHARE_PRICE
+        );
+
+        // Attempt another transfer with the same transferor
+        vm.expectRevert(abi.encodeWithSignature("ZeroQuantityPosition(bytes16)", securityId));
+        IStockFacet(address(capTable)).transferStock(
+            transferorId, transfereeId, stockClassId, INITIAL_SHARES, SHARE_PRICE
+        );
+    }
+
+    function testFailConsolidateMismatchedStockClass() public {
+        // Create a different stock class
+        bytes16 differentStockClassId = createStockClass();
+
+        // Issue stock with different stock class to same stakeholder
+        bytes16 differentClassSecurityId = bytes16(uint128(transferorId) + 7);
+        IssueStockParams memory params = IssueStockParams({
+            id: bytes16(uint128(transferorId) + 8),
+            stock_class_id: differentStockClassId,
+            share_price: SHARE_PRICE,
+            quantity: INITIAL_SHARES,
+            stakeholder_id: transferorId,
+            security_id: differentClassSecurityId,
+            custom_id: "STOCK_003",
+            stock_legend_ids_mapping: "LEGEND_1",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        IStockFacet(address(capTable)).issueStock(params);
+
+        // Attempt to transfer with wrong stock class ID
+        vm.expectRevert(
+            abi.encodeWithSignature("StockClassMismatch(bytes16,bytes16)", stockClassId, differentStockClassId)
+        );
+        IStockFacet(address(capTable)).transferStock(
+            transferorId, transfereeId, stockClassId, INITIAL_SHARES, SHARE_PRICE
+        );
+    }
+
+    function testConsolidationWeightedPrice() public {
+        // Issue a second position with different price
+        bytes16 secondSecurityId = bytes16(uint128(transferorId) + 4);
+        IssueStockParams memory params = IssueStockParams({
+            id: bytes16(uint128(transferorId) + 5),
+            stock_class_id: stockClassId,
+            share_price: SHARE_PRICE * 2, // Double the price
+            quantity: INITIAL_SHARES * 2, // Double the quantity
+            stakeholder_id: transferorId,
+            security_id: secondSecurityId,
+            custom_id: "STOCK_002",
+            stock_legend_ids_mapping: "LEGEND_1",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        IStockFacet(address(capTable)).issueStock(params);
+
+        // Calculate expected weighted average: (1000*100 + 2000*200) / (1000 + 2000)
+        uint256 expectedPrice =
+            (INITIAL_SHARES * SHARE_PRICE + INITIAL_SHARES * 2 * SHARE_PRICE * 2) / (INITIAL_SHARES * 3);
+
+        // Trigger consolidation via transfer
+        IStockFacet(address(capTable)).transferStock(
+            transferorId, transfereeId, stockClassId, INITIAL_SHARES, SHARE_PRICE
+        );
+
+        // Get the remaining position
+        bytes16[] memory securities =
+            IStockFacet(address(capTable)).getStakeholderSecurities(transferorId, stockClassId);
+        assertEq(securities.length, 1, "Should have one remaining security");
+
+        StockActivePosition memory position = IStockFacet(address(capTable)).getStockPosition(securities[0]);
+        assertEq(position.share_price, expectedPrice, "Weighted average price should be correct");
+    }
+
+    function testConsolidationWithExtremeQuantities() public {
+        uint256 largeAmount = type(uint128).max;
+        uint256 veryLargeAmount = type(uint256).max;
+
+        // Adjust issuer authorized shares to handle large quantities
+        IIssuerFacet(address(capTable)).adjustIssuerAuthorizedShares(issuerId, veryLargeAmount);
+        IStockClassFacet(address(capTable)).adjustAuthorizedShares(
+            bytes16(uint128(transferorId) + 100), stockClassId, veryLargeAmount
+        );
+
+        bytes16 smallSecurityId = bytes16(uint128(transferorId) + 4);
+        IssueStockParams memory smallParams = IssueStockParams({
+            id: bytes16(uint128(transferorId) + 5),
+            stock_class_id: stockClassId,
+            share_price: SHARE_PRICE,
+            quantity: 1, // Minimum quantity
+            stakeholder_id: transferorId,
+            security_id: smallSecurityId,
+            custom_id: "STOCK_SMALL",
+            stock_legend_ids_mapping: "LEGEND_1",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        IStockFacet(address(capTable)).issueStock(smallParams);
+
+        // Issue a position with large quantity
+        bytes16 largeSecurityId = bytes16(uint128(transferorId) + 6);
+        IssueStockParams memory largeParams = IssueStockParams({
+            id: bytes16(uint128(transferorId) + 7),
+            stock_class_id: stockClassId,
+            share_price: SHARE_PRICE,
+            quantity: largeAmount,
+            stakeholder_id: transferorId,
+            security_id: largeSecurityId,
+            custom_id: "STOCK_LARGE",
+            stock_legend_ids_mapping: "LEGEND_1",
+            security_law_exemptions_mapping: "REG_D"
+        });
+        IStockFacet(address(capTable)).issueStock(largeParams);
+
+        // Trigger consolidation by transferring the smallest amount
+        IStockFacet(address(capTable)).transferStock(transferorId, transfereeId, stockClassId, 1, SHARE_PRICE);
+
+        // Verify the consolidated position
+        bytes16[] memory securities =
+            IStockFacet(address(capTable)).getStakeholderSecurities(transferorId, stockClassId);
+        StockActivePosition memory position = IStockFacet(address(capTable)).getStockPosition(securities[0]);
+
+        // Calculate expected: initial + small + large - transferred
+        uint256 expectedQuantity = INITIAL_SHARES + largeAmount; // Add the large amount first
+        expectedQuantity = expectedQuantity + 1 - 1; // Then add small and subtract transferred amount
+
+        assertEq(position.quantity, expectedQuantity, "Should handle large quantities correctly");
     }
 }
