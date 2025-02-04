@@ -1,4 +1,4 @@
-import ethers from "ethers";
+import * as ethers from "ethers";
 import ISTOCK_CLASS_FACET from "../../chain/out/IStockClassFacet.sol/IStockClassFacet.json";
 import ISTAKEHOLDER_FACET from "../../chain/out/IStakeholderFacet.sol/IStakeholderFacet.json";
 import ISTOCK_PLAN_FACET from "../../chain/out/IStockPlanFacet.sol/IStockPlanFacet.json";
