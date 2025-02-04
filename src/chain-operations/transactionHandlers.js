@@ -126,7 +126,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     );
 };
 
-export const handleStockTransfer = async (stock, issuerId, hash) => {
+export const handleStockTransfer = async (stock, issuerId) => {
     console.log(`Stock Transfer with quantity ${toDecimal(stock.quantity).toString()} received at `, new Date(Date.now()).toLocaleDateString());
 
     const id = convertBytes16ToUUID(stock.id);
@@ -146,13 +146,6 @@ export const handleStockTransfer = async (stock, issuerId, hash) => {
     });
 
     console.log("Stock Transfer reflected and validated off-chain", createdStockTransfer);
-
-    await createHistoricalTransaction({
-        transaction: createdStockTransfer._id,
-        issuer: createdStockTransfer.issuer,
-        transactionType: "StockTransfer",
-        hash,
-    });
 
     console.log(
         `✅ | StockTransfer confirmation onchain with date ${new Date(Date.now()).toLocaleDateString("en-US", options)}`,
