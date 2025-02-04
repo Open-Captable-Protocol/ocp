@@ -38,7 +38,7 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
         assertEq(position.stakeholder_id, stakeholderId);
     }
 
-    function testFailInvalidStakeholder() public {
+    function test_RevertInvalidStakeholder() public {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
@@ -54,10 +54,11 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
         });
+        vm.expectRevert(abi.encodeWithSignature("NoStakeholder(bytes16)", invalidStakeholderId));
         IConvertiblesFacet(address(capTable)).issueConvertible(params);
     }
 
-    function testFailZeroAmount() public {
+    function test_RevertZeroAmount() public {
         bytes16 stakeholderId = createStakeholder();
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
@@ -73,6 +74,7 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
         });
+        vm.expectRevert(abi.encodeWithSignature("InvalidAmount()"));
         IConvertiblesFacet(address(capTable)).issueConvertible(params);
     }
 }

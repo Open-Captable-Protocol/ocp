@@ -23,7 +23,7 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         vm.stopPrank();
 
         stakeholderId = createStakeholder();
-        stockClassId = createStockClass();
+        stockClassId = createStockClass(bytes16(uint128(10)));
 
         // Create array properly
         bytes16[] memory stockClassIds = new bytes16[](1);
@@ -65,7 +65,7 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         assertEq(position.stock_plan_id, stockPlanId);
     }
 
-    function testFailInvalidStakeholder() public {
+    function test_RevertInvalidStakeholder() public {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
@@ -85,10 +85,11 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
             termination_exercise_windows_mapping: "90_DAYS",
             security_law_exemptions_mapping: "REG_D"
         });
+        vm.expectRevert(abi.encodeWithSignature("NoStakeholder(bytes16)", invalidStakeholderId));
         IEquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 
-    function testFailInvalidStockClass() public {
+    function test_RevertInvalidStockClass() public {
         bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
@@ -108,10 +109,11 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
             termination_exercise_windows_mapping: "90_DAYS",
             security_law_exemptions_mapping: "REG_D"
         });
+        vm.expectRevert(abi.encodeWithSignature("InvalidStockClass(bytes16)", invalidStockClassId));
         IEquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 
-    function testFailZeroQuantity() public {
+    function test_RevertZeroQuantity() public {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
 
@@ -130,6 +132,7 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
             termination_exercise_windows_mapping: "90_DAYS",
             security_law_exemptions_mapping: "REG_D"
         });
+        vm.expectRevert(abi.encodeWithSignature("InvalidQuantity()"));
         IEquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 }

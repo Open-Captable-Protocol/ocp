@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import { Test } from "forge-std/Test.sol";
 import "./TestBase.sol";
 import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
@@ -42,7 +43,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         vm.prank(contractOwner);
         IAccessControlFacet(address(capTable)).grantRole(AccessControl.INVESTOR_ROLE, stakeholderWallet);
 
-        stockClassId = createStockClass();
+        stockClassId = createStockClass(bytes16(uint128(11)));
 
         bytes16[] memory stockClassIds = new bytes16[](1);
         stockClassIds[0] = stockClassId;
@@ -142,45 +143,54 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         assertEq(position.quantity, 0);
     }
 
-    function testFailNonOperatorExercise() public {
+    function test_RevertNonOperatorExercise() public {
         address nonOperator = address(0x129);
         vm.prank(nonOperator);
         bytes16 exerciseId = bytes16(keccak256("NON_OPERATOR"));
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "AccessControlUnauthorized(address,bytes32)", nonOperator, AccessControl.OPERATOR_ROLE
+            )
+        );
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             exerciseId, equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY
         );
     }
 
-    function testFailInvalidEquityCompSecurity() public {
+    function test_RevertInvalidEquityCompSecurity() public {
         bytes16 invalidSecurityId = 0xd3373e0a4dd940000000000000000099;
         bytes16 exerciseId = bytes16(keccak256("INVALID_EXERCISE_1"));
 
+        vm.expectRevert(abi.encodeWithSignature("InvalidSecurity(bytes16)", invalidSecurityId));
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             exerciseId, invalidSecurityId, stockSecurityId, 500
         );
     }
 
-    function testFailInvalidStockSecurity() public {
+    function test_RevertInvalidStockSecurity() public {
         bytes16 invalidStockId = 0xd3373e0a4dd940000000000000000099;
         bytes16 exerciseId = bytes16(keccak256("INVALID_EXERCISE_2"));
 
+        vm.expectRevert(abi.encodeWithSignature("InvalidSecurity(bytes16)", invalidStockId));
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             exerciseId, equityCompSecurityId, invalidStockId, 500
         );
     }
 
-    function testFailInsufficientShares() public {
+    function test_RevertInsufficientShares() public {
         bytes16 exerciseId = bytes16(keccak256("INSUFFICIENT_SHARES"));
 
+        vm.expectRevert(abi.encodeWithSignature("InsufficientShares()"));
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
             exerciseId, equityCompSecurityId, stockSecurityId, EQUITY_COMP_QUANTITY + 1
         );
     }
 
-    function testFailWrongStakeholder() public {
+    function test_RevertWrongStakeholder() public {
         // Create a different stakeholder with unique ID
-        bytes16 otherStakeholderId = createStakeholder();
+        bytes16 otherStakeholderId = bytes16(uint128(uint256(keccak256("WRONG_STAKEHOLDER"))));
         bytes16 exerciseId = bytes16(keccak256("WRONG_STAKEHOLDER"));
+        IStakeholderFacet(address(capTable)).createStakeholder(otherStakeholderId);
 
         // Issue stock to different stakeholder
         bytes16 otherStockSecurityId = 0xd3373e0a4dd940000000000000000003;
@@ -198,11 +208,14 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         });
         IStockFacet(address(capTable)).issueStock(otherParams);
 
-        // Should fail when trying to exercise equity compensation with stock belonging to different stakeholder
-        // even though caller is an operator
+        // Get the equity compensation position to get the stakeholder ID
+        EquityCompensationActivePosition memory position =
+            IEquityCompensationFacet(address(capTable)).getPosition(equityCompSecurityId);
+        bytes16 equityCompStakeholderId = position.stakeholder_id;
+
         vm.expectRevert(
-            abi.encodeWithSelector(
-                ValidationLib.InvalidSecurityStakeholder.selector, otherStockSecurityId, stakeholderId
+            abi.encodeWithSignature(
+                "InvalidSecurityStakeholder(bytes16,bytes16)", otherStockSecurityId, equityCompStakeholderId
             )
         );
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
