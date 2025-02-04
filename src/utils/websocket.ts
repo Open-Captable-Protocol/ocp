@@ -6,14 +6,9 @@ import get from "lodash/get.js";
 import { handleStockPlan, txMapper, txTypes } from "../chain-operations/transactionHandlers";
 import { handleStakeholder, handleStockClass } from "../chain-operations/transactionHandlers";
 import Issuer from "../db/objects/Issuer";
+import { TxCreated, StakeholderCreated, StockClassCreated, StockPlanCreated } from "../chain-operations/topics";
 
-const TOPICS = {
-    // TODO: automatically generate these topics from the events in the contract
-    TxCreated: ethers.id("TxCreated(uint8,bytes)"),
-    StakeholderCreated: "0x53df47344d1cdf2ddb4901af5df61e37e14606bb7c8cc004d65c7c83ab3d0693",
-    StockClassCreated: "0xc7496d70298fcc793e1d058617af680232585e302f0185b14bba498b247a9c1d",
-    StockPlanCreated: ethers.id("StockPlanCreated(bytes16,uint256)"),
-};
+const TOPICS = { TxCreated, StakeholderCreated, StockClassCreated, StockPlanCreated };
 
 const abiCoder = new AbiCoder();
 

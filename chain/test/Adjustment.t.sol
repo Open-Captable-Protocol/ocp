@@ -13,7 +13,7 @@ contract DiamondAdjustmentTest is DiamondTestBase {
 
     function setUp() public override {
         super.setUp();
-        stockClassId = createStockClass();
+        stockClassId = createStockClass(bytes16(uint128(13)));
         bytes16[] memory stockClassIds = new bytes16[](1);
         stockClassIds[0] = stockClassId;
         stockPlanId = createStockPlan(stockClassIds);

@@ -192,13 +192,13 @@ export async function validateCapTableData(issuerData) {
     );
 
     // Validate stock class shares don't exceed issuer authorized shares
-    // stockClasses.forEach((stockClass) => {
-    //     if (stockClass.initial_shares_authorized > issuerData.issuer.initial_shares_authorized) {
-    //         errors.push(
-    //             `StockClass ${stockClass.id} initial_shares_authorized (${stockClass.initial_shares_authorized}) exceeds issuer initial_shares_authorized (${issuerData.issuer.initial_shares_authorized}) - issuer id: ${issuerData.issuer.id}`
-    //         );
-    //     }
-    // });
+    stockClasses.forEach((stockClass) => {
+        if (stockClass.initial_shares_authorized > issuerData.issuer.initial_shares_authorized) {
+            errors.push(
+                `StockClass ${stockClass.id} initial_shares_authorized (${stockClass.initial_shares_authorized}) exceeds issuer initial_shares_authorized (${issuerData.issuer.initial_shares_authorized}) - issuer id: ${issuerData.issuer.id}`
+            );
+        }
+    });
 
     // Validate transactions
     errors.push(...transactions.flatMap((tx) => validateTransactionByType(tx, referenceSets)));

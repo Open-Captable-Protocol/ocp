@@ -75,9 +75,11 @@ library LibDeployment {
             return FacetCutInfo({ name: "StockClassFacet", selectors: selectors });
         }
         if (facetType == FacetType.Stock) {
-            bytes4[] memory selectors = new bytes4[](2);
+            bytes4[] memory selectors = new bytes4[](4);
             selectors[0] = StockFacet.issueStock.selector;
             selectors[1] = StockFacet.getStockPosition.selector;
+            selectors[2] = StockFacet.transferStock.selector;
+            selectors[3] = StockFacet.getStakeholderSecurities.selector;
             return FacetCutInfo({ name: "StockFacet", selectors: selectors });
         }
         if (facetType == FacetType.Convertibles) {

@@ -246,7 +246,6 @@ export const stockTransfer = (issuerId, quantity, transferorId, transfereeId, st
             transferorId,
             transfereeId,
             stockClassId,
-            isBuyerVerified: true,
             sharePrice,
         },
     };

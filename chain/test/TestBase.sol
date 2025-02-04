@@ -70,8 +70,8 @@ contract DiamondTestBase is Test {
     }
 
     // Helper function to create a stock class for testing
-    function createStockClass() public virtual returns (bytes16) {
-        bytes16 stockClassId = 0xd3373e0a4dd940000000000000000006;
+    function createStockClass(bytes16 stockClassId) public virtual returns (bytes16) {
+        // bytes16 stockClassId = 0xd3373e0a4dd940000000000000000019;
         string memory classType = "COMMON";
         uint256 pricePerShare = 1e18;
         uint256 initialSharesAuthorized = 1_000_000;

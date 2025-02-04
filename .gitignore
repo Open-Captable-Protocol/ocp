@@ -40,8 +40,4 @@ tsconfig.tsbuildinfo
 chain/out
 chain/lib/*
 solana/*
-dump/*
-*migration*/*
 *.ignore.js
-
-.windsurf
