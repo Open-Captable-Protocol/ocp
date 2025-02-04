@@ -47,3 +47,4 @@ export const StockAcceptance = {};
 export const StockCancellation = {};
 export const StockRetraction = {};
 export const StockReissuance = {};
+export const StockConsolidation = {};

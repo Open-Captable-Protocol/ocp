@@ -29,10 +29,12 @@ import { reflectStakeholder } from "../fairmint/reflectStakeholder.js";
 import { reflectInvestment } from "../fairmint/reflectInvestment.js";
 import * as structs from "./structs.js";
 import { reflectGrant } from "../fairmint/reflectGrant.js";
+import { v4 as uuid } from "uuid";
 import { reflectGrantExercise } from "../fairmint/reflectGrantExercise.js";
 import StockPlanPoolAdjustment from "../db/objects/transactions/adjustment/StockPlanPoolAdjustment.js";
 import StockClassAuthorizedSharesAdjustment from "../db/objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
 import IssuerAuthorizedSharesAdjustment from "../db/objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.js";
+import StockConsolidation from "../db/objects/transactions/consolidation/StockConsolidation.js";
 
 const isUUID = (value) => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -708,6 +710,30 @@ export const handleEquityCompensationExercise = async (exercise, issuerId, times
     );
 };
 
+// Note: consolidations are only coming as a helper from transfers
+export const handleStockConsolidation = async (data, issuerId, timestamp) => {
+    console.log("StockConsolidation Event Received!");
+    const [security_ids, resulting_security_id] = data;
+
+    const dateOCF = new Date(timestamp * 1000).toISOString().split("T")[0];
+    const _id = uuid(); // TODO verify this.
+
+    let result;
+
+    // create new consolidation record
+    result = await StockConsolidation.create({
+        _id,
+        security_ids: security_ids.map((id) => convertBytes16ToUUID(id)),
+        resulting_security_id: convertBytes16ToUUID(resulting_security_id),
+        date: dateOCF,
+        issuer: issuerId,
+        is_onchain_synced: true,
+    });
+    console.log("[CREATED] StockConsolidation", result);
+
+    console.log(`✅ [CONFIRMED] StockConsolidation ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
+};
+
 export const handleStockPlanPoolAdjustment = async (data, issuerId, timestamp, hash) => {
     console.log("StockPlanPoolAdjustment Event Received!");
     const [id, stockPlanId, newSharesReserved] = data;
@@ -762,6 +788,7 @@ export const txMapper = {
     12: [structs.StockPlanPoolAdjustment, handleStockPlanPoolAdjustment],
     13: [structs.WarrantIssuance, handleWarrantIssuance],
     14: [structs.EquityCompensationExercise, handleEquityCompensationExercise],
+    15: [structs.StockConsolidation, handleStockConsolidation],
 };
 // (idx => type name) derived from txMapper
 export const txTypes = Object.fromEntries(
