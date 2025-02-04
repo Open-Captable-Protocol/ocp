@@ -13,7 +13,7 @@ import stakeholderRoutes from "./routes/stakeholder.js";
 import stockClassRoutes from "./routes/stockClass.js";
 import stockLegendRoutes from "./routes/stockLegend.js";
 import stockPlanRoutes from "./routes/stockPlan.js";
-import transactionRoutes from "./routes/transactions.js";
+import transactionRoutes from "./routes/transactions/index.js";
 import valuationRoutes from "./routes/valuation.js";
 import vestingTermsRoutes from "./routes/vestingTerms.js";
 import statsRoutes from "./routes/stats/index.js";
