@@ -142,7 +142,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         assertEq(position.quantity, 0);
     }
 
-    function testFailNonOperatorExercise() public {
+    function test_RevertNonOperatorExercise() public {
         address nonOperator = address(0x129);
         vm.prank(nonOperator);
         bytes16 exerciseId = bytes16(keccak256("NON_OPERATOR"));
@@ -151,7 +151,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         );
     }
 
-    function testFailInvalidEquityCompSecurity() public {
+    function test_RevertInvalidEquityCompSecurity() public {
         bytes16 invalidSecurityId = 0xd3373e0a4dd940000000000000000099;
         bytes16 exerciseId = bytes16(keccak256("INVALID_EXERCISE_1"));
 
@@ -160,7 +160,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         );
     }
 
-    function testFailInvalidStockSecurity() public {
+    function test_RevertInvalidStockSecurity() public {
         bytes16 invalidStockId = 0xd3373e0a4dd940000000000000000099;
         bytes16 exerciseId = bytes16(keccak256("INVALID_EXERCISE_2"));
 
@@ -169,7 +169,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         );
     }
 
-    function testFailInsufficientShares() public {
+    function test_RevertInsufficientShares() public {
         bytes16 exerciseId = bytes16(keccak256("INSUFFICIENT_SHARES"));
 
         IEquityCompensationFacet(address(capTable)).exerciseEquityCompensation(
@@ -177,7 +177,7 @@ contract DiamondEquityCompExerciseTest is DiamondTestBase {
         );
     }
 
-    function testFailWrongStakeholder() public {
+    function test_RevertWrongStakeholder() public {
         // Create a different stakeholder with unique ID
         bytes16 otherStakeholderId = createStakeholder();
         bytes16 exerciseId = bytes16(keccak256("WRONG_STAKEHOLDER"));

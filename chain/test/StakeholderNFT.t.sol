@@ -68,13 +68,13 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         IStakeholderNFTFacet(address(capTable)).mint();
     }
 
-    function testFailMintWithoutLink() public {
+    function test_RevertMintWithoutLink() public {
         // Try to mint without linking - should fail
         vm.prank(stakeholderWallet);
         IStakeholderNFTFacet(address(capTable)).mint();
     }
 
-    function testFailDoubleMint() public {
+    function test_RevertDoubleMint() public {
         // Link address first
         linkStakeholderAddress(stakeholderId, stakeholderWallet);
 

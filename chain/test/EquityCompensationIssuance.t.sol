@@ -65,7 +65,7 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         assertEq(position.stock_plan_id, stockPlanId);
     }
 
-    function testFailInvalidStakeholder() public {
+    function test_RevertInvalidStakeholder() public {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
@@ -88,7 +88,7 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         IEquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 
-    function testFailInvalidStockClass() public {
+    function test_RevertInvalidStockClass() public {
         bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
@@ -111,7 +111,7 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         IEquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 
-    function testFailZeroQuantity() public {
+    function test_RevertZeroQuantity() public {
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
 

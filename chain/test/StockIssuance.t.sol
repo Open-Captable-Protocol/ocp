@@ -48,7 +48,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         IStockFacet(address(capTable)).issueStock(params);
     }
 
-    function testFailInvalidStakeholder() public {
+    function test_RevertInvalidStakeholder() public {
         bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
         bytes16 stockClassId = 0xd3373e0a4dd940000000000000000000;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
@@ -69,7 +69,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         IStockFacet(address(capTable)).issueStock(params);
     }
 
-    function testFailInvalidStockClass() public {
+    function test_RevertInvalidStockClass() public {
         (, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
         bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
@@ -90,7 +90,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         IStockFacet(address(capTable)).issueStock(params);
     }
 
-    function testFailInsufficientIssuerShares() public {
+    function test_RevertInsufficientIssuerShares() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100);
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
@@ -110,7 +110,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
         IStockFacet(address(capTable)).issueStock(params);
     }
 
-    function testFailInsufficientStockClassShares() public {
+    function test_RevertInsufficientStockClassShares() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100);
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;

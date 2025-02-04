@@ -105,7 +105,7 @@ contract DiamondStockTransferTest is DiamondTestBase {
         assertEq(transfereePosition.share_price, SHARE_PRICE * 2, "Incorrect transfer price");
     }
 
-    function testFailInvalidTransferor() public {
+    function test_RevertInvalidTransferor() public {
         bytes16 invalidTransferorId = bytes16(uint128(transferorId) + 100);
 
         IStockFacet(address(capTable)).transferStock(
@@ -113,7 +113,7 @@ contract DiamondStockTransferTest is DiamondTestBase {
         );
     }
 
-    function testFailInvalidTransferee() public {
+    function test_RevertInvalidTransferee() public {
         bytes16 invalidTransfereeId = bytes16(uint128(transfereeId) + 100);
 
         IStockFacet(address(capTable)).transferStock(
@@ -121,7 +121,7 @@ contract DiamondStockTransferTest is DiamondTestBase {
         );
     }
 
-    function testFailInsufficientShares() public {
+    function test_RevertInsufficientShares() public {
         IStockFacet(address(capTable)).transferStock(
             transferorId,
             transfereeId,
@@ -131,7 +131,7 @@ contract DiamondStockTransferTest is DiamondTestBase {
         );
     }
 
-    function testFailUnauthorizedCaller() public {
+    function test_RevertUnauthorizedCaller() public {
         // Switch to a non-operator address
         address nonOperator = address(0x123);
         vm.startPrank(nonOperator);
@@ -181,7 +181,7 @@ contract DiamondStockTransferTest is DiamondTestBase {
         );
     }
 
-    function testFailConsolidateEmptyPositions() public {
+    function test_RevertConsolidateEmptyPositions() public {
         // Create a stakeholder with no positions
         bytes16 emptyStakeholderId = bytes16(uint128(transferorId) + 6);
         IStakeholderFacet(address(capTable)).createStakeholder(emptyStakeholderId);
@@ -193,7 +193,7 @@ contract DiamondStockTransferTest is DiamondTestBase {
         );
     }
 
-    function testFailConsolidateZeroQuantityPosition() public {
+    function test_RevertConsolidateZeroQuantityPosition() public {
         // First transfer all shares to make position zero
         IStockFacet(address(capTable)).transferStock(
             transferorId, transfereeId, stockClassId, INITIAL_SHARES, SHARE_PRICE
@@ -206,7 +206,7 @@ contract DiamondStockTransferTest is DiamondTestBase {
         );
     }
 
-    function testFailConsolidateMismatchedStockClass() public {
+    function test_RevertConsolidateMismatchedStockClass() public {
         // Create a different stock class
         bytes16 differentStockClassId = createStockClass();
 
