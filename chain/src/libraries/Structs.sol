@@ -133,3 +133,16 @@ struct IssueWarrantParams {
     string security_law_exemptions_mapping;
     string exercise_triggers_mapping;
 }
+
+struct StockConsolidationTx {
+    bytes16[] security_ids;
+    bytes16 resulting_security_id;
+}
+
+struct StockTransferTx {
+    bytes16 consolidated_security_id;
+    bytes16 transferee_security_id;
+    bytes16 remainder_security_id;
+    uint256 quantity;
+    uint256 share_price;
+}

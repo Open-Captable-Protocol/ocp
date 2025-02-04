@@ -2,7 +2,14 @@
 pragma solidity ^0.8.0;
 
 import { StorageLib, Storage } from "@core/Storage.sol";
-import { StockActivePosition, StockClass, IssueStockParams, StockActivePositions } from "@libraries/Structs.sol";
+import {
+    StockActivePosition,
+    StockClass,
+    IssueStockParams,
+    StockActivePositions,
+    StockConsolidationTx,
+    StockTransferTx
+} from "@libraries/Structs.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
@@ -212,7 +219,10 @@ contract StockFacet {
         }
 
         // Record consolidation transaction
-        bytes memory consolidationData = abi.encode(security_ids, resulting_security_id);
+
+        StockConsolidationTx memory consolidationTx =
+            StockConsolidationTx({ security_ids: security_ids, resulting_security_id: resulting_security_id });
+        bytes memory consolidationData = abi.encode(consolidationTx);
         TxHelper.createTx(TxType.STOCK_CONSOLIDATION, consolidationData);
 
         return resulting_security_id;
@@ -319,8 +329,15 @@ contract StockFacet {
         removeSecurityFromStakeholder(ds.stockActivePositions, transferor_stakeholder_id, consolidated_security_id);
 
         // Record transfer transaction
-        bytes memory transferData =
-            abi.encode(consolidated_security_id, transferee_security_id, remainder_security_id, quantity, share_price);
+        bytes memory transferData = abi.encode(
+            StockTransferTx({
+                consolidated_security_id: consolidated_security_id,
+                transferee_security_id: transferee_security_id,
+                remainder_security_id: remainder_security_id,
+                quantity: quantity,
+                share_price: share_price
+            })
+        );
         TxHelper.createTx(TxType.STOCK_TRANSFER, transferData);
     }
 }
