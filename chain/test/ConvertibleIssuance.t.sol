@@ -54,6 +54,7 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
         });
+        vm.expectRevert(abi.encodeWithSignature("NoStakeholder(bytes16)", invalidStakeholderId));
         IConvertiblesFacet(address(capTable)).issueConvertible(params);
     }
 
@@ -73,6 +74,7 @@ contract DiamondConvertibleIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             conversion_triggers_mapping: "CONVERSION_ON_NEXT_EQUITY"
         });
+        vm.expectRevert(abi.encodeWithSignature("InvalidAmount()"));
         IConvertiblesFacet(address(capTable)).issueConvertible(params);
     }
 }

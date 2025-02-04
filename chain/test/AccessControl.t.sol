@@ -62,7 +62,7 @@ contract AccessControlTest is DiamondTestBase {
     function testStockFacetAccess() public {
         // Create a stakeholder and stock class first
         bytes16 stakeholderId = createStakeholder();
-        bytes16 stockClassId = createStockClass();
+        bytes16 stockClassId = createStockClass(bytes16(uint128(2)));
         bytes16 id1 = 0xd3373e0a4dd940000000000000000002;
         bytes16 id2 = 0xd3373e0a4dd940000000000000000003;
 
@@ -206,8 +206,7 @@ contract AccessControlTest is DiamondTestBase {
         return stakeholderId;
     }
 
-    function createStockClass() public override returns (bytes16) {
-        bytes16 stockClassId = bytes16(keccak256("stockClass1"));
+    function createStockClass(bytes16 stockClassId) public override returns (bytes16) {
         vm.startPrank(admin);
         StockClassFacet(address(capTable)).createStockClass(stockClassId, "Common", 100, 1000);
         vm.stopPrank();

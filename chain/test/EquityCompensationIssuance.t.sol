@@ -23,7 +23,7 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
         vm.stopPrank();
 
         stakeholderId = createStakeholder();
-        stockClassId = createStockClass();
+        stockClassId = createStockClass(bytes16(uint128(10)));
 
         // Create array properly
         bytes16[] memory stockClassIds = new bytes16[](1);
@@ -85,6 +85,7 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
             termination_exercise_windows_mapping: "90_DAYS",
             security_law_exemptions_mapping: "REG_D"
         });
+        vm.expectRevert(abi.encodeWithSignature("NoStakeholder(bytes16)", invalidStakeholderId));
         IEquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 
@@ -108,6 +109,7 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
             termination_exercise_windows_mapping: "90_DAYS",
             security_law_exemptions_mapping: "REG_D"
         });
+        vm.expectRevert(abi.encodeWithSignature("InvalidStockClass(bytes16)", invalidStockClassId));
         IEquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 
@@ -130,6 +132,7 @@ contract DiamondEquityCompensationIssuanceTest is DiamondTestBase {
             termination_exercise_windows_mapping: "90_DAYS",
             security_law_exemptions_mapping: "REG_D"
         });
+        vm.expectRevert(abi.encodeWithSignature("InvalidQuantity()"));
         IEquityCompensationFacet(address(capTable)).issueEquityCompensation(params);
     }
 }

@@ -66,6 +66,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D"
         });
 
+        vm.expectRevert(abi.encodeWithSignature("NoStakeholder(bytes16)", invalidStakeholderId));
         IStockFacet(address(capTable)).issueStock(params);
     }
 
@@ -87,6 +88,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D"
         });
 
+        vm.expectRevert(abi.encodeWithSignature("InvalidStockClass(bytes16)", invalidStockClassId));
         IStockFacet(address(capTable)).issueStock(params);
     }
 
@@ -107,6 +109,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D"
         });
 
+        vm.expectRevert("StockClass: Insufficient shares authorized");
         IStockFacet(address(capTable)).issueStock(params);
     }
 
@@ -127,6 +130,7 @@ contract DiamondStockIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D"
         });
 
+        vm.expectRevert("StockClass: Insufficient shares authorized");
         IStockFacet(address(capTable)).issueStock(params);
     }
 }

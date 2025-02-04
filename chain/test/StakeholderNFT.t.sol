@@ -30,7 +30,7 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
         vm.stopPrank();
 
         // Create a stock class and issue some stock for the NFT metadata
-        bytes16 stockClassId = createStockClass();
+        bytes16 stockClassId = createStockClass(bytes16(uint128(1)));
         bytes16 stockSecurityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 stockId = 0xd3373e0a4dd940000000000000000011;
         IssueStockParams memory params = IssueStockParams({
@@ -71,6 +71,7 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
     function test_RevertMintWithoutLink() public {
         // Try to mint without linking - should fail
         vm.prank(stakeholderWallet);
+        vm.expectRevert(abi.encodeWithSignature("NotStakeholder()"));
         IStakeholderNFTFacet(address(capTable)).mint();
     }
 
@@ -84,6 +85,7 @@ contract DiamondStakeholderNFTTest is DiamondTestBase {
 
         // Try to mint again - should fail
         vm.prank(stakeholderWallet);
+        vm.expectRevert(abi.encodeWithSignature("AlreadyMinted()"));
         IStakeholderNFTFacet(address(capTable)).mint();
     }
 

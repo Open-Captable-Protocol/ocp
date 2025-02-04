@@ -51,6 +51,7 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             exercise_triggers_mapping: "TIME_BASED"
         });
+        vm.expectRevert(abi.encodeWithSignature("NoStakeholder(bytes16)", invalidStakeholderId));
         IWarrantFacet(address(capTable)).issueWarrant(params);
     }
 
@@ -69,6 +70,7 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             exercise_triggers_mapping: "TIME_BASED"
         });
+        vm.expectRevert(abi.encodeWithSignature("InvalidQuantity()"));
         IWarrantFacet(address(capTable)).issueWarrant(params);
     }
 }

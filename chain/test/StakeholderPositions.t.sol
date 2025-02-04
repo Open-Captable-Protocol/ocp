@@ -27,7 +27,7 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
     function setUp() public override {
         super.setUp();
         stakeholderId = createStakeholder();
-        stockClassId = createStockClass();
+        stockClassId = createStockClass(bytes16(uint128(12)));
 
         bytes16[] memory stockClassIds = new bytes16[](1);
         stockClassIds[0] = stockClassId;
