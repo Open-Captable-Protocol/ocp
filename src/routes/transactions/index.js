@@ -7,7 +7,7 @@ const router = Router();
 // Mount base transactions routes
 router.use("/", baseTransactions);
 
-// Mount Fairmint-specific routes
+// Mount your company's specific transactions routes
 router.use("/", fairmintTransactions);
 
 export default router;

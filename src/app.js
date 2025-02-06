@@ -6,7 +6,6 @@ import { setTag } from "@sentry/node";
 import * as Sentry from "@sentry/node";
 
 // Routes
-import historicalTransactions from "./routes/historicalTransactions.js";
 import mainRoutes from "./routes/index.js";
 import issuerRoutes from "./routes/issuer.js";
 import stakeholderRoutes from "./routes/stakeholder.js";
@@ -94,7 +93,6 @@ app.use("/stock-legend", stockLegendRoutes);
 app.use("/stock-plan", contractMiddleware, stockPlanRoutes);
 app.use("/valuation", valuationRoutes);
 app.use("/vesting-terms", vestingTermsRoutes);
-app.use("/historical-transactions", historicalTransactions);
 app.use("/stats", statsRoutes);
 app.use("/export", exportRoutes);
 app.use("/ocf", ocfRoutes);
