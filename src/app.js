@@ -8,7 +8,7 @@ import * as Sentry from "@sentry/node";
 // Routes
 import mainRoutes from "./routes/index.js";
 import issuerRoutes from "./routes/issuer.js";
-import stakeholderRoutes from "./routes/stakeholder.js";
+import stakeholderRoutes from "./routes/stakeholder/index.js";
 import stockClassRoutes from "./routes/stockClass.js";
 import stockLegendRoutes from "./routes/stockLegend.js";
 import stockPlanRoutes from "./routes/stockPlan.js";
