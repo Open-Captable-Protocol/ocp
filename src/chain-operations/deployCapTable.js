@@ -1,54 +1,79 @@
 import { ethers } from "ethers";
-import CAP_TABLE from "../../chain/out/CapTable.sol/CapTable.json";
 import CAP_TABLE_FACTORY from "../../chain/out/CapTableFactory.sol/CapTableFactory.json";
-import { readfactories } from "../db/operations/read.js";
+import STAKEHOLDER_FACET from "../../chain/out/StakeholderFacet.sol/StakeholderFacet.json";
+import ISSUER_FACET from "../../chain/out/IssuerFacet.sol/IssuerFacet.json";
+import STOCK_CLASS_FACET from "../../chain/out/StockClassFacet.sol/StockClassFacet.json";
+import STOCK_FACET from "../../chain/out/StockFacet.sol/StockFacet.json";
+import CONVERTIBLE_FACET from "../../chain/out/ConvertiblesFacet.sol/ConvertiblesFacet.json";
+import WARRANT_FACET from "../../chain/out/WarrantFacet.sol/WarrantFacet.json";
+import EQUITY_COMPENSATION_FACET from "../../chain/out/EquityCompensationFacet.sol/EquityCompensationFacet.json";
+import STOCK_PLAN_FACET from "../../chain/out/StockPlanFacet.sol/StockPlanFacet.json";
+import STAKEHOLDER_NFT_FACET from "../../chain/out/StakeholderNFTFacet.sol/StakeholderNFTFacet.json";
+import ACCESS_CONTROL_FACET from "../../chain/out/AccessControlFacet.sol/AccessControlFacet.json";
 import { toScaledBigNumber } from "../utils/convertToFixedPointDecimals.js";
 import { setupEnv } from "../utils/env.js";
-import getTXLibContracts from "../utils/getLibrariesContracts.js";
 import getProvider from "./getProvider.js";
+import { findOne } from "../db/operations/atomic";
+import Factory from "../db/objects/Factory.js";
+import assert from "node:assert";
 
 setupEnv();
 
-async function deployCapTable(issuerId, initial_shares_authorized) {
-    const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
+export const facetsABI = [
+    ...STAKEHOLDER_FACET.abi,
+    ...ISSUER_FACET.abi,
+    ...STOCK_CLASS_FACET.abi,
+    ...STOCK_FACET.abi,
+    ...STOCK_PLAN_FACET.abi,
+    ...CONVERTIBLE_FACET.abi,
+    ...WARRANT_FACET.abi,
+    ...EQUITY_COMPENSATION_FACET.abi,
+    ...STAKEHOLDER_NFT_FACET.abi,
+    ...ACCESS_CONTROL_FACET.abi,
+];
 
-    const provider = getProvider();
+const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
 
-    const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
+export const getWallet = async (chainId) => {
+    assert(WALLET_PRIVATE_KEY, "WALLET_PRIVATE_KEY is not set");
+    assert(chainId, "chainId is not set");
+
+    const provider = getProvider(chainId);
+    return new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
+};
+
+async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
+    // Get provider for specified chain
+    const wallet = await getWallet(chainId);
     console.log("🗽 | Wallet address: ", wallet.address);
 
-    const factories = await readfactories();
-    const factoryAddress = factories[0]?.factory_address;
-    console.log({ factories, factoryAddress });
+    // Find factory for this chain
+    const factory = await findOne(Factory, { version: "DIAMOND", chain_id: chainId });
+    const factoryAddress = factory?.factory_address;
 
     if (!factoryAddress) {
-        throw new Error(`❌ | Factory address not found`);
+        throw new Error(`Factory not found for chain ${chainId}`);
     }
+    console.log("🏭 | Factory address: ", factoryAddress);
 
     const capTableFactory = new ethers.Contract(factoryAddress, CAP_TABLE_FACTORY.abi, wallet);
 
     console.log("Creating a new cap table...");
     const tx = await capTableFactory.createCapTable(issuerId, toScaledBigNumber(initial_shares_authorized));
-    await tx.wait();
+    const receipt = await tx.wait();
     console.log("Cap table created");
-    const capTableCount = await capTableFactory.getCapTableCount();
 
+    const capTableCount = await capTableFactory.getCapTableCount();
     console.log("📄 | Cap table count: ", capTableCount);
 
-    const latestCapTableProxyContractAddress = await capTableFactory.capTableProxies(capTableCount - BigInt(1));
-
-    const contract = new ethers.Contract(latestCapTableProxyContractAddress, CAP_TABLE.abi, wallet);
-
-    console.log("⏳ | Waiting for contract to be deployed...");
-    console.log("✅ | Cap table contract address ", latestCapTableProxyContractAddress);
-    const libraries = getTXLibContracts(latestCapTableProxyContractAddress, wallet);
+    const captableAddress = await capTableFactory.capTables(capTableCount - BigInt(1));
+    console.log("✅ | Cap table address: ", captableAddress);
 
     return {
-        contract,
-        provider,
-        address: latestCapTableProxyContractAddress,
-        libraries,
-        deployHash: tx.hash,
+        contract: new ethers.Contract(captableAddress, facetsABI, wallet),
+        address: captableAddress,
+        deployHash: receipt.hash,
+        receipt,
     };
 }
 

@@ -18,6 +18,7 @@ const ConvertibleIssuanceSchema = new mongoose.Schema(
         board_approval_date: String,
         stockholder_approval_date: String,
         consideration_text: String,
+        is_onchain_synced: { type: Boolean, default: false },
         security_law_exemptions: [{}],
         issuer: {
             type: String,

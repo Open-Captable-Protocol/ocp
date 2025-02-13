@@ -1,95 +1,112 @@
 /* eslint-disable no-case-declarations */
-import { Log, AbiCoder, Provider, Block } from "ethers";
+
+import { Log, AbiCoder, Block, ethers } from "ethers";
 import getProvider from "../chain-operations/getProvider";
 import get from "lodash/get.js";
-import { txMapper, txTypes } from "../chain-operations/transactionHandlers";
+import { handleStockPlan, txMapper, txTypes } from "../chain-operations/transactionHandlers";
 import { handleStakeholder, handleStockClass } from "../chain-operations/transactionHandlers";
 import Issuer from "../db/objects/Issuer";
+import { TxCreated, StakeholderCreated, StockClassCreated, StockPlanCreated } from "../chain-operations/topics";
 
-const TOPICS = {
-    // TODO: automatically generate these topics from the events in the contract
-    TxCreated: "0x9f88fb156974def70024c0bee5f2fefd94c4f8141b6468bd9e49eb0425639845",
-    StakeholderCreated: "0x53df47344d1cdf2ddb4901af5df61e37e14606bb7c8cc004d65c7c83ab3d0693",
-    StockClassCreated: "0xc7496d70298fcc793e1d058617af680232585e302f0185b14bba498b247a9c1d",
-    // IssuerCreated: "0xb8cbde9f597f493a1b4d1c4db5fded9cd26293080750a0df6b7e7097f4b680dd", // We don't receive this event because by time an issuer is created and we add it to the listener we have already missed it.
-};
+const TOPICS = { TxCreated, StakeholderCreated, StockClassCreated, StockPlanCreated };
 
 const abiCoder = new AbiCoder();
-// Create a Set to store unique addresses
-const watchedAddresses = new Set<string>();
 
-// Function to add new addresses to the filter (can handle single or multiple addresses)
-export const addAddressesToWatch = (addresses: string | string[]) => {
-    const addressArray = Array.isArray(addresses) ? addresses : [addresses];
-    addressArray.forEach((address) => watchedAddresses.add(address));
-    updateProviderFilter();
-};
+// Create a map to store providers and their active listeners
+const providers = new Map<number, ethers.Provider>();
+const activeListeners = new Map<number, boolean>();
+const watchedAddressesByChain = new Map<number, Set<string>>();
 
-// Function to remove addresses from the filter (can handle single or multiple addresses)
-export const removeAddressesToWatch = (addresses: string | string[]) => {
-    const addressArray = Array.isArray(addresses) ? addresses : [addresses];
-    addressArray.forEach((address) => watchedAddresses.delete(address));
-    updateProviderFilter();
-};
-
-// let provider: Provider;
-const provider = getProvider() as Provider;
-let isSetup = false;
-
-// Function to update the provider filter
-const updateProviderFilter = () => {
-    if (!provider) {
-        console.log("🔗 | No provider found");
-        return;
+// Function to get or create provider for a chain
+const getChainProvider = (chainId: number): ethers.Provider => {
+    if (!providers.has(chainId)) {
+        providers.set(chainId, getProvider(chainId) as ethers.Provider);
     }
-    console.log("🔗 | Updating provider filter");
-    isSetup = false;
-    provider.removeAllListeners();
-    setupProviderListener();
+    return providers.get(chainId)!;
 };
 
-// Function to set up the provider listener
-const setupProviderListener = () => {
-    if (isSetup) {
-        console.log("🔗 | listener already set up");
-        return;
+// Function to add new addresses to watch for a specific chain
+export const addAddressesToWatch = async (chainId: number, addresses: string | string[]) => {
+    const addressArray = Array.isArray(addresses) ? addresses : [addresses];
+
+    if (!watchedAddressesByChain.has(chainId)) {
+        watchedAddressesByChain.set(chainId, new Set());
     }
-    console.log("🔗 | Setting up provider listener");
-    provider.on(
-        {
-            address: Array.from(watchedAddresses),
-            topics: [Object.values(TOPICS)],
-        },
-        async (log: Log) => {
-            const block = await log.getBlock();
-            if (!block) {
-                console.error("No block found");
-                return;
-            }
-            const deployed_to = log.address;
-            await handleEventType(log, block, deployed_to);
+
+    const chainAddresses = watchedAddressesByChain.get(chainId)!;
+    addressArray.forEach((address) => chainAddresses.add(address.toLowerCase()));
+
+    // Always reload the listener with all addresses
+    await setupChainListener(chainId, Array.from(chainAddresses));
+};
+
+// Function to setup a single chain listener
+const setupChainListener = async (chainId: number, addresses: string[]) => {
+    console.log("Setting up chain listener for chain", chainId, "with addresses", addresses);
+    const provider = getChainProvider(chainId);
+
+    if (addresses.length > 0) {
+        // Remove any existing listener for this chain
+        if (activeListeners.get(chainId)) {
+            await provider.removeAllListeners();
         }
-    );
 
-    provider.on("error", (err) => {
-        console.error(err);
-    });
-    isSetup = true;
-};
+        // Set up new listener
+        await provider.on(
+            {
+                address: addresses,
+                topics: [Object.values(TOPICS)],
+            },
+            async (log: Log) => {
+                const block = await provider.getBlock(log.blockNumber!);
+                if (block) {
+                    handleEventType(log, block, log.address);
+                }
+            }
+        );
 
-export const startListener = async (contracts: string[]) => {
-    if (isSetup) {
-        console.log("🔗 | Listener already setup");
-        return;
+        activeListeners.set(chainId, true);
+        console.log(` Chain ${chainId}: Listening to ${addresses.length} contracts`);
     }
-    console.log("🔗 | Starting listener");
-    addAddressesToWatch(contracts);
-    setupProviderListener();
 };
 
+// Function to start listening for all chains
+export const startListener = async (contracts: { address: string; chain_id: number }[]) => {
+    // Group contracts by chain
+    const contractsByChain = contracts.reduce((acc, { address, chain_id }) => {
+        if (!acc[chain_id]) acc[chain_id] = [];
+        acc[chain_id].push(address);
+        return acc;
+    }, {} as Record<number, string[]>);
+
+    // Start one listener per chain
+    for (const [chainId, addresses] of Object.entries(contractsByChain)) {
+        const numericChainId = parseInt(chainId);
+        // Add addresses to watch list
+        if (!watchedAddressesByChain.has(numericChainId)) {
+            watchedAddressesByChain.set(numericChainId, new Set());
+        }
+        addresses.forEach((addr) => watchedAddressesByChain.get(numericChainId)!.add(addr.toLowerCase()));
+
+        const contracts = Array.from(watchedAddressesByChain.get(numericChainId) || []);
+        // Setup single listener for this chain
+        await setupChainListener(numericChainId, contracts);
+    }
+};
+
+export const reamoveAllListeners = async () => {
+    for (const [chainId, provider] of providers.entries()) {
+        console.log(`Removing listeners for chain ${chainId}...`);
+        await provider.removeAllListeners();
+        providers.delete(chainId);
+        activeListeners.set(chainId, false);
+    }
+};
+
+// Update handleEventType to include chainId
 const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
     const topic = get(log, "topics.0", null);
-    console.log("🔗 | Handling event type", topic);
+    console.log(" | Handling event type", topic);
     switch (topic) {
         case TOPICS.StockClassCreated:
             const stockClassIdBytes = get(log, "topics.1", null);
@@ -112,15 +129,17 @@ const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
             break;
 
         case TOPICS.TxCreated:
+            console.log(" | TxCreated event");
             const issuer = await Issuer.findOne({ deployed_to });
             if (!issuer) {
                 console.error("No issuer found");
                 return;
             }
             const issuerId = issuer._id;
-            const decoded = abiCoder.decode(["uint256", "uint8", "bytes"], log.data);
-            const txTypeIdx = decoded[1] as number;
-            const txData = decoded[2] as string;
+            const decoded = abiCoder.decode(["uint8", "bytes"], log.data);
+            console.log(" | Decoded data", decoded);
+            const txTypeIdx = decoded[0] as number;
+            const txData = decoded[1] as string;
 
             const txType = txTypes[txTypeIdx];
             // @ts-ignore
@@ -135,12 +154,23 @@ const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
 
             if (handleFunc) {
                 console.log("Handling transaction:", txType);
-                await handleFunc(_tx.data, issuerId, _tx.timestamp);
-                console.log("✅ | Transaction handled:", txType);
+                await handleFunc(_tx.data, issuerId, _tx.timestamp, log.transactionHash);
+                console.log(" | Transaction handled:", txType);
             } else {
                 console.error("Invalid transaction type: ", txType);
                 throw new Error(`Invalid transaction type: "${txType}"`);
             }
+            break;
+        case TOPICS.StockPlanCreated:
+            const stockPlanIdBytes = get(log, "topics.1", null);
+            const sharesReservedBytes = get(log, "topics.2", null);
+            if (!stockPlanIdBytes || !sharesReservedBytes) {
+                console.error("No stock plan id found");
+                return;
+            }
+            const [stockPlanIdBytes16] = abiCoder.decode(["bytes16"], stockPlanIdBytes);
+            const [sharesReserved] = abiCoder.decode(["uint256"], sharesReservedBytes);
+            await handleStockPlan(stockPlanIdBytes16, sharesReserved);
             break;
 
         default:
