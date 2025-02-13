@@ -21,7 +21,6 @@ const IssuerSchema = new mongoose.Schema(
         tx_hash: String,
         last_processed_block: { type: Number, default: null },
         is_manifest_created: { type: Boolean, default: false },
-        chain_id: { type: Number, required: true },
     },
     { timestamps: true }
 );

@@ -1,80 +1,57 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
-import "./TestBase.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
-import { IIssuerFacet } from "@interfaces/IIssuerFacet.sol";
-import { IStockClassFacet } from "@interfaces/IStockClassFacet.sol";
-import { IStockPlanFacet } from "@interfaces/IStockPlanFacet.sol";
+import "./CapTable.t.sol";
 
-contract DiamondAdjustmentTest is DiamondTestBase {
-    bytes16 public stockClassId;
-    bytes16 public stockPlanId;
 
-    function setUp() public override {
-        super.setUp();
-        stockClassId = createStockClass(bytes16(uint128(13)));
-        bytes16[] memory stockClassIds = new bytes16[](1);
-        stockClassIds[0] = stockClassId;
-        stockPlanId = createStockPlan(stockClassIds);
+contract AdjustmentTest is CapTableTest {
+    function testAdjustIssuerAuthorizedSharesBelowIssuedFails() public {
+        // Create stock class and stakeholder
+        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(1000000);
+
+        // Issue stock
+        uint256 issuanceQuantity = 1000;
+        issueStock(stockClassId, stakeholderId, issuanceQuantity);
+
+        // Attempt to adjust issuer authorized shares below the issued amount
+        uint256 newSharesAuthorized = 500; // Less than the issued amount
+        vm.expectRevert("InsufficientIssuerSharesAuthorized: shares_issued exceeds newSharesAuthorized");
+        capTable.adjustIssuerAuthorizedShares(newSharesAuthorized, new string[](0), "2023-01-01", "2023-01-02");
     }
 
-    function test_AdjustIssuerAuthorizedShares() public {
-        bytes16 issuerAdjustmentId = bytes16(keccak256("ADJUSTMENT_1"));
-        uint256 newSharesAuthorized = 2_000_000;
+    function testAdjustIssuerAuthorizedShares() public {
+        // Adjust issuer authorized shares
+        uint256 newIssuerSharesAuthorized = 20000;
+        capTable.adjustIssuerAuthorizedShares(newIssuerSharesAuthorized, new string[](0), "2023-01-01", "2023-01-02");
 
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(
-            TxType.ISSUER_AUTHORIZED_SHARES_ADJUSTMENT, abi.encode(issuerAdjustmentId, issuerId, newSharesAuthorized)
-        );
-
-        IIssuerFacet(address(capTable)).adjustIssuerAuthorizedShares(issuerAdjustmentId, newSharesAuthorized);
+        // Assert that the issuer authorized shares have been updated
+        (, , uint256 sharesAuthorized) = capTable.issuer();
+        assertEq(sharesAuthorized, newIssuerSharesAuthorized);
     }
 
-    function test_AdjustStockClassAuthorizedShares() public {
-        uint256 newSharesAuthorized = 2_000_000;
-        bytes16 stockClassAdjustmentId = bytes16(keccak256("ADJUSTMENT_1"));
+    function testAdjustStockClassAuthorizedShares() public {
+        // Create stock class
+        bytes16 stockClassId = 0xd3373e0a4dd940000000000000000000;
+        uint256 originalSharesAuthorized = 10000;
+        capTable.createStockClass(stockClassId, "Common", 100, originalSharesAuthorized);
 
-        IIssuerFacet(address(capTable)).adjustIssuerAuthorizedShares(stockClassAdjustmentId, newSharesAuthorized);
+        // Adjust stock class authorized shares
+        uint256 newStockClassSharesAuthorized = 20000;
+        capTable.adjustStockClassAuthorizedShares(stockClassId, newStockClassSharesAuthorized, new string[](0), "2023-01-01", "2023-01-02");
 
-        uint256 newStockClassSharesAuthorized = 1_999_999;
-
-        IStockClassFacet(address(capTable)).adjustAuthorizedShares(
-            stockClassAdjustmentId, stockClassId, newStockClassSharesAuthorized
-        );
+        // Assert that the stock class authorized shares have been updated
+        (, , , , uint256 sharesAuthorized) = capTable.getStockClassById(stockClassId);
+        assertEq(sharesAuthorized, newStockClassSharesAuthorized);
     }
 
-    function test_AdjustStockPlanPool() public {
-        uint256 newSharesReserved = 200_000;
-        bytes16 stockPlanAdjustmentId = bytes16(keccak256("STOCK_PLAN_ADJ_1"));
+    function testAdjustStockClassAuthorizedSharesAboveIssuerLimitFails() public {
+        // Create stock class
+        bytes16 stockClassId = 0xd3373e0a4dd940000000000000000000;
+        capTable.createStockClass(stockClassId, "Common", 100, 1000000);
 
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(
-            TxType.STOCK_PLAN_POOL_ADJUSTMENT, abi.encode(stockPlanAdjustmentId, stockPlanId, newSharesReserved)
-        );
-
-        IStockPlanFacet(address(capTable)).adjustStockPlanPool(stockPlanAdjustmentId, stockPlanId, newSharesReserved);
-    }
-
-    function test_RevertWhen_AdjustingNonExistentStockClass() public {
-        bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
-        bytes16 stockClassAdjustmentId = bytes16(keccak256("INVALID_ADJ_1"));
-        uint256 newSharesAuthorized = 2_000_000;
-
-        vm.expectRevert(abi.encodeWithSelector(IStockClassFacet.StockClassNotFound.selector, invalidStockClassId));
-        IStockClassFacet(address(capTable)).adjustAuthorizedShares(
-            stockClassAdjustmentId, invalidStockClassId, newSharesAuthorized
-        );
-    }
-
-    function test_RevertWhen_AdjustingNonExistentStockPlan() public {
-        bytes16 invalidStockPlanId = 0xd3373e0a4dd940000000000000000099;
-        bytes16 stockPlanAdjustmentId = bytes16(keccak256("INVALID_PLAN_ADJ_1"));
-        uint256 newSharesReserved = 200_000;
-
-        vm.expectRevert(abi.encodeWithSelector(IStockPlanFacet.StockPlanNotFound.selector, invalidStockPlanId));
-        IStockPlanFacet(address(capTable)).adjustStockPlanPool(
-            stockPlanAdjustmentId, invalidStockPlanId, newSharesReserved
-        );
+        // Attempt to adjust stock class authorized shares above the issuer limit
+        uint256 newStockClassSharesAuthorized = issuerInitialSharesAuthorized + 1; // More than the issuer authorized amount
+        vm.expectRevert("InsufficientStockClassSharesAuthorized: stock class authorized shares exceeds issuer shares authorized");
+        capTable.adjustStockClassAuthorizedShares(stockClassId, newStockClassSharesAuthorized, new string[](0), "2023-01-01", "2023-01-02");
     }
 }

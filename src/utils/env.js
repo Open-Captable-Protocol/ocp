@@ -1,7 +1,6 @@
 import { config } from "dotenv";
 import fs from "fs";
 import pathTools from "path";
-import get from "lodash/get";
 
 const splitPath = (path) => {
     /* 
@@ -17,7 +16,7 @@ const splitPath = (path) => {
 
 const getEnvFile = (fileName) => {
     // Find the .env file by iterating up the PWD. However do not go past the repo root!
-    const repoRootDirName = "open-captable-protocol";
+    const repoRootDirName = "tap-cap-table";
     const cwd = process.env.PWD;
     let { dir, rightMost } = splitPath(cwd);
     let check = pathTools.join(cwd, fileName);
@@ -39,18 +38,9 @@ export const setupEnv = () => {
     if (_ALREADY_SETUP) {
         return;
     }
-
-    // If we're in a Docker environment, skip file loading
-    if (get(process, "env.DOCKER_ENV", false)) {
-        console.log("Using runtime environment variables");
-        _ALREADY_SETUP = true;
-        return;
-    }
-
-    // Fall back to .env file for local development
     const fileName = process.env.USE_ENV_FILE || ".env";
     const path = getEnvFile(fileName);
-    console.log("Loading from env file:", path);
+    console.log("setupEnv with:", path);
     config({ path });
     _ALREADY_SETUP = true;
 };

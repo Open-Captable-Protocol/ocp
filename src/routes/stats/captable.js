@@ -1,4 +1,4 @@
-import { find } from "../../db/operations/atomic.ts";
+import { find } from "../../db/operations/atomic.js";
 import get from "lodash/get";
 import Stockclass from "../../db/objects/StockClass.js";
 import StockPlan from "../../db/objects/StockPlan.js";

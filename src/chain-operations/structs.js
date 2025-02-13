@@ -1,16 +1,218 @@
-import ISTOCK_FACET from "../../chain/out/IStockFacet.sol/IStockFacet.json";
-import ICONVERTIBLES_FACET from "../../chain/out/IConvertiblesFacet.sol/IConvertiblesFacet.json";
-import IWARRANTS_FACET from "../../chain/out/IWarrantFacet.sol/IWarrantFacet.json";
-import IEQUITY_COMPENSATION_FACET from "../../chain/out/IEquityCompensationFacet.sol/IEquityCompensationFacet.json";
+export const StockIssuance = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "id" },
+        { type: "string", baseType: "string", name: "object_type" },
+        { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        {
+            type: "tuple",
+            baseType: "tuple",
+            name: "params",
+            components: [
+                { type: "bytes16", baseType: "bytes16", name: "stock_class_id" },
+                { type: "bytes16", baseType: "bytes16", name: "stock_plan_id" },
+                {
+                    type: "tuple",
+                    baseType: "tuple",
+                    name: "share_numbers_issued",
+                    components: [
+                        { type: "uint256", baseType: "uint256", name: "starting_share_number" },
+                        { type: "uint256", baseType: "uint256", name: "ending_share_number" },
+                    ],
+                },
+                { type: "uint256", baseType: "uint256", name: "share_price" },
+                { type: "uint256", baseType: "uint256", name: "quantity" },
+                { type: "bytes16", baseType: "bytes16", name: "vesting_terms_id" },
+                { type: "uint256", baseType: "uint256", name: "cost_basis" },
+                {
+                    type: "bytes16[]",
+                    baseType: "array",
+                    arrayLength: -1,
+                    arrayChildren: { type: "bytes16", baseType: "bytes16" },
+                    name: "stock_legend_ids",
+                },
+                { type: "string", baseType: "string", name: "issuance_type" },
+                {
+                    type: "string[]",
+                    baseType: "array",
+                    arrayLength: -1,
+                    arrayChildren: { type: "string", baseType: "string" },
+                    name: "comments",
+                },
+                { type: "string", baseType: "string", name: "custom_id" },
+                { type: "bytes16", baseType: "bytes16", name: "stakeholder_id" },
+                { type: "string", baseType: "string", name: "board_approval_date" },
+                { type: "string", baseType: "string", name: "stockholder_approval_date" },
+                { type: "string", baseType: "string", name: "consideration_text" },
+                {
+                    type: "tuple(string, string)[]",
+                    baseType: "array",
+                    arrayLength: -1,
+                    components: [
+                        {
+                            name: "description",
+                            type: "string",
+                            baseType: "string",
+                        },
+                        {
+                            name: "jurisdiction",
+                            type: "string",
+                            baseType: "string",
+                        },
+                    ],
+                    name: "security_law_exemptions",
+                },
+            ],
+        },
+    ],
+};
 
-export const StockIssuance = ISTOCK_FACET.abi.find((fn) => fn.name === "issueStock").inputs[0];
+export const StockTransfer = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "id" },
+        { type: "string", baseType: "string", name: "object_type" },
+        { type: "uint256", baseType: "uint256", name: "quantity" },
+        {
+            type: "string[]",
+            baseType: "array",
+            arrayLength: -1,
+            arrayChildren: { type: "string", baseType: "string" },
+            name: "comments",
+        },
+        { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        { type: "string", baseType: "string", name: "consideration_text" },
+        { type: "bytes16", baseType: "bytes16", name: "balance_security_id" },
+        {
+            type: "bytes16[]",
+            baseType: "array",
+            arrayLength: -1,
+            arrayChildren: { type: "bytes16", baseType: "bytes16" },
+            name: "resulting_security_ids",
+        },
+    ],
+};
+
+export const StockCancellation = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "id" },
+        { type: "string", baseType: "string", name: "object_type" },
+        { type: "uint256", baseType: "uint256", name: "quantity" },
+        {
+            type: "string[]",
+            baseType: "array",
+            arrayLength: -1,
+            arrayChildren: { type: "string", baseType: "string" },
+            name: "comments",
+        },
+        { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        { type: "string", baseType: "string", name: "reason_text" },
+        { type: "bytes16", baseType: "bytes16", name: "balance_security_id" },
+    ],
+};
+
+export const StockRetraction = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "id" },
+        { type: "string", baseType: "string", name: "object_type" },
+        {
+            type: "string[]",
+            baseType: "array",
+            arrayLength: -1,
+            arrayChildren: { type: "string", baseType: "string" },
+            name: "comments",
+        },
+        { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        { type: "string", baseType: "string", name: "reason_text" },
+    ],
+};
+
+export const StockReissuance = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "id" },
+        { type: "string", baseType: "string", name: "object_type" },
+        {
+            type: "string[]",
+            baseType: "array",
+            arrayLength: -1,
+            arrayChildren: { type: "string", baseType: "string" },
+            name: "comments",
+        },
+        { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        {
+            type: "bytes16[]",
+            baseType: "array",
+            arrayLength: -1,
+            arrayChildren: { type: "bytes16", baseType: "bytes16" },
+            name: "resulting_security_ids",
+        },
+        { type: "bytes16", baseType: "bytes16", name: "split_transaction_id" },
+        { type: "string", baseType: "string", name: "reason_text" },
+    ],
+};
+
+export const StockRepurchase = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "id" },
+        { type: "string", baseType: "string", name: "object_type" },
+        {
+            type: "string[]",
+            baseType: "array",
+            arrayLength: -1,
+            arrayChildren: { type: "string", baseType: "string" },
+            name: "comments",
+        },
+        { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        { type: "string", baseType: "string", name: "consideration_text" },
+        { type: "bytes16", baseType: "bytes16", name: "balance_security_id" },
+        { type: "uint256", baseType: "uint256", name: "quantity" },
+        { type: "uint256", baseType: "uint256", name: "price" },
+    ],
+};
+
+export const StockAcceptance = {
+    type: "tuple",
+    baseType: "tuple",
+    components: [
+        { type: "bytes16", baseType: "bytes16", name: "id" },
+        { type: "string", baseType: "string", name: "object_type" },
+        { type: "bytes16", baseType: "bytes16", name: "security_id" },
+        {
+            type: "string[]",
+            baseType: "array",
+            arrayLength: -1,
+            arrayChildren: { type: "string", baseType: "string" },
+            name: "comments",
+        },
+    ],
+};
 
 export const IssuerAuthorizedSharesAdjustment = {
     type: "tuple",
     baseType: "tuple",
     components: [
-        { type: "bytes16", baseType: "bytes16", name: "issuer_id" },
+        { type: "bytes16", baseType: "bytes16", name: "id" },
+        { type: "string", baseType: "string", name: "object_type" },
         { type: "uint256", baseType: "uint256", name: "new_shares_authorized" },
+        {
+            type: "string[]",
+            baseType: "array",
+            arrayLength: -1,
+            arrayChildren: { type: "string", baseType: "string" },
+            name: "comments",
+        },
+        { type: "string", baseType: "string", name: "board_approval_date" },
+        { type: "string", baseType: "string", name: "stockholder_approval_date" },
     ],
 };
 
@@ -18,51 +220,18 @@ export const StockClassAuthorizedSharesAdjustment = {
     type: "tuple",
     baseType: "tuple",
     components: [
+        { type: "bytes16", baseType: "bytes16", name: "id" },
         { type: "bytes16", baseType: "bytes16", name: "stock_class_id" },
+        { type: "string", baseType: "string", name: "object_type" },
         { type: "uint256", baseType: "uint256", name: "new_shares_authorized" },
-    ],
-};
-
-export const StockPlanPoolAdjustment = {
-    type: "tuple",
-    baseType: "tuple",
-    components: [
-        { type: "bytes16", baseType: "bytes16", name: "stock_plan_id" },
-        { type: "uint256", baseType: "uint256", name: "new_shares_reserved" },
-    ],
-};
-
-export const ConvertibleIssuance = ICONVERTIBLES_FACET.abi.find((fn) => fn.name === "issueConvertible").inputs[0];
-
-export const WarrantIssuance = IWARRANTS_FACET.abi.find((fn) => fn.name === "issueWarrant").inputs[0];
-
-export const EquityCompensationIssuance = IEQUITY_COMPENSATION_FACET.abi.find((fn) => fn.name === "issueEquityCompensation").inputs[0];
-
-export const EquityCompensationExercise = IEQUITY_COMPENSATION_FACET.abi.find((fn) => fn.name === "exerciseEquityCompensation").inputs[0];
-
-export const StockTransfer = {
-    type: "tuple",
-    components: [
-        { type: "bytes16", name: "consolidated_security_id" },
-        { type: "bytes16", name: "transferee_security_id" },
-        { type: "bytes16", name: "remainder_security_id" },
-        { type: "uint256", name: "quantity" },
-        { type: "uint256", name: "share_price" },
-    ],
-};
-
-/* TODO: IMPLEMENT THIS */
-export const StockRepurchase = {};
-export const StockAcceptance = {};
-export const StockCancellation = {};
-export const StockRetraction = {};
-export const StockReissuance = {};
-// export const StockConsolidation = ISTOCK_FACET.abi.find((fn) => fn.name === "consolidateStock").inputs[0];
-
-export const StockConsolidation = {
-    type: "tuple",
-    components: [
-        { type: "bytes16[]", name: "security_ids" },
-        { type: "bytes16", name: "resulting_security_id" },
+        {
+            type: "string[]",
+            baseType: "array",
+            arrayLength: -1,
+            arrayChildren: { type: "string", baseType: "string" },
+            name: "comments",
+        },
+        { type: "string", baseType: "string", name: "board_approval_date" },
+        { type: "string", baseType: "string", name: "stockholder_approval_date" },
     ],
 };
