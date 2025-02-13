@@ -1,76 +1,108 @@
 import { convertUUIDToBytes16 } from "../../utils/convertUUID.js";
 import { toScaledBigNumber } from "../../utils/convertToFixedPointDecimals.js";
-import { withChainErrorHandler } from "../helper.js";
 
-const checkIssuanceValues = (issuance) => {
-    return {
-        stakeholder_id: issuance.stakeholder_id, // required
-        stock_class_id: issuance.stock_class_id, // required
-        share_numbers_issued: issuance.share_numbers_issued || [0, 0],
-        quantity: issuance.quantity, // required
-        share_price: issuance.share_price, // required
-        stock_plan_id: issuance.stock_plan_id || "00000000-0000-0000-0000-000000000000",
-        vesting_terms_id: issuance.vesting_terms_id || "00000000-0000-0000-0000-000000000000",
-        cost_basis: issuance.cost_basis || 0,
-        stock_legend_ids: issuance.stock_legend_ids || [],
-        issuance_type: issuance.issuance_type || "",
-        comments: issuance.comments || [],
-        custom_id: issuance.custom_id || "",
-        board_approval_date: issuance.board_approval_date || "",
-        stockholder_approval_date: issuance.stockholder_approval_date || "",
-        consideration_text: issuance.consideration_text || "",
-        security_law_exemptions: issuance.security_law_exemptions || [],
-    };
-};
-
-export const convertAndCreateIssuanceStockOnchain = withChainErrorHandler(async (contract, issuance) => {
-    const checkedValues = checkIssuanceValues(issuance);
-    const {
-        stakeholder_id,
-        stock_class_id,
-        quantity,
-        share_price,
-        stock_plan_id,
-        share_numbers_issued,
-        vesting_terms_id,
-        cost_basis,
-        stock_legend_ids,
-        issuance_type,
-        comments,
-        custom_id,
-        board_approval_date,
-        stockholder_approval_date,
-        consideration_text,
-        security_law_exemptions,
-    } = checkedValues;
-
-    let stockLegendIdsBytes16 = [];
-    for (const legendId of stock_legend_ids) {
-        const legendIdBytes16 = convertUUIDToBytes16(legendId);
-        stockLegendIdsBytes16.push(legendIdBytes16);
-    }
-
-    // Second: create issuance onchain
-    const tx = await contract.issueStock({
+// Stock Issuance
+export const convertAndCreateIssuanceStockOnchain = async (
+    contract,
+    { id, security_id, stock_class_id, stakeholder_id, quantity, share_price, custom_id = "" }
+) => {
+    console.log("data to save", {
+        id: convertUUIDToBytes16(id),
         stock_class_id: convertUUIDToBytes16(stock_class_id),
-        stock_plan_id: convertUUIDToBytes16(stock_plan_id),
-        share_numbers_issued, // not converted
         share_price: toScaledBigNumber(share_price.amount),
         quantity: toScaledBigNumber(quantity),
-        vesting_terms_id: convertUUIDToBytes16(vesting_terms_id),
-        cost_basis, // not converted
-        stock_legend_ids: stockLegendIdsBytes16,
-        issuance_type,
-        comments,
-        custom_id,
         stakeholder_id: convertUUIDToBytes16(stakeholder_id),
-        board_approval_date,
-        stockholder_approval_date,
-        consideration_text,
-        security_law_exemptions,
+        security_id: convertUUIDToBytes16(security_id),
+        custom_id,
+        stock_legend_ids_mapping: "",
+        security_law_exemptions_mapping: "",
     });
-    await tx.wait();
-    console.log("Transaction hash:", tx.hash);
+    const tx = await contract.issueStock({
+        id: convertUUIDToBytes16(id),
+        stock_class_id: convertUUIDToBytes16(stock_class_id),
+        share_price: toScaledBigNumber(share_price.amount),
+        quantity: toScaledBigNumber(quantity),
+        stakeholder_id: convertUUIDToBytes16(stakeholder_id),
+        security_id: convertUUIDToBytes16(security_id),
+        custom_id,
+        stock_legend_ids_mapping: "",
+        security_law_exemptions_mapping: "",
+    });
+    const receipt = await tx.wait();
+    return receipt;
+};
 
-    console.log("✅ | Issued stock onchain, unconfirmed: ", issuance);
-});
+// Convertible Issuance
+export const convertAndCreateIssuanceConvertibleOnchain = async (
+    contract,
+    { id, security_id, stakeholder_id, investment_amount, convertible_type, seniority, custom_id = "" }
+) => {
+    const tx = await contract.issueConvertible({
+        id: convertUUIDToBytes16(id),
+        stakeholder_id: convertUUIDToBytes16(stakeholder_id),
+        investment_amount: toScaledBigNumber(investment_amount.amount),
+        security_id: convertUUIDToBytes16(security_id),
+        convertible_type,
+        seniority: toScaledBigNumber(seniority),
+        custom_id,
+        security_law_exemptions_mapping: "",
+        conversion_triggers_mapping: "",
+    });
+    const receipt = await tx.wait();
+    return receipt;
+};
+
+// Warrant Issuance
+export const convertAndCreateIssuanceWarrantOnchain = async (
+    contract,
+    { id, security_id, stakeholder_id, quantity, purchase_price = { amount: 0 }, custom_id = "" }
+) => {
+    const tx = await contract.issueWarrant({
+        id: convertUUIDToBytes16(id),
+        stakeholder_id: convertUUIDToBytes16(stakeholder_id),
+        quantity: toScaledBigNumber(quantity),
+        security_id: convertUUIDToBytes16(security_id),
+        purchase_price: toScaledBigNumber(purchase_price.amount),
+        custom_id,
+        security_law_exemptions_mapping: "",
+        exercise_triggers_mapping: "",
+    });
+    const receipt = await tx.wait();
+    return receipt;
+};
+
+// Equity Compensation Issuance
+export const convertAndCreateIssuanceEquityCompensationOnchain = async (
+    contract,
+    {
+        id,
+        security_id,
+        stakeholder_id,
+        stock_class_id,
+        stock_plan_id,
+        quantity,
+        compensation_type,
+        exercise_price,
+        base_price,
+        expiration_date,
+        custom_id = "",
+    }
+) => {
+    const tx = await contract.issueEquityCompensation({
+        id: convertUUIDToBytes16(id),
+        stakeholder_id: convertUUIDToBytes16(stakeholder_id),
+        stock_class_id: convertUUIDToBytes16(stock_class_id),
+        stock_plan_id: convertUUIDToBytes16(stock_plan_id),
+        quantity: toScaledBigNumber(quantity),
+        security_id: convertUUIDToBytes16(security_id),
+        compensation_type,
+        exercise_price: toScaledBigNumber(exercise_price?.amount || 0),
+        base_price: toScaledBigNumber(base_price?.amount || 0),
+        expiration_date,
+        custom_id,
+        termination_exercise_windows_mapping: "",
+        security_law_exemptions_mapping: "",
+    });
+    const receipt = await tx.wait();
+    return receipt;
+};

@@ -2,6 +2,7 @@ import * as Acceptance from "../objects/transactions/acceptance/index.js";
 import * as Adjustment from "../objects/transactions/adjustment/index.js";
 import * as Cancellation from "../objects/transactions/cancellation/index.js";
 import * as Conversion from "../objects/transactions/conversion/index.js";
+import * as Consolidation from "../objects/transactions/consolidation/index.js";
 import * as Exercise from "../objects/transactions/exercise/index.js";
 import * as Issuance from "../objects/transactions/issuance/index.js";
 import * as Reissuance from "../objects/transactions/reissuance/index.js";
@@ -85,6 +86,9 @@ const typeToModelType = {
     TX_VESTING_ACCELERATION: Vesting.VestingAcceleration,
     TX_VESTING_EVENT: Vesting.VestingEvent,
     TX_VESTING_START: Vesting.VestingStart,
+
+    // Consolidation
+    TX_STOCK_CONSOLIDATION: Consolidation.default,
 };
 
 const addTransactions = async (inputTransactions, issuerId) => {
