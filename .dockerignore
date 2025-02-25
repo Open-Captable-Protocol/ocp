@@ -1,4 +1,2 @@
 node_modules
 npm-debug.log
-!chain/out
-!chain/out/**/*.json

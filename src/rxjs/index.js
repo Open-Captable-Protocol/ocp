@@ -1,5 +1,6 @@
 import { from, lastValueFrom } from "rxjs";
 import { scan, tap, last, map } from "rxjs/operators";
+import { getAllStateMachineObjectsById } from "../db/operations/read.js";
 import { dashboardInitialState, processDashboardConvertibleIssuance, processDashboardStockIssuance } from "./dashboard.js";
 import {
     captableInitialState,
@@ -17,31 +18,24 @@ const createInitialState = (issuer, stockClasses, stockPlans, stakeholders) => {
 
     // Create captable state
     const captableState = captableInitialState(issuer, stockClasses, stockPlans, stakeholders);
-    const errors = new Set();
-    if (!issuer.initial_shares_authorized) {
-        errors.add(`Issuer ${issuer.legal_name} has no initial_shares_authorized`);
-    }
+
     return {
         issuer: {
             id: issuer._id,
             sharesAuthorized: parseInt(issuer.initial_shares_authorized),
             sharesIssued: 0,
         },
-        stockClasses: stockClasses.reduce((acc, sc) => {
-            if (Number(sc.initial_shares_authorized) > Number(issuer.initial_shares_authorized)) {
-                errors.add(
-                    `[StockClass ${sc.id} initial_shares_authorized (${sc.initial_shares_authorized}) exceeds issuer initial_shares_authorized (${issuer.initial_shares_authorized})`
-                );
-            }
-            return {
+        stockClasses: stockClasses.reduce(
+            (acc, sc) => ({
                 ...acc,
                 [sc.id]: {
                     id: sc.id,
                     sharesAuthorized: parseInt(sc.initial_shares_authorized),
                     sharesIssued: 0,
                 },
-            };
-        }, {}),
+            }),
+            {}
+        ),
         stockPlans: {
             "no-stock-plan": {
                 id: "no-stock-plan",
@@ -69,7 +63,7 @@ const createInitialState = (issuer, stockClasses, stockPlans, stakeholders) => {
         ...dashboardState,
         ...captableState, // Add captable specific state
         transactions: [], // Reset transactions array
-        errors, // Reset errors array
+        errors: new Set(), // Reset errors array
     };
 };
 
@@ -202,7 +196,7 @@ const processStockIssuance = (state, transaction, stakeholder, originalStockClas
 
     // Access state stock class directly from state
     const stateStockClass = state.stockClasses[stock_class_id];
-    // console.log("stateStockClass", stateStockClass);
+    console.log("stateStockClass", stateStockClass);
 
     // Validate using state data
     if (stateStockClass.sharesIssued + numShares > stateStockClass.sharesAuthorized) {
@@ -349,7 +343,7 @@ export const processEquityCompensationExercise = (state, transaction) => {
     const equityGrant = state.transactions.find((tx) => tx.security_id === security_id);
 
     if (!equityGrant) {
-        // console.log("No equity grant found for:", security_id);
+        console.log("No equity grant found for:", security_id);
         return {
             ...state,
             errors: [...state.errors, `Exercise references non-existent equity grant: ${security_id}`],
@@ -382,7 +376,9 @@ export const processEquityCompensationExercise = (state, transaction) => {
     };
 };
 
-export const dashboardStats = async ({ issuer, stockClasses, stockPlans, stakeholders, transactions }) => {
+export const dashboardStats = async (issuerId) => {
+    const { issuer, stockClasses, stockPlans, stakeholders, transactions } = await getAllStateMachineObjectsById(issuerId);
+
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
         const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
@@ -411,7 +407,7 @@ export const dashboardStats = async ({ issuer, stockClasses, stockPlans, stakeho
                 const stateWithoutTransactions = { ...state };
                 delete stateWithoutTransactions.transactions;
 
-                // console.log("\nProcessed transaction. New state:", JSON.stringify(stateWithoutTransactions, null, 2));
+                console.log("\nProcessed transaction. New state:", JSON.stringify(stateWithoutTransactions, null, 2));
             }),
             map((state) => {
                 // If there are errors, return the state as is
@@ -435,7 +431,7 @@ export const dashboardStats = async ({ issuer, stockClasses, stockPlans, stakeho
                     .filter((v) => v && v.amount)
                     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-                // console.log("validValuations", validValuations);
+                console.log("validValuations", validValuations);
 
                 return {
                     numOfStakeholders: state.numOfStakeholders,
@@ -455,18 +451,17 @@ export const dashboardStats = async ({ issuer, stockClasses, stockPlans, stakeho
         )
     );
 
-    // console.log("finalState", finalState);
+    console.log("finalState", finalState);
 
     return finalState;
 };
 
-export const captableStats = async ({ issuer, stockClasses, stockPlans, stakeholders, transactions }) => {
+export const captableStats = async (issuerId) => {
+    const { issuer, stockClasses, stockPlans, stakeholders, transactions } = await getAllStateMachineObjectsById(issuerId);
+
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
         const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
-        if (initialState.errors.size > 0) {
-            return { valid: false, errors: Array.from(initialState.errors) };
-        }
         return {
             isCapTableEmpty: true,
             summary: {
@@ -498,12 +493,11 @@ export const captableStats = async ({ issuer, stockClasses, stockPlans, stakehol
             tap((state) => {
                 const stateWithoutTransactions = { ...state };
                 delete stateWithoutTransactions.transactions;
-                // console.log("\nProcessed transaction. New state:", JSON.stringify(stateWithoutTransactions, null, 2));
+                console.log("\nProcessed transaction. New state:", JSON.stringify(stateWithoutTransactions, null, 2));
             }),
             map((state) => {
                 // If there are errors, return the state as is
                 if (state.errors.size > 0) {
-                    console.error("Errors found in state:", Array.from(state.errors));
                     return state;
                 }
                 // Just maintain section structures without calculating totals yet
@@ -652,22 +646,18 @@ export const captableStats = async ({ issuer, stockClasses, stockPlans, stakehol
         )
     );
 
-    // console.log("finalState", finalState);
+    console.log("finalState", finalState);
     return finalState;
 };
 
 export const verifyCapTable = async (captable) => {
     // Format manifest and get items for each object / transaction
     const { issuer, stockClasses, stockPlans, stakeholders, transactions } = captable;
-    // console.log({ captable });
+    console.log({ captable });
 
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
-        const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
-        if (initialState.errors.size > 0) {
-            return { valid: false, errors: Array.from(initialState.errors) };
-        }
-        return { valid: true, errors: [] };
+        return true;
     }
 
     const finalState = await lastValueFrom(
@@ -688,6 +678,6 @@ export const verifyCapTable = async (captable) => {
         )
     );
 
-    // console.log("finalState", finalState);
+    console.log("finalState", finalState);
     return finalState;
 };

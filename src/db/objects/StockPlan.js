@@ -13,7 +13,6 @@ const StockPlanSchema = new mongoose.Schema({
     stock_class_id: String, // Deprecated by OCF,
     stock_class_ids: [String],
     comments: [String],
-    is_onchain_synced: { type: Boolean, default: false },
     issuer: {
         type: String,
         ref: "Issuer",

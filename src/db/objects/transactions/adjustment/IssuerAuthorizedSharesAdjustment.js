@@ -11,7 +11,6 @@ const IssuerAuthorizedSharesAdjustmentSchema = new mongoose.Schema(
         new_shares_authorized: String,
         board_approval_date: String,
         stockholder_approval_date: String,
-        is_onchain_synced: { type: Boolean, default: false },
         issuer: {
             type: String,
             ref: "Issuer",
