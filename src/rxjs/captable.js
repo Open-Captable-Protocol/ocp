@@ -216,6 +216,7 @@ export const processCaptableConvertibleIssuance = (state, transaction, stakehold
 
     return {
         ...state,
+        totalRaised: state.totalRaised + amount,
         convertibles: {
             convertiblesSummary: {
                 ...existingConvertiblesSummary,
