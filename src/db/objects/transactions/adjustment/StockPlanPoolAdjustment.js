@@ -11,7 +11,6 @@ const StockPlanPoolAdjustmentSchema = new mongoose.Schema(
         board_approval_date: String,
         stockholder_approval_date: String,
         shares_reserved: String,
-        is_onchain_synced: { type: Boolean, default: false },
         issuer: {
             type: String,
             ref: "Issuer",

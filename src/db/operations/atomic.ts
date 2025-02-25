@@ -73,10 +73,6 @@ export const findByIdAndUpdate = (model, id, updatedData, options?: TQueryOption
     return model.findByIdAndUpdate(id, updatedData, includeSession(options));
 };
 
-export const findBySecurityIdAndUpdate = (model, securityId, updatedData, options?: TQueryOptions) => {
-    return model.findOneAndUpdate({ security_id: securityId }, updatedData, includeSession(options));
-};
-
 // DELETE
 
 export const findByIdAndDelete = (model, id, options?: TQueryOptions) => {

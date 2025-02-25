@@ -8,7 +8,7 @@ import { countIssuers, readIssuerById } from "../db/operations/read.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { checkPortal } from "../fairmint/checkPortal.js";
-import { addAddressesToWatch } from "../utils/websocket.ts";
+import { addAddressesToWatch } from "../utils/websocket.js";
 import { reflectPortal } from "../fairmint/reflectPortal.js";
 const issuer = Router();
 
@@ -42,16 +42,11 @@ issuer.get("/total-number", async (req, res) => {
 
 issuer.post("/create", async (req, res) => {
     try {
-        const { chain_id, ...issuerData } = req.body;
-
-        if (!chain_id) {
-            return res.status(400).send({ error: "chain_id is required" });
-        }
-
+        // OCF doesn't allow extra fields in their validation
         const incomingIssuerToValidate = {
             id: uuid(),
             object_type: "ISSUER",
-            ...issuerData,
+            ...req.body,
         };
 
         console.log("⏳ | Issuer to validate", incomingIssuerToValidate);
@@ -61,20 +56,18 @@ issuer.post("/create", async (req, res) => {
         if (exists && exists._id) {
             return res.status(200).send({ message: "issuer already exists", issuer: exists });
         }
-
         const issuerIdBytes16 = convertUUIDToBytes16(incomingIssuerToValidate.id);
         console.log("💾 | Issuer id in bytes16 ", issuerIdBytes16);
-        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized, Number(chain_id));
+        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized);
 
         const incomingIssuerForDB = {
             ...incomingIssuerToValidate,
             deployed_to: address,
             tx_hash: deployHash,
-            chain_id: Number(chain_id),
         };
 
         const issuer = await createIssuer(incomingIssuerForDB);
-        addAddressesToWatch(Number(chain_id), address);
+        addAddressesToWatch(address);
 
         console.log("✅ | Issuer created offchain:", issuer);
 
@@ -122,7 +115,7 @@ issuer.post("/create-fairmint-reflection", async (req, res) => {
         // saving Fairmint Obj by issuer id so we can retrieve it later on event listener
         console.log("🔥 | Creating Fairmint Data for issuer:", issuer._id);
         await createFairmintData({ id: issuer._id });
-        addAddressesToWatch(Number(issuer.chain_id), issuer.deployed_to);
+        addAddressesToWatch(address);
 
         await reflectPortal({ portalId: issuer._id });
 

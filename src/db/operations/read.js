@@ -24,6 +24,10 @@ export const readIssuerById = async (id) => {
     return await findById(Issuer, id);
 };
 
+export const readStakeholderByIssuerAssignedId = async (id) => {
+    return await findOne(Stakeholder, { issuer_assigned_id: id });
+};
+
 export const readStakeholderById = async (id) => {
     return await findById(Stakeholder, id);
 };
@@ -86,6 +90,14 @@ export const countVestingTerms = async () => {
     return await countDocuments(VestingTerms);
 };
 
+export const readStockIssuanceByCustomId = async (custom_id) => {
+    return await StockIssuance.find({ custom_id });
+};
+
+export const readConvertibleIssuanceById = async (id) => {
+    return await ConvertibleIssuance.findById(id);
+};
+
 export const getAllIssuerDataById = async (issuerId) => {
     const issuerStakeholders = await find(Stakeholder, { issuer: issuerId });
     const issuerStockClasses = await find(StockClass, { issuer: issuerId });
@@ -116,12 +128,8 @@ export const readFairmintDataById = async (id) => {
     return await Fairmint.findById(id);
 };
 
-export const readFairmintDataBySecurityId = async (securityId) => {
-    return await Fairmint.findOne({ security_id: securityId });
-};
-
-export const readFairmintDataByStakeholderId = async (stakeholderId) => {
-    return await Fairmint.findOne({ stakeholder_id: stakeholderId });
+export const readFairmintDataBySeriesId = async (series_id) => {
+    return await Fairmint.findOne({ series_id });
 };
 
 export const getAllStateMachineObjectsById = async (issuerId) => {
@@ -168,7 +176,7 @@ export const getAllStateMachineObjectsById = async (issuerId) => {
         return typeCompare !== 0 ? typeCompare : new Date(a.createdAt) - new Date(b.createdAt);
     });
 
-    console.log("All Transactions:", allTransactions.length);
+    console.log("allTransactions", allTransactions);
 
     return {
         issuer,
@@ -208,23 +216,3 @@ export async function sumEquityCompensationIssuances(issuerId, stockPlanId) {
         return 0;
     }
 }
-
-export const readWarrantIssuanceBySecurityId = async (securityId) => {
-    return await findOne(WarrantIssuance, { security_id: securityId });
-};
-
-export const readStockIssuanceBySecurityId = async (securityId) => {
-    return await findOne(StockIssuance, { security_id: securityId });
-};
-
-export const readConvertibleIssuanceBySecurityId = async (securityId) => {
-    return await findOne(ConvertibleIssuance, { security_id: securityId });
-};
-
-export const readEquityCompensationIssuanceBySecurityId = async (securityId) => {
-    return await findOne(EquityCompensationIssuance, { security_id: securityId });
-};
-
-export const readEquityCompensationExerciseBySecurityId = async (securityId) => {
-    return await findOne(EquityCompensationExercise, { security_id: securityId });
-};

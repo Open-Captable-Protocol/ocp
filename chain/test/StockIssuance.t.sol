@@ -1,136 +1,174 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
-import "./TestBase.sol";
-import { StorageLib } from "@core/Storage.sol";
-import { TxHelper, TxType } from "@libraries/TxHelper.sol";
-import { IssueStockParams } from "@libraries/Structs.sol";
-import { IStockFacet } from "@interfaces/IStockFacet.sol";
+import "forge-std/console.sol";
 
-contract DiamondStockIssuanceTest is DiamondTestBase {
-    function createStockClassAndStakeholder(uint256 sharesAuthorized) public returns (bytes16, bytes16) {
-        bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
-        bytes16 stockClassId = 0xd3373e0a4dd940000000000000000000;
+import "./CapTable.t.sol";
+import {
+    InitialShares,
+    IssuerInitialShares,
+    StockClassInitialShares,
+    Issuer,
+    StockClass,
+    StockIssuanceParams,
+    ShareNumbersIssued,
+    StockIssuance,
+    StockTransfer,
+    StockParams,
+    SecurityLawExemption
+} from "../src/lib/Structs.sol";
 
-        vm.expectEmit(true, false, false, false, address(capTable));
-        emit StakeholderCreated(stakeholderId);
-        IStakeholderFacet(address(capTable)).createStakeholder(stakeholderId);
-
-        vm.expectEmit(true, true, false, false, address(capTable));
-        emit StockClassCreated(stockClassId, "COMMON", 100, sharesAuthorized);
-        IStockClassFacet(address(capTable)).createStockClass(stockClassId, "COMMON", 100, sharesAuthorized);
-
-        return (stockClassId, stakeholderId);
+contract StockIssuanceTest is CapTableTest {
+    function createDummyStockIssuance(bytes16 stockClassId, bytes16 stakeholderId, uint256 quantity)
+        private
+        pure
+        returns (StockIssuance memory)
+    {
+        StockIssuanceParams memory params = StockIssuanceParams({
+            stock_class_id: stockClassId,
+            stock_plan_id: 0x00000000000000000000000000000000,
+            share_numbers_issued: ShareNumbersIssued(0, 0),
+            share_price: 10000000000,
+            quantity: quantity,
+            vesting_terms_id: 0x00000000000000000000000000000000,
+            cost_basis: 5000000000,
+            stock_legend_ids: new bytes16[](0),
+            issuance_type: "RSA",
+            comments: new string[](0),
+            custom_id: "R2-D2",
+            stakeholder_id: stakeholderId,
+            board_approval_date: "2023-01-01",
+            stockholder_approval_date: "2023-01-02",
+            consideration_text: "For services rendered",
+            security_law_exemptions: new SecurityLawExemption[](0)
+        });
+        return StockIssuance({
+            id: 0x00000000000000000000000000000000,
+            object_type: "TX_STOCK_ISSUANCE",
+            security_id: 0x00000000000000000000000000000000,
+            params: params
+        });
     }
 
     function testIssueStock() public {
-        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
-        bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
-        bytes16 id = 0xd3373e0a4dd940000000000000000010;
-        uint256 sharePrice = 10_000_000_000;
-        uint256 quantity = 1000;
+        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100000);
+        StockIssuance memory expectedIssuance = createDummyStockIssuance(stockClassId, stakeholderId, 1000);
 
-        IssueStockParams memory params = IssueStockParams({
-            id: id,
-            stock_class_id: stockClassId,
-            share_price: sharePrice,
-            quantity: quantity,
-            stakeholder_id: stakeholderId,
-            security_id: securityId,
-            custom_id: "STOCK_001",
-            stock_legend_ids_mapping: "LEGEND_1",
-            security_law_exemptions_mapping: "REG_D"
-        });
+        capTable.issueStock(expectedIssuance.params);
 
-        vm.expectEmit(true, true, false, true, address(capTable));
-        emit TxHelper.TxCreated(TxType.STOCK_ISSUANCE, abi.encode(params));
+        uint256 lastTransactionIndex = capTable.getTransactionsCount() - 1;
+        bytes memory lastTransaction = capTable.transactions(lastTransactionIndex);
+        StockIssuance memory actualIssuance = abi.decode(lastTransaction, (StockIssuance));
 
-        IStockFacet(address(capTable)).issueStock(params);
+        (, uint256 issuerSharesIssued,) = capTable.issuer();
+        (,,, uint256 actualSharesIssuedStockClass,) = capTable.getStockClassById(stockClassId);
+
+        // Compare the expected and actual issuance through deterministic encoding
+        assertEq(keccak256(abi.encode(actualIssuance.params)), keccak256(abi.encode(expectedIssuance.params)));
+        assertEq(expectedIssuance.object_type, actualIssuance.object_type);
+        // assert shares_issued for issuer and stock class
+        assertEq(expectedIssuance.params.quantity, issuerSharesIssued);
+        assertEq(expectedIssuance.params.quantity, actualSharesIssuedStockClass);
     }
 
-    function test_RevertInvalidStakeholder() public {
-        bytes16 invalidStakeholderId = 0xd3373e0a4dd940000000000000000099;
+    function testInvalidStakeholderAndStockClass() public {
+        bytes16 fakeStakeholderId = 0xd3373e0a4dd940000000000000000005;
+        bytes16 fakeStockClassId = 0xd3373e0a4dd940000000000000000000;
+        StockIssuance memory expectedIssuance = createDummyStockIssuance(fakeStockClassId, fakeStakeholderId, 10000);
+        console.log("Testing invalid stakeholder and stock class with fakeStakeholderId");
+        vm.expectRevert(abi.encodeWithSignature("NoStakeholder(bytes16)", fakeStakeholderId));
+        capTable.issueStock(expectedIssuance.params);
+    }
+
+    function testInvalidStakeholder() public {
+        bytes16 fakeStakeholderId = 0xd3373e0a4dd940000000000000000005;
+
         bytes16 stockClassId = 0xd3373e0a4dd940000000000000000000;
-        bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
-        bytes16 id = 0xd3373e0a4dd940000000000000000002;
+        capTable.createStockClass(stockClassId, "COMMON", 100, 10000);
+        uint256 quantity = 10000;
+        StockIssuance memory expectedIssuance = createDummyStockIssuance(stockClassId, fakeStakeholderId, quantity);
 
-        IssueStockParams memory params = IssueStockParams({
-            id: id,
-            stock_class_id: stockClassId,
-            share_price: 10_000_000_000,
-            quantity: 1000,
-            stakeholder_id: invalidStakeholderId,
-            security_id: securityId,
-            custom_id: "STOCK_002",
-            stock_legend_ids_mapping: "LEGEND_1",
-            security_law_exemptions_mapping: "REG_D"
-        });
-
-        vm.expectRevert(abi.encodeWithSignature("NoStakeholder(bytes16)", invalidStakeholderId));
-        IStockFacet(address(capTable)).issueStock(params);
+        bytes memory expectedError = abi.encodeWithSignature("NoStakeholder(bytes16)", fakeStakeholderId);
+        vm.expectRevert(expectedError);
+        capTable.issueStock(expectedIssuance.params);
     }
 
-    function test_RevertInvalidStockClass() public {
-        (, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
-        bytes16 invalidStockClassId = 0xd3373e0a4dd940000000000000000099;
-        bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
-        bytes16 id = 0xd3373e0a4dd940000000000000000002;
+    function testInvalidStockClass() public {
+        bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
+        capTable.createStakeholder(stakeholderId, "INDIVIDUAL", "EMPLOYEE");
 
-        IssueStockParams memory params = IssueStockParams({
-            id: id,
-            stock_class_id: invalidStockClassId,
-            share_price: 10_000_000_000,
-            quantity: 1000,
-            stakeholder_id: stakeholderId,
-            security_id: securityId,
-            custom_id: "STOCK_003",
-            stock_legend_ids_mapping: "LEGEND_1",
-            security_law_exemptions_mapping: "REG_D"
-        });
+        bytes16 stockClassId = 0x12345678901234567890123456789012;
+        uint256 quantity = 10000;
+        StockIssuance memory expectedIssuance = createDummyStockIssuance(stockClassId, stakeholderId, quantity);
 
-        vm.expectRevert(abi.encodeWithSignature("InvalidStockClass(bytes16)", invalidStockClassId));
-        IStockFacet(address(capTable)).issueStock(params);
+        bytes memory expectedError = abi.encodeWithSignature("InvalidStockClass(bytes16)", stockClassId);
+        vm.expectRevert(expectedError);
+        capTable.issueStock(expectedIssuance.params);
     }
 
-    function test_RevertInsufficientIssuerShares() public {
-        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100);
-        bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
-        bytes16 id = 0xd3373e0a4dd940000000000000000002;
+    function testInvalidQuantityReverts() public {
+        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100000);
+        uint256 quantity = 0;
+        StockIssuance memory expectedIssuance = createDummyStockIssuance(stockClassId, stakeholderId, quantity);
 
-        IssueStockParams memory params = IssueStockParams({
-            id: id,
+        bytes memory expectedError = abi.encodeWithSignature(
+            "InvalidQuantityOrPrice(uint256,uint256)", quantity, expectedIssuance.params.share_price
+        );
+        vm.expectRevert(expectedError);
+        capTable.issueStock(expectedIssuance.params);
+    }
+
+    function testIssuingExcessiveStockAgainstIssuerAuthorizedShares() public {
+        uint256 stockClassIntialSharesAuthorized = issuerInitialSharesAuthorized - 100;
+        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(stockClassIntialSharesAuthorized);
+        uint256 excessiveQuantity = 10000000000001; // More than the Issuer authorized amount
+        StockIssuanceParams memory params = StockIssuanceParams({
             stock_class_id: stockClassId,
-            share_price: 10_000_000_000,
-            quantity: 1000,
+            stock_plan_id: 0x00000000000000000000000000000000,
+            share_numbers_issued: ShareNumbersIssued(0, 0),
+            share_price: 10000000000,
+            quantity: excessiveQuantity,
+            vesting_terms_id: 0x00000000000000000000000000000000,
+            cost_basis: 5000000000,
+            stock_legend_ids: new bytes16[](0),
+            issuance_type: "RSA",
+            comments: new string[](0),
+            custom_id: "R2-D2",
             stakeholder_id: stakeholderId,
-            security_id: securityId,
-            custom_id: "STOCK_004",
-            stock_legend_ids_mapping: "LEGEND_1",
-            security_law_exemptions_mapping: "REG_D"
+            board_approval_date: "2023-01-01",
+            stockholder_approval_date: "2023-01-02",
+            consideration_text: "For services rendered",
+            security_law_exemptions: new SecurityLawExemption[](0)
+        });
+
+        vm.expectRevert("Issuer: Insufficient shares authorized");
+        capTable.issueStock(params);
+    }
+
+    function testIssuingExcessiveStockAgainstAuthorizedShares() public {
+        uint256 stockClassAuthorizedShares = 1000;
+        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(stockClassAuthorizedShares);
+        uint256 excessiveQuantity = stockClassAuthorizedShares + 1; // More than the authorized amount
+        StockIssuanceParams memory params = StockIssuanceParams({
+            stock_class_id: stockClassId,
+            stock_plan_id: 0x00000000000000000000000000000000,
+            share_numbers_issued: ShareNumbersIssued(0, 0),
+            share_price: 10000000000,
+            quantity: excessiveQuantity,
+            vesting_terms_id: 0x00000000000000000000000000000000,
+            cost_basis: 5000000000,
+            stock_legend_ids: new bytes16[](0),
+            issuance_type: "RSA",
+            comments: new string[](0),
+            custom_id: "R2-D2",
+            stakeholder_id: stakeholderId,
+            board_approval_date: "2023-01-01",
+            stockholder_approval_date: "2023-01-02",
+            consideration_text: "For services rendered",
+            security_law_exemptions: new SecurityLawExemption[](0)
         });
 
         vm.expectRevert("StockClass: Insufficient shares authorized");
-        IStockFacet(address(capTable)).issueStock(params);
-    }
-
-    function test_RevertInsufficientStockClassShares() public {
-        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100);
-        bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
-        bytes16 id = 0xd3373e0a4dd940000000000000000002;
-
-        IssueStockParams memory params = IssueStockParams({
-            id: id,
-            stock_class_id: stockClassId,
-            share_price: 10_000_000_000,
-            quantity: 101,
-            stakeholder_id: stakeholderId,
-            security_id: securityId,
-            custom_id: "STOCK_005",
-            stock_legend_ids_mapping: "LEGEND_1",
-            security_law_exemptions_mapping: "REG_D"
-        });
-
-        vm.expectRevert("StockClass: Insufficient shares authorized");
-        IStockFacet(address(capTable)).issueStock(params);
+        capTable.issueStock(params);
     }
 }
