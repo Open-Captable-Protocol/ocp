@@ -4,13 +4,13 @@ export const SUPPORTED_CHAINS = {
         // Base Mainnet
         name: "Base Mainnet",
         rpcUrl: process.env.BASE_RPC_URL,
-        wsUrl: process.env.BASE_WS_URL,
+        wsUrl: (process.env.BASE_RPC_URL || "").replace("https://", "wss://"),
     },
     84532: {
         // Base Sepolia
         name: "Base Sepolia",
         rpcUrl: process.env.BASE_SEPOLIA_RPC_URL,
-        wsUrl: process.env.BASE_SEPOLIA_WS_URL,
+        wsUrl: (process.env.BASE_SEPOLIA_RPC_URL || "").replace("https://", "wss://"),
     },
     31337: {
         // Anvil
