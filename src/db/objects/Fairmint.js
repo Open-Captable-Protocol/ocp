@@ -20,6 +20,7 @@ const FairmintSchema = new mongoose.Schema(
         security_id: { type: String, default: null },
         stakeholder_id: { type: String, default: null },
         attributes: { type: mongoose.Schema.Types.Mixed, default: {} },
+        date: { type: String, default: null },
     },
     { timestamps: true }
 );
