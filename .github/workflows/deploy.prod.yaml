@@ -52,8 +52,7 @@ jobs:
                   ETHERSCAN_L2_API_KEY: ${{ secrets.ETHERSCAN_L2_API_KEY }}
                   SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
                   DATABASE_URL: ${{ secrets.DATABASE_URL }}
-                  RPC_URL: ${{ secrets.RPC_URL }}
-                  CHAIN_ID: ${{ secrets.CHAIN_ID }}
+                  BASE_RPC_URL: ${{ secrets.BASE_RPC_URL }}
 
               run: |
                   # Generate timestamp for deployment
@@ -113,8 +112,7 @@ jobs:
                   -e NODE_ENV="production" \
                   -e SENTRY_DSN="${{ secrets.SENTRY_DSN }}" \
                   -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-                  -e RPC_URL="${{ secrets.RPC_URL }}" \
-                  -e CHAIN_ID="${{ secrets.CHAIN_ID }}" \
+                  -e BASE_RPC_URL="${{ secrets.BASE_RPC_URL }}" \
                   -e PORT=8080 \
                   -e PRIVATE_KEY="${{ secrets.PRIVATE_KEY }}" \
                   -e ETHERSCAN_L2_API_KEY="${{ secrets.ETHERSCAN_L2_API_KEY }}" \
