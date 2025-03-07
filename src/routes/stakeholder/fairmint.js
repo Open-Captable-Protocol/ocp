@@ -44,11 +44,10 @@ router.post("/create-fairmint-reflection", async (req, res) => {
             });
         }
 
-        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id);
-
         const stakeholder = await createStakeholder(incomingStakeholderForDB);
         const fairmintData = await createFairmintData({ stakeholder_id: stakeholder._id });
         console.log("✅ | Fairmint Data created:", fairmintData);
+        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id);
 
         console.log("✅ | Stakeholder created offchain:", stakeholder);
 
