@@ -73,7 +73,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
     const _stakeholder_id = convertBytes16ToUUID(stakeholder_id);
 
     // If we have fairmint data, get historical date
-    const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
+    const dateToUse = get(fairmintData, "date", chainDate) || chainDate;
 
     const createdStockIssuance = await upsertStockIssuanceById(_id, {
         id: _id,
@@ -427,7 +427,7 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
     const _stakeholder_id = convertBytes16ToUUID(stakeholder_id);
 
     // If we have fairmint data, get historical date
-    const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
+    const dateToUse = get(fairmintData, "date", chainDate) || chainDate;
 
     const createdConvertibleIssuance = await upsertConvertibleIssuanceById(_id, {
         id: _id,
@@ -495,7 +495,7 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp, hash) 
     const _stakeholder_id = convertBytes16ToUUID(stakeholder_id);
 
     // If we have fairmint data, get historical date
-    const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
+    const dateToUse = get(fairmintData, "date", chainDate) || chainDate;
 
     const createdWarrantIssuance = await upsertWarrantIssuanceById(_id, {
         _id: _id,
@@ -580,7 +580,7 @@ export const handleEquityCompensationIssuance = async (equity, issuerId, timesta
     const _stakeholder_id = convertBytes16ToUUID(stakeholder_id);
 
     // If we have fairmint data, get historical date
-    const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
+    const dateToUse = get(fairmintData, "date", chainDate) || chainDate;
 
     const createdEquityCompIssuance = await upsertEquityCompensationIssuanceById(_id, {
         _id: _id,
@@ -665,7 +665,7 @@ export const handleEquityCompensationExercise = async (exercise, issuerId, times
     const _resulting_stock_security_id = convertBytes16ToUUID(resulting_stock_security_id);
 
     // If we have fairmint data, get historical date
-    const dateToUse = fairmintData && fairmintData._id ? get(fairmintData, "date", chainDate) : chainDate;
+    const dateToUse = get(fairmintData, "date", chainDate) || chainDate;
 
     const createdExercise = await upsertEquityCompensationExerciseById(_id, {
         id: _id,

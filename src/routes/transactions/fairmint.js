@@ -93,6 +93,7 @@ fairmintTransactions.post("/issuance/stock-fairmint-reflection", async (req, res
         await upsertFairmintDataBySecurityId(incomingStockIssuance.security_id, {
             security_id: incomingStockIssuance.security_id,
             series_id: payload.series_id,
+            date: incomingStockIssuance.date,
             attributes: {
                 series_name: payload.series_name,
             },
@@ -269,8 +270,6 @@ fairmintTransactions.post("/exercise/equity-compensation-fairmint-reflection", a
             quantity: incomingEquityCompensationExercise.quantity,
         });
 
-        // TODO: Store Historical Transactions
-
         res.status(200).send({ equityCompensationExercise: createdExercise });
     } catch (error) {
         console.error(error);
@@ -342,6 +341,7 @@ fairmintTransactions.post("/issuance/convertible-fairmint-reflection", async (re
         await upsertFairmintDataBySecurityId(incomingConvertibleIssuance.security_id, {
             security_id: incomingConvertibleIssuance.security_id,
             series_id: payload.series_id,
+            date: incomingConvertibleIssuance.date,
             attributes: {
                 series_name: payload.series_name,
             },
@@ -423,6 +423,7 @@ fairmintTransactions.post("/issuance/warrant-fairmint-reflection", async (req, r
         await upsertFairmintDataBySecurityId(incomingWarrantIssuance.security_id, {
             security_id: incomingWarrantIssuance.security_id,
             series_id: payload.series_id,
+            date: incomingWarrantIssuance.date,
             attributes: {
                 series_name: payload.series_name,
             },

@@ -56,8 +56,7 @@ jobs:
                   ETHERSCAN_L2_API_KEY: ${{ secrets.ETHERSCAN_L2_API_KEY }}
                   SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
                   DATABASE_URL: ${{ secrets.DATABASE_URL }}
-                  RPC_URL: ${{ secrets.RPC_URL }}
-                  CHAIN_ID: ${{ secrets.CHAIN_ID }}
+                  BASE_SEPOLIA_RPC_URL: ${{ secrets.BASE_SEPOLIA_RPC_URL }}
 
               run: |
                   # Generate timestamp for deployment
@@ -119,8 +118,7 @@ jobs:
                       -e NODE_ENV='development' \
                       -e SENTRY_DSN='${SENTRY_DSN}' \
                       -e DATABASE_URL='${DATABASE_URL}' \
-                      -e RPC_URL='${RPC_URL}' \
-                      -e CHAIN_ID='${CHAIN_ID}' \
+                      -e BASE_SEPOLIA_RPC_URL='${BASE_SEPOLIA_RPC_URL}' \
                       -e PORT=8080 \
                       -e PRIVATE_KEY='${PRIVATE_KEY}' \
                       -e ETHERSCAN_L2_API_KEY='${ETHERSCAN_L2_API_KEY}' \
