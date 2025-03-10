@@ -45,7 +45,7 @@ import {
 import { createStockPlanPoolAdjustment } from "../db/operations/create.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import { getJoiErrorMessage } from "../chain-operations/utils.js";
-import { upsertFairmintDataBySeriesId } from "../db/operations/update.js";
+import { upsertFairmintDataBySecurityId } from "../db/operations/update.js";
 import { SERIES_TYPE } from "../fairmint/enums.js";
 import { reflectSeries } from "../fairmint/reflectSeries.js";
 import get from "lodash/get";
@@ -140,8 +140,10 @@ transactions.post("/issuance/Stock-fairmint-reflection", async (req, res) => {
 
         await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
 
-        await upsertFairmintDataBySeriesId(payload.series_id, {
+        await upsertFairmintDataBySecurityId(incomingStockIssuance.security_id, {
+            security_id: incomingStockIssuance.security_id,
             series_id: payload.series_id,
+            date: incomingStockIssuance.date,
             attributes: {
                 series_name: payload.series_name,
             },

@@ -1,9 +1,9 @@
 // Store a global mongo session to allows us to bundle CRUD operations into one transaction
 
-import { Connection, QueryOptions, Model, ClientSession, FilterQuery, UpdateQuery, ProjectionType } from "mongoose";
+import { Connection, QueryOptions, Model, ClientSession, FilterQuery, UpdateQuery, ProjectionType, Document } from "mongoose";
 import { connectDB } from "../config/mongoose";
 
-type TQueryOptions<T = any> = QueryOptions<T> | undefined;
+type TQueryOptions<T> = QueryOptions<T> | undefined;
 type TSession = ClientSession | null;
 
 let _globalSession: TSession = null;
@@ -65,8 +65,8 @@ Wrapped mongoose db calls. All mongo interaction should go through a function be
 
 // CREATE
 
-export const create = <T>(model: Model<T>, options?: TQueryOptions<T>): Promise<T> => {
-    return (model as Model<T>).create(includeSession(options));
+export const save = <T>(document: Document<T>, options?: TQueryOptions<T>): Promise<T> => {
+    return document.save(includeSession(options)) as Promise<T>;
 };
 
 // UPDATE
