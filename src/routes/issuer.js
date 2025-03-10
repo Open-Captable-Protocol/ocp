@@ -80,6 +80,13 @@ issuer.post("/create", async (req, res) => {
 
 issuer.post("/create-fairmint-reflection", async (req, res) => {
     try {
+        const { chain_id } = req.body;
+        delete req.body.chain_id;
+
+        if (!chain_id) {
+            return res.status(400).send({ error: "chain_id is required" });
+        }
+
         // OCF doesn't allow extra fields in their validation
         const incomingIssuerToValidate = {
             id: uuid(),
@@ -103,12 +110,13 @@ issuer.post("/create-fairmint-reflection", async (req, res) => {
 
         console.log("💾 | Issuer id in bytes16 ", issuerIdBytes16);
 
-        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized);
+        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized, Number(chain_id));
 
         const incomingIssuerForDB = {
             ...incomingIssuerToValidate,
             deployed_to: address,
             tx_hash: deployHash,
+            chain_id: Number(chain_id),
         };
 
         const issuer = await createIssuer(incomingIssuerForDB);

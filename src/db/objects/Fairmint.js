@@ -18,6 +18,7 @@ const FairmintSchema = new mongoose.Schema(
         _id: { type: String, default: () => uuid() },
         series_id: { type: String },
         attributes: { type: mongoose.Schema.Types.Mixed, default: {} },
+        date: { type: String, default: null },
     },
     { timestamps: true }
 );
