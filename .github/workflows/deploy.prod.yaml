@@ -27,6 +27,15 @@ jobs:
             - name: Install Node Dependencies
               run: yarn install --frozen-lockfile
 
+            - name: Setup OCF
+              run: |
+                  cd ocf
+                  yarn install --frozen-lockfile
+                  cd ..
+
+            - name: Install ESLint JSON Plugin
+              run: yarn add -D eslint-plugin-json
+
             - name: Install Foundry
               uses: foundry-rs/foundry-toolchain@v1
               with:
