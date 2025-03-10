@@ -1,12 +1,10 @@
 <div align="center">
-  <a href="https://github.com/transfer-agent-protocol/tap-cap-table/blob/main/LICENSE">
-    <img alt="License" src="https://img.shields.io/github/license/transfer-agent-protocol/tap-cap-table">
+  <a href="https://github.com/victormimo/open-captable-protocol/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/victormimo/open-captable-protocol">
   </a>
 </div>
 
 # Documentation
-
-Read official docs at [https://docs.transferagentprotocol.xyz](https://docs.transferagentprotocol.xyz/) to get started.
 
 This repo is based on the [Open Cap Table Coalition](https://github.com/Open-Cap-Table-Coalition/Open-Cap-Format-OCF) standard, with the license included in its entirety.
 
@@ -19,7 +17,9 @@ We welcome all contributions. Please give a quick read to our [CONTRIBUTING](./C
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## OUTDATED README BELOW
+
 ---
+
 ## Running the cap table server
 
 After the deployment script is completed, start the server with nodemon:
@@ -31,16 +31,12 @@ yarn dev
 Inspect the database with Mongo Compass. To connect to it, use the same string that we provided in the `.env` file:
 
 ```sh
-mongodb://tap:tap@localhost:27017/mongo?authSource=admin&retryWrites=true&w=majority
+mongodb://ocp:ocp@localhost:27017/mongo?authSource=admin&retryWrites=true&w=majority
 ```
 
 ## Seeding and deploying the cap table with sample data
 
 There are two ways of seeding the cap table:
-
-### Using the manifest file
-
-We provide sample data to test deploying the cap table onchain. You can inspect and change it in [/src/db/samples/notPoet](./src/db/samples/notPoet/), which contains [Manifest.ocf.json](./src/db/samples/notPoet/Manifest.ocf.json) file with [Poet's](https://poet.network) actual cap table, and some partial data in primary objects (stakeholders, stock classes, vesting terms, valuation, etc).
 
 You can change it to your own startup if you want to test it.
 
