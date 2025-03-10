@@ -10,7 +10,7 @@
     "t": "npx tsx src/test.mjs",
     "test-captables": "npx tsx testCaptables.js",
     "prod": "npx tsx src/app.js",
-    "dev": "USE_ENV_FILE=.env.local npx tsx watch src/app.js",
+    "dev": "npx tsx watch src/app.js",
     "format": "prettier --write \"src/**/*.{js,mjs,ts,mts,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,mjs,ts,mts,json,md}\"",
     "lint": "eslint \"src/**/*.{js,ts,mjs,mts}\"",
