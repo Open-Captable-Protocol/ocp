@@ -140,8 +140,10 @@ transactions.post("/issuance/Stock-fairmint-reflection", async (req, res) => {
 
         await convertAndCreateIssuanceStockOnchain(contract, incomingStockIssuance);
 
-        await upsertFairmintDataBySecurityId(payload.series_id, {
-            security_id: payload.series_id,
+        await upsertFairmintDataBySecurityId(incomingStockIssuance.security_id, {
+            security_id: incomingStockIssuance.security_id,
+            series_id: payload.series_id,
+            date: incomingStockIssuance.date,
             attributes: {
                 series_name: payload.series_name,
             },
