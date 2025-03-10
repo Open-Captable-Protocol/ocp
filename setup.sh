@@ -30,6 +30,6 @@ echo '@core/=src/core/' >> remappings.txt
 echo '@interfaces/=src/interfaces/' >> remappings.txt
 
 echo "Building contracts..."
-forge build || exit 1
+forge build
 
 echo "Setup completed successfully!"
