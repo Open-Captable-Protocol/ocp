@@ -12,6 +12,11 @@ router.get("/", async (req, res) => {
     res.status(200).send(`Welcome to the future of Transfer Agents 💸`);
 });
 
+router.get("/health", async (req, res) => {
+    res.status(200).send(`OK`);
+});
+
+/* Outdated approach, not recommended as it doesn't translate transactions onchain */
 router.post("/mint-cap-table", async (req, res) => {
     try {
         const manifest = await processManifest(req);

@@ -2,7 +2,7 @@ import { convertUUIDToBytes16 } from "../../utils/convertUUID.js";
 import { toScaledBigNumber } from "../../utils/convertToFixedPointDecimals.js";
 
 export const convertAndCreateTransferStockOnchain = async (contract, transfer) => {
-    const { quantity, transferorId, transfereeId, stockClassId, isBuyerVerified, sharePrice } = transfer;
+    const { quantity, transferorId, transfereeId, stockClassId, sharePrice } = transfer;
 
     // First: convert OCF Types to Onchain Types
     const transferorIdBytes16 = convertUUIDToBytes16(transferorId);
@@ -12,14 +12,7 @@ export const convertAndCreateTransferStockOnchain = async (contract, transfer) =
     const quantityScaled = toScaledBigNumber(quantity);
     const sharePriceScaled = toScaledBigNumber(sharePrice);
 
-    const tx = await contract.transferStock(
-        transferorIdBytes16,
-        transfereeIdBytes16,
-        stockClassIdBytes16,
-        isBuyerVerified,
-        quantityScaled,
-        sharePriceScaled
-    );
+    const tx = await contract.transferStock(transferorIdBytes16, transfereeIdBytes16, stockClassIdBytes16, quantityScaled, sharePriceScaled);
     await tx.wait();
     console.log(`Initiate Stock Transfer from transferee ID: ${transfereeId} to transferor ID: ${transferorId}`);
     console.log(`Quantity to be transferred: ${quantity}`);
