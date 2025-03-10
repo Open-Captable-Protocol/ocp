@@ -24,10 +24,6 @@ export const readIssuerById = async (id) => {
     return await findById(Issuer, id);
 };
 
-export const readStakeholderByIssuerAssignedId = async (id) => {
-    return await findOne(Stakeholder, { issuer_assigned_id: id });
-};
-
 export const readStakeholderById = async (id) => {
     return await findById(Stakeholder, id);
 };
@@ -88,14 +84,6 @@ export const countValuations = async () => {
 
 export const countVestingTerms = async () => {
     return await countDocuments(VestingTerms);
-};
-
-export const readStockIssuanceByCustomId = async (custom_id) => {
-    return await StockIssuance.find({ custom_id });
-};
-
-export const readConvertibleIssuanceById = async (id) => {
-    return await ConvertibleIssuance.findById(id);
 };
 
 export const getAllIssuerDataById = async (issuerId) => {

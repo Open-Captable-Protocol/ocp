@@ -18,7 +18,16 @@ const HistoricalTransactionSchema = new mongoose.Schema(
                 "StockAcceptance",
                 "IssuerAuthorizedSharesAdjustment",
                 "StockClassAuthorizedSharesAdjustment",
+                "StockPlanPoolAdjustment",
+                "EquityCompensationIssuance",
+                "EquityCompensationExercise",
+                "ConvertibleIssuance",
+                "WarrantIssuance",
             ], // List of possible models
+            required: true,
+        },
+        hash: {
+            type: String,
             required: true,
         },
         issuer: {

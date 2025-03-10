@@ -36,4 +36,8 @@ tsconfig.tsbuildinfo
 
 # Private keys
 *.pem
+.env.*
 chain/out
+chain/lib/*
+solana/*
+*.ignore.js

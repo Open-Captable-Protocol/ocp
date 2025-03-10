@@ -1,4 +1,4 @@
-import { find } from "../../db/operations/atomic.js";
+import { find } from "../../db/operations/atomic.ts";
 import Stakeholder from "../../db/objects/Stakeholder.js";
 import StockPlan from "../../db/objects/StockPlan.js";
 import StockIssuance from "../../db/objects/transactions/issuance/StockIssuance.js";

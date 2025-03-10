@@ -241,7 +241,7 @@ export const processCaptableConvertibleIssuance = (state, transaction, stakehold
 };
 
 export const processCaptableWarrantAndNonPlanAwardIssuance = (state, transaction, stakeholder, originalStockClass) => {
-    console.log("original stock class", originalStockClass);
+    // console.log("original stock class", originalStockClass);
     const { quantity, object_type, compensation_type, exercise_triggers } = transaction;
     let newSummary = { ...state.summary };
 
