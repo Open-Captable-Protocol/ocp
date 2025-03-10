@@ -14,7 +14,7 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v2
               with:
-                  submodules: true
+                  submodules: recursive
                   fetch-depth: 0
 
             # Setup and cache dependencies
@@ -82,6 +82,8 @@ jobs:
                     --exclude='deploy_key' \
                     --include='chain/out' \
                     --include='chain/out/**' \
+                    --include='ocf/' \
+                    --include='ocf/**' \
                     -e "ssh -i deploy_key -o StrictHostKeyChecking=no" \
                     $DEPLOY_DIR/ \
                     ubuntu@"$HOST":/home/ubuntu/app-${DEPLOY_TIME}
