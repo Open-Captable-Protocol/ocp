@@ -8,10 +8,6 @@ forge clean
 # Remove current installations
 rm -rf lib/*
 
-# Initialize git submodules if they exist
-git submodule init
-git submodule update
-
 # Install dependencies with  to prevent git issues
 echo "Installing openzeppelin-contracts..."
 forge install OpenZeppelin/openzeppelin-contracts@v4.9.3  || exit 1
