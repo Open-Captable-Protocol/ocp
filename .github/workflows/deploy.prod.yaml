@@ -24,25 +24,8 @@ jobs:
                   node-version: "18"
                   cache: "yarn"
 
-            - name: Initialize Submodules
-              run: |
-                  git submodule update --init --recursive
-
             - name: Install Node Dependencies
               run: yarn install --frozen-lockfile
-
-            - name: Setup OCF
-              run: |
-                  if [ ! -d "ocf" ]; then
-                    echo "OCF directory not found. Creating it..."
-                    mkdir -p ocf
-                  fi
-                  cd ocf
-                  yarn install --frozen-lockfile
-                  cd ..
-
-            - name: Install ESLint JSON Plugin
-              run: yarn add -D eslint-plugin-json
 
             - name: Install Foundry
               uses: foundry-rs/foundry-toolchain@v1
@@ -62,7 +45,6 @@ jobs:
             - name: Check Formatting
               run: yarn format:check
 
-            # Build and Deploy
             - name: Deploy
               shell: bash
               env:
@@ -99,8 +81,6 @@ jobs:
                     --exclude='deploy_key' \
                     --include='chain/out' \
                     --include='chain/out/**' \
-                    --include='ocf/' \
-                    --include='ocf/**' \
                     -e "ssh -i deploy_key -o StrictHostKeyChecking=no" \
                     $DEPLOY_DIR/ \
                     ubuntu@"$HOST":/home/ubuntu/app-${DEPLOY_TIME}
@@ -144,10 +124,10 @@ jobs:
                       ocp-prod:${DEPLOY_TIME} && \
 
                       # Wait for container to be healthy
-                      wait_for_health "\$CONTAINER_NAME" && \
+                      wait_for_health \"\$CONTAINER_NAME\" && \
                       if [ \$? -eq 0 ]; then
-                          handle_container_switch "\$CONTAINER_NAME" "${DEPLOY_TIME}" "prod"
+                          handle_container_switch \"\$CONTAINER_NAME\" \"${DEPLOY_TIME}\" \"prod\"
                       else
-                          handle_failed_deployment "\$CONTAINER_NAME" "${DEPLOY_TIME}" "prod"
+                          handle_failed_deployment \"\$CONTAINER_NAME\" \"${DEPLOY_TIME}\" \"prod\"
                       fi
                   "
