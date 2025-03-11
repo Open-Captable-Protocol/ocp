@@ -7,7 +7,7 @@ import importPlugin from "eslint-plugin-import";
 export default [
     {
         files: ["**/*.{js,ts,mjs,mts}"],
-        ignores: ["**/*.json", "node_modules/**", "eslint.config.js"],
+        ignores: ["node_modules/**", "eslint.config.js"],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: "module",
@@ -30,7 +30,9 @@ export default [
         settings: {
             "import/resolver": {
                 node: {
-                    extensions: [".js", ".ts"],
+                    extensions: [".js", ".ts", ".json"],
+                    moduleDirectory: ["node_modules", "."],
+                    paths: ["node_modules"],
                 },
             },
         },

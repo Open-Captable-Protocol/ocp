@@ -28,7 +28,7 @@ export const removeWalletFromStakeholder = async (contract, id, wallet) => {
     return receipt;
 };
 
-//TODO: to decide if we want to also return offchain data.
+// TODO: to decide if we want to also return offchain data.
 export const getStakeholderById = async (contract, id) => {
     // First: convert OCF Types to Onchain Types
     const stakeholderIdBytes16 = convertUUIDToBytes16(id);

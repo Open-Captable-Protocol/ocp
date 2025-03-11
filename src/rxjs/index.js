@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-unresolved, import/named
 import { from, lastValueFrom } from "rxjs";
 import { scan, tap, last, map } from "rxjs/operators";
 import { dashboardInitialState, processDashboardConvertibleIssuance, processDashboardStockIssuance } from "./dashboard.js";

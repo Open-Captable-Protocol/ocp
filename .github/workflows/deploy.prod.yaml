@@ -29,6 +29,8 @@ jobs:
 
             - name: Install Foundry
               uses: foundry-rs/foundry-toolchain@v1
+              with:
+                  version: stable
 
             - name: Run Forge Install Script
               run: chmod +x setup.sh && ./setup.sh
@@ -57,6 +59,8 @@ jobs:
               run: |
                   # Generate timestamp for deployment
                   DEPLOY_TIME=$(date +%s)
+                  echo "DEPLOY_TIME: $DEPLOY_TIME"
+
                   # Save SSH key and set permissions
                   echo "$SSH_PRIVATE_KEY" > deploy_key
                   chmod 600 deploy_key
@@ -81,50 +85,49 @@ jobs:
                     $DEPLOY_DIR/ \
                     ubuntu@"$HOST":/home/ubuntu/app-${DEPLOY_TIME}
 
-                  sudo su && \
-                  cd /home/ubuntu/app-${DEPLOY_TIME} && \
-                  echo "Building image on host..." && \
-                  # Source the functions
-                  source ./scripts/docker_container_utils.sh && \
-                  docker build -t ocp-prod:${DEPLOY_TIME} -f Dockerfile.prod . && \
+                  # Execute deployment on server
+                  ssh -i deploy_key -o StrictHostKeyChecking=no ubuntu@"$HOST" "
+                      sudo su && \
+                      cd /home/ubuntu/app-${DEPLOY_TIME} && \
+                      echo 'Building image on host...' && \
+                      # Source the functions
+                      source ./scripts/docker_container_utils.sh && \
+                      docker build -t ocp-prod:${DEPLOY_TIME} -f Dockerfile.prod . && \
 
-                  # Initial cleanup of dangling images and stopped containers
-                  echo "Cleaning up old resources..." && \
-                  docker ps -q --filter "publish=8081" | xargs -r docker rm -f && \
-                  docker ps -q --filter "publish=8082" | xargs -r docker rm -f && \
-                  docker container prune -f && \
-                  docker image prune -f && \
+                      # Initial cleanup
+                      echo 'Cleaning up old resources...' && \
+                      docker ps -q --filter 'publish=8081' | xargs -r docker rm -f && \
+                      docker ps -q --filter 'publish=8082' | xargs -r docker rm -f && \
+                      docker container prune -f && \
+                      docker image prune -f && \
 
-                  # Start new container on different port
-                  echo "Starting new container..." && \
-                  CONTAINER_NAME=ocp-prod-${DEPLOY_TIME} && \
-                  NEW_PORT=$(get_port)
-                  echo "Using port: $NEW_PORT" && \
+                      # Start new container
+                      echo 'Starting new container...' && \
+                      CONTAINER_NAME=ocp-prod-${DEPLOY_TIME} && \
 
-                  docker run --name $CONTAINER_NAME -d \
-                  -p ${NEW_PORT}:8080 \
-                  --health-cmd="curl -f http://localhost:8080/health || exit 1" \
-                  --health-interval=2s \
-                  --health-retries=3 \
-                  --health-timeout=5s \
-                  --restart always \
-                  -e DOCKER_ENV="true" \
-                  -e NODE_ENV="production" \
-                  -e SENTRY_DSN="${{ secrets.SENTRY_DSN }}" \
-                  -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-                  -e BASE_RPC_URL="${{ secrets.BASE_RPC_URL }}" \
-                  -e PORT=8080 \
-                  -e PRIVATE_KEY="${{ secrets.PRIVATE_KEY }}" \
-                  -e ETHERSCAN_L2_API_KEY="${{ secrets.ETHERSCAN_L2_API_KEY }}" \
-                  -v "/home/ubuntu/global-bundle.pem:/global-bundle.pem" \
-                  ocp-prod:${DEPLOY_TIME} && \
+                      # Run container
+                      docker run --name \$CONTAINER_NAME -d \
+                      --health-cmd='curl -f http://localhost:8080/health || exit 1' \
+                      --health-interval='2s' \
+                      --health-retries='3' \
+                      --health-timeout='5s' \
+                      --restart always \
+                      -e DOCKER_ENV='true' \
+                      -e NODE_ENV='production' \
+                      -e SENTRY_DSN='${SENTRY_DSN}' \
+                      -e DATABASE_URL='${DATABASE_URL}' \
+                      -e BASE_RPC_URL='${BASE_RPC_URL}' \
+                      -e PORT=8080 \
+                      -e PRIVATE_KEY='${PRIVATE_KEY}' \
+                      -e ETHERSCAN_L2_API_KEY='${ETHERSCAN_L2_API_KEY}' \
+                      -v '/home/ubuntu/global-bundle.pem:/global-bundle.pem' \
+                      ocp-prod:${DEPLOY_TIME} && \
 
-                  # Wait for container to be healthy
-                  wait_for_health "$CONTAINER_NAME" && \
-
-                  # If container is healthy, switch traffic
-                  if [ $? -eq 0 ]; then
-                      handle_container_switch "$CONTAINER_NAME" "${DEPLOY_TIME}" "prod"
-                  else
-                      handle_failed_deployment "$CONTAINER_NAME" "${DEPLOY_TIME}" "prod"
-                  fi
+                      # Wait for container to be healthy
+                      wait_for_health \"\$CONTAINER_NAME\" && \
+                      if [ \$? -eq 0 ]; then
+                          handle_container_switch \"\$CONTAINER_NAME\" \"${DEPLOY_TIME}\" \"prod\"
+                      else
+                          handle_failed_deployment \"\$CONTAINER_NAME\" \"${DEPLOY_TIME}\" \"prod\"
+                      fi
+                  "
