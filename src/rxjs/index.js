@@ -1,7 +1,6 @@
-/* eslint-disable import/no-unresolved */
-const { from, lastValueFrom } = require("rxjs");
-const { scan, tap, last, map } = require("rxjs/operators");
-/* eslint-enable import/no-unresolved */
+// eslint-disable-next-line import/no-unresolved, import/named
+import { from, lastValueFrom } from "rxjs";
+import { scan, tap, last, map } from "rxjs/operators";
 import { dashboardInitialState, processDashboardConvertibleIssuance, processDashboardStockIssuance } from "./dashboard.js";
 import {
     captableInitialState,
