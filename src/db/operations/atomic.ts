@@ -1,12 +1,14 @@
 // Store a global mongo session to allows us to bundle CRUD operations into one transaction
 
-import { Connection, QueryOptions } from "mongoose";
-import { connectDB } from "../config/mongoose.ts";
-type TQueryOptions = QueryOptions | null;
+import { Connection, QueryOptions, Model, ClientSession, FilterQuery, UpdateQuery, ProjectionType, Document } from "mongoose";
+import { connectDB } from "../config/mongoose";
 
-let _globalSession = null;
+type TQueryOptions<T> = QueryOptions<T> | undefined;
+type TSession = ClientSession | null;
 
-export const setGlobalSession = (session) => {
+let _globalSession: TSession = null;
+
+export const setGlobalSession = (session: ClientSession): void => {
     if (_globalSession !== null) {
         throw new Error(
             `globalSession is already set! ${_globalSession}. 
@@ -16,18 +18,18 @@ export const setGlobalSession = (session) => {
     _globalSession = session;
 };
 
-export const clearGlobalSession = () => {
+export const clearGlobalSession = (): void => {
     _globalSession = null;
 };
 
-const isReplSet = () => {
+const isReplSet = (): boolean => {
     if (process.env.DATABASE_REPLSET === "1") {
         return true;
     }
     return false;
 };
 
-export const withGlobalTransaction = async (func: () => Promise<void>, useConn?: Connection) => {
+export const withGlobalTransaction = async (func: () => Promise<void>, useConn?: Connection): Promise<void> => {
     if (!isReplSet()) {
         // Transactions in mongo only work when running with --replSet
         //  https://www.mongodb.com/docs/manual/tutorial/convert-standalone-to-replica-set/
@@ -46,7 +48,7 @@ export const withGlobalTransaction = async (func: () => Promise<void>, useConn?:
     });
 };
 
-const includeSession = (options?: TQueryOptions) => {
+const includeSession = <T>(options?: TQueryOptions<T>): TQueryOptions<T> => {
     let useOptions = options || {};
     if (_globalSession !== null) {
         if (useOptions.session) {
@@ -63,40 +65,50 @@ Wrapped mongoose db calls. All mongo interaction should go through a function be
 
 // CREATE
 
-export const save = (model, options?: TQueryOptions) => {
-    return model.save(includeSession(options));
+export const save = <T>(document: Document<T>, options?: TQueryOptions<T>): Promise<T> => {
+    return document.save(includeSession(options)) as Promise<T>;
 };
 
 // UPDATE
 
-export const findByIdAndUpdate = (model, id, updatedData, options?: TQueryOptions) => {
+export const findByIdAndUpdate = <T>(model: Model<T>, id: string, updatedData: UpdateQuery<T>, options?: TQueryOptions<T>): Promise<T | null> => {
     return model.findByIdAndUpdate(id, updatedData, includeSession(options));
 };
 
-export const findBySecurityIdAndUpdate = (model, securityId, updatedData, options?: TQueryOptions) => {
-    return model.findOneAndUpdate({ security_id: securityId }, updatedData, includeSession(options));
+export const findBySecurityIdAndUpdate = <T>(
+    model: Model<T>,
+    securityId: string,
+    updatedData: UpdateQuery<T>,
+    options?: TQueryOptions<T>
+): Promise<T | null> => {
+    return model.findOneAndUpdate({ security_id: securityId } as FilterQuery<T>, updatedData, includeSession(options));
 };
 
 // DELETE
 
-export const findByIdAndDelete = (model, id, options?: TQueryOptions) => {
+export const findByIdAndDelete = <T>(model: Model<T>, id: string, options?: TQueryOptions<T>): Promise<T | null> => {
     return model.findByIdAndDelete(id, includeSession(options));
 };
 
 // QUERY
 
-export const findById = (model, id, projection?, options?: TQueryOptions) => {
+export const findById = <T>(model: Model<T>, id: string, projection?: ProjectionType<T>, options?: TQueryOptions<T>): Promise<T | null> => {
     return model.findById(id, projection, includeSession(options));
 };
 
-export const findOne = (model, filter, projection?, options?: TQueryOptions) => {
+export const findOne = <T>(
+    model: Model<T>,
+    filter: FilterQuery<T>,
+    projection?: ProjectionType<T>,
+    options?: TQueryOptions<T>
+): Promise<T | null> => {
     return model.findOne(filter, projection, includeSession(options));
 };
 
-export const find = (model, filter, projection?, options?: TQueryOptions) => {
+export const find = <T>(model: Model<T>, filter: FilterQuery<T>, projection?: ProjectionType<T>, options?: TQueryOptions<T>): Promise<T[]> => {
     return model.find(filter, projection, includeSession(options));
 };
 
-export const countDocuments = (model, options?: TQueryOptions) => {
-    return model.countDocuments(includeSession(options));
+export const countDocuments = <T>(model: Model<T>, filter?: FilterQuery<T>, options?: TQueryOptions<T>): Promise<number> => {
+    return model.countDocuments(filter || {}, includeSession(options));
 };
