@@ -496,12 +496,7 @@ transactions.post("/exercise/equity-compensation", async (req, res) => {
         const createdExercise = await createEquityCompensationExercise({ ...incomingEquityCompensationExercise, issuer: issuerId });
 
         // Save onchain
-        await convertAndCreateEquityCompensationExerciseOnchain(contract, {
-            equity_comp_security_id: incomingEquityCompensationExercise.security_id,
-            resulting_stock_security_id: incomingEquityCompensationExercise.resulting_security_ids[0],
-            quantity: incomingEquityCompensationExercise.quantity,
-            id: incomingEquityCompensationExercise.id,
-        });
+        await convertAndCreateEquityCompensationExerciseOnchain(contract, incomingEquityCompensationExercise);
 
         // TODO: Store Historical Transactions
 

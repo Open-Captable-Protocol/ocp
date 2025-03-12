@@ -242,7 +242,7 @@ fairmintTransactions.post("/exercise/equity-compensation-fairmint-reflection", a
             object_type: "TX_EQUITY_COMPENSATION_EXERCISE",
             ...data,
         };
-
+        console.log("incomingEquityCompensationExercise", incomingEquityCompensationExercise);
         await validateInputAgainstOCF(incomingEquityCompensationExercise, equityCompensationExerciseSchema);
 
         // Enforce data.resulting_security_ids array has at least one element
@@ -258,18 +258,13 @@ fairmintTransactions.post("/exercise/equity-compensation-fairmint-reflection", a
             });
         }
         // Save Fairmint data
-        await createFairmintData({ security_id: incomingEquityCompensationExercise.security_id });
+        await createFairmintData({ id: incomingEquityCompensationExercise.id, security_id: incomingEquityCompensationExercise.security_id });
 
         // Save offchain
         const createdExercise = await createEquityCompensationExercise({ ...incomingEquityCompensationExercise, issuer: issuerId });
 
         // Save onchain
-        await convertAndCreateEquityCompensationExerciseOnchain(contract, {
-            id: incomingEquityCompensationExercise.id,
-            equity_comp_security_id: incomingEquityCompensationExercise.security_id,
-            resulting_stock_security_id: incomingEquityCompensationExercise.resulting_security_ids[0],
-            quantity: incomingEquityCompensationExercise.quantity,
-        });
+        await convertAndCreateEquityCompensationExerciseOnchain(contract, incomingEquityCompensationExercise);
 
         res.status(200).send({ equityCompensationExercise: createdExercise });
     } catch (error) {
