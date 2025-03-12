@@ -265,6 +265,7 @@ fairmintTransactions.post("/exercise/equity-compensation-fairmint-reflection", a
 
         // Save onchain
         await convertAndCreateEquityCompensationExerciseOnchain(contract, {
+            id: incomingEquityCompensationExercise.id,
             equity_comp_security_id: incomingEquityCompensationExercise.security_id,
             resulting_stock_security_id: incomingEquityCompensationExercise.resulting_security_ids[0],
             quantity: incomingEquityCompensationExercise.quantity,
