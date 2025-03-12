@@ -38,7 +38,7 @@ export const WarrantIssuance = IWARRANTS_FACET.abi.find((fn) => fn.name === "iss
 
 export const EquityCompensationIssuance = IEQUITY_COMPENSATION_FACET.abi.find((fn) => fn.name === "issueEquityCompensation").inputs[0];
 
-export const EquityCompensationExercise = IEQUITY_COMPENSATION_FACET.abi.find((fn) => fn.name === "exerciseEquityCompensation").inputs[0];
+export const EquityCompensationExercise = IEQUITY_COMPENSATION_FACET.abi.find((fn) => fn.name === "exerciseEquityCompensation").inputs;
 
 export const StockTransfer = {
     type: "tuple",

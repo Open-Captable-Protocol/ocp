@@ -144,16 +144,19 @@ const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
             const txType = txTypes[txTypeIdx];
             // @ts-ignore
             const [structType, handleFunc] = txMapper[txTypeIdx];
-            const decodedData = abiCoder.decode([structType], txData);
+            console.log(" | Struct type", structType);
+            const _structType = Array.isArray(structType) ? structType : [structType];
+            const decodedData = abiCoder.decode(_structType, txData);
 
             const _tx = {
                 type: txType,
                 timestamp: block.timestamp,
-                data: decodedData[0],
+                data: Array.isArray(structType) ? decodedData : decodedData[0], // TODO: Handle multiple structs
             };
 
             if (handleFunc) {
                 console.log("Handling transaction:", txType);
+                console.log(" | Transaction data", _tx.data);
                 await handleFunc(_tx.data, issuerId, _tx.timestamp, log.transactionHash);
                 console.log(" | Transaction handled:", txType);
             } else {
