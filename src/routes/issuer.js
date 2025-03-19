@@ -64,17 +64,17 @@ issuer.post("/create", async (req, res) => {
 
         const issuerIdBytes16 = convertUUIDToBytes16(incomingIssuerToValidate.id);
         console.log("💾 | Issuer id in bytes16 ", issuerIdBytes16);
-        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized, Number(chain_id));
+        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized, chain_id);
 
         const incomingIssuerForDB = {
             ...incomingIssuerToValidate,
             deployed_to: address,
             tx_hash: deployHash,
-            chain_id: Number(chain_id),
+            chain_id,
         };
 
         const issuer = await createIssuer(incomingIssuerForDB);
-        addAddressesToWatch(Number(chain_id), address);
+        addAddressesToWatch(chain_id, address);
 
         console.log("✅ | Issuer created offchain:", issuer);
 
