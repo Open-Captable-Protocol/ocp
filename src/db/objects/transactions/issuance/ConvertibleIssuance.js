@@ -24,6 +24,7 @@ const ConvertibleIssuanceSchema = new mongoose.Schema(
             type: String,
             ref: "Issuer",
         },
+        tx_hash: { type: String, default: null },
     },
     { timestamps: true }
 );
