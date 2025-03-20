@@ -1,6 +1,5 @@
 import { connectDB } from "../../db/config/mongoose";
 import Fairmint from "../../db/objects/Fairmint";
-import HistoricalTransaction from "../../db/objects/HistoricalTransaction";
 import Issuer from "../../db/objects/Issuer";
 import Stakeholder from "../../db/objects/Stakeholder";
 import StockClass from "../../db/objects/StockClass";
@@ -28,7 +27,6 @@ const deleteAll = async () => {
     await StockPlan.deleteMany({});
     await Valuation.deleteMany({});
     await VestingTerms.deleteMany({});
-    await HistoricalTransaction.deleteMany({});
     await Fairmint.deleteMany({});
     await deleteAllTransactions(); // Delete all transactions
 };

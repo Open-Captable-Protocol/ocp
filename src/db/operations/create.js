@@ -1,5 +1,4 @@
 import Factory from "../objects/Factory.js";
-import HistoricalTransaction from "../objects/HistoricalTransaction.js";
 import Issuer from "../objects/Issuer.js";
 import Stakeholder from "../objects/Stakeholder.js";
 import StockClass from "../objects/StockClass.js";
@@ -46,10 +45,6 @@ export const createValuation = (valuationData) => {
 
 export const createVestingTerms = (vestingTermsData) => {
     return save(new VestingTerms(vestingTermsData));
-};
-
-export const createHistoricalTransaction = (transactionHistoryData) => {
-    return save(new HistoricalTransaction(transactionHistoryData));
 };
 
 export const createStockIssuance = (stockIssuanceData) => {
