@@ -1,7 +1,7 @@
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import { toScaledBigNumber } from "../utils/convertToFixedPointDecimals.js";
 
-export const convertAndReflectStockPlanOnchain = async (contract, stockPlan) => {
+export const createStockPlanOnchain = async (contract, stockPlan) => {
     // Convert OCF Types to Onchain Types
     const stockPlanIdBytes16 = convertUUIDToBytes16(stockPlan.id);
     const stockClassIdsBytes16 = stockPlan.stock_class_ids.map((id) => convertUUIDToBytes16(id));

@@ -55,6 +55,16 @@ export const updateStockPlanById = async (id, update) => {
     return stockPlan;
 };
 
+export const upsertStockPlanById = async (id, update) => {
+    const stockPlan = await StockPlan.findByIdAndUpdate(id, { $set: update }, { new: true, upsert: true });
+
+    if (!stockPlan) {
+        throw new Error(`Stock Plan with id ${id} not found`);
+    }
+
+    return stockPlan;
+};
+
 export const updateValuationById = async (id, updatedData) => {
     return await findByIdAndUpdate(Valuation, id, updatedData, { new: true });
 };

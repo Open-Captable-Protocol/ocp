@@ -114,7 +114,7 @@ const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
                 return;
             }
             const [stockClassIdBytes16] = abiCoder.decode(["bytes16"], stockClassIdBytes);
-            await handleStockClass(stockClassIdBytes16);
+            await handleStockClass(stockClassIdBytes16, log.transactionHash);
             break;
 
         case TOPICS.StakeholderCreated:
@@ -124,7 +124,7 @@ const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
                 return;
             }
             const [stakeholderIdBytes16] = abiCoder.decode(["bytes16"], stakeholderIdBytes);
-            await handleStakeholder(stakeholderIdBytes16);
+            await handleStakeholder(stakeholderIdBytes16, log.transactionHash);
             break;
 
         case TOPICS.TxCreated:
@@ -164,15 +164,19 @@ const handleEventType = async (log: Log, block: Block, deployed_to: string) => {
             }
             break;
         case TOPICS.StockPlanCreated:
+            console.log(" | StockPlanCreated event");
+            console.log(" | topics", log.topics);
             const stockPlanIdBytes = get(log, "topics.1", null);
-            const sharesReservedBytes = get(log, "topics.2", null);
+            const sharesReservedBytes = get(log, "data", null);
             if (!stockPlanIdBytes || !sharesReservedBytes) {
                 console.error("No stock plan id found");
                 return;
             }
             const [stockPlanIdBytes16] = abiCoder.decode(["bytes16"], stockPlanIdBytes);
             const [sharesReserved] = abiCoder.decode(["uint256"], sharesReservedBytes);
-            await handleStockPlan(stockPlanIdBytes16, sharesReserved);
+            console.log(" | stockPlanIdBytes16", stockPlanIdBytes16);
+            console.log(" | sharesReserved", sharesReserved);
+            await handleStockPlan(stockPlanIdBytes16, sharesReserved, log.transactionHash);
             break;
 
         default:

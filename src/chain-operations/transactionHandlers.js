@@ -14,12 +14,12 @@ import {
     upsertStockReissuanceById,
     upsertStockRepurchaseById,
     upsertStockAcceptanceById,
-    updateStockPlanById,
     upsertStockIssuanceById,
     upsertConvertibleIssuanceById,
     upsertEquityCompensationIssuanceById,
     upsertWarrantIssuanceById,
     upsertEquityCompensationExerciseById,
+    upsertStockPlanById,
 } from "../db/operations/update.js";
 import get from "lodash/get";
 import { reflectSeries } from "../fairmint/reflectSeries.js";
@@ -152,10 +152,10 @@ export const handleStockTransfer = async (stock, issuerId) => {
     );
 };
 
-export const handleStakeholder = async (id) => {
+export const handleStakeholder = async (id, hash) => {
     try {
         const incomingStakeholderId = convertBytes16ToUUID(id);
-        const stakeholder = await upsertStakeholderById(incomingStakeholderId, { is_onchain_synced: true });
+        const stakeholder = await upsertStakeholderById(incomingStakeholderId, { is_onchain_synced: true, tx_hash: hash });
 
         // fairmint data reflection
         const fairmintData = await readFairmintDataByStakeholderId(incomingStakeholderId);
@@ -167,10 +167,10 @@ export const handleStakeholder = async (id) => {
     }
 };
 
-export const handleStockClass = async (id) => {
+export const handleStockClass = async (id, hash) => {
     console.log("StockClassCreated Event Emitted!", id);
     const incomingStockClassId = convertBytes16ToUUID(id);
-    const stockClass = await updateStockClassById(incomingStockClassId, { is_onchain_synced: true });
+    const stockClass = await updateStockClassById(incomingStockClassId, { is_onchain_synced: true, tx_hash: hash });
     console.log("✅ | StockClass confirmation onchain ", stockClass);
 };
 
@@ -397,14 +397,15 @@ export const handleIssuerAuthorizedSharesAdjusted = async (data, issuerId, times
     console.log(`✅ [CONFIRMED] IssuerAuthorizedSharesAdjusted  ${new Date(Date.now()).toLocaleDateString("en-US", options)}`);
 };
 
-export const handleStockPlan = async (id, sharesReserved) => {
+export const handleStockPlan = async (id, sharesReserved, hash) => {
     console.log("StockPlanCreated Event Emitted!", id);
     const incomingStockPlanId = convertBytes16ToUUID(id);
-    const stockPlan = await updateStockPlanById(incomingStockPlanId, {
+    const stockPlan = await upsertStockPlanById(incomingStockPlanId, {
         initial_shares_reserved: toDecimal(sharesReserved).toString(),
         is_onchain_synced: true,
+        tx_hash: hash,
     });
-    console.log("✅ | StockPlan confirmation onchain ", stockPlan);
+    console.log("✅ | CONFIRMED - StockPlan Created", stockPlan);
 };
 
 export const handleConvertibleIssuance = async (convertible, issuerId, timestamp, hash) => {
