@@ -38,7 +38,8 @@ import { upsertFairmintDataBySecurityId } from "../../db/operations/update";
 import { convertAndCreateEquityCompensationExerciseOnchain } from "../../controllers/transactions/exerciseController";
 import StockIssuance from "../../db/objects/transactions/issuance/StockIssuance.js";
 import EquityCompensationIssuance from "../../db/objects/transactions/issuance/EquityCompensationIssuance.js";
-import { ConvertibleIssuance } from "../../db/objects/transactions/issuance";
+import { ConvertibleIssuance, WarrantIssuance } from "../../db/objects/transactions/issuance";
+import { EquityCompensationExercise } from "../../db/objects/transactions/exercise";
 
 const fairmintTransactions = Router();
 
@@ -148,9 +149,6 @@ fairmintTransactions.post("/issuance/equity-compensation-fairmint-reflection", a
         if (!get(incomingEquityCompensationIssuance, "stock_class_id")) {
             return res.status(400).send({ error: "Stock class id is required" });
         }
-        if (!get(incomingEquityCompensationIssuance, "stock_plan_id")) {
-            return res.status(400).send({ error: "Stock plan id is required" });
-        }
 
         await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
 
@@ -185,7 +183,7 @@ fairmintTransactions.post("/issuance/equity-compensation-fairmint-reflection", a
         // Update the equity compensation issuance with tx_hash
         await EquityCompensationIssuance.findByIdAndUpdate(createdIssuance._id, { tx_hash: receipt.hash });
 
-        res.status(200).send({ equityCompensationIssuance: { ...createdIssuance, tx_hash: receipt.hash } });
+        res.status(200).send({ equityCompensationIssuance: { ...createdIssuance.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -229,9 +227,12 @@ fairmintTransactions.post("/exercise/equity-compensation-fairmint-reflection", a
         const createdExercise = await createEquityCompensationExercise({ ...incomingEquityCompensationExercise, issuer: issuerId });
 
         // Save onchain
-        await convertAndCreateEquityCompensationExerciseOnchain(contract, incomingEquityCompensationExercise);
+        const receipt = await convertAndCreateEquityCompensationExerciseOnchain(contract, incomingEquityCompensationExercise);
 
-        res.status(200).send({ equityCompensationExercise: createdExercise });
+        // Update the equity compensation exercise with tx_hash
+        await EquityCompensationExercise.findByIdAndUpdate(createdExercise._id, { tx_hash: receipt.hash });
+
+        res.status(200).send({ equityCompensationExercise: { ...createdExercise.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -386,9 +387,12 @@ fairmintTransactions.post("/issuance/warrant-fairmint-reflection", async (req, r
         const createdIssuance = await createWarrantIssuance({ ...incomingWarrantIssuance, issuer: issuerId });
 
         // Save Onchain
-        await convertAndCreateIssuanceWarrantOnchain(contract, createdIssuance);
+        const receipt = await convertAndCreateIssuanceWarrantOnchain(contract, createdIssuance);
 
-        res.status(200).send({ warrantIssuance: createdIssuance });
+        // Update the warrant issuance with tx_hash
+        await WarrantIssuance.findByIdAndUpdate(createdIssuance._id, { tx_hash: receipt.hash });
+
+        res.status(200).send({ warrantIssuance: { ...createdIssuance.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
