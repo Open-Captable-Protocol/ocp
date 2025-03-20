@@ -9,6 +9,7 @@ import { checkStakeholderExistsOnFairmint } from "../../fairmint/checkStakeholde
 import { updateStakeholderById } from "../../db/operations/update.js";
 import { updateReflectedStakeholder } from "../../fairmint/updateReflectStakeholder.js";
 import { reflectStakeholder } from "../../fairmint/reflectStakeholder.js";
+import Stakeholder from "../../db/objects/Stakeholder.js";
 
 const router = Router();
 
@@ -47,11 +48,12 @@ router.post("/create-fairmint-reflection", async (req, res) => {
         const stakeholder = await createStakeholder(incomingStakeholderForDB);
         const fairmintData = await createFairmintData({ stakeholder_id: stakeholder._id });
         console.log("✅ | Fairmint Data created:", fairmintData);
-        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id);
+        const receipt = await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id);
+        await Stakeholder.findByIdAndUpdate(stakeholder._id, { tx_hash: receipt.hash });
 
         console.log("✅ | Stakeholder created offchain:", stakeholder);
 
-        res.status(200).send({ stakeholder });
+        res.status(200).send({ stakeholder: { ...stakeholder.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);

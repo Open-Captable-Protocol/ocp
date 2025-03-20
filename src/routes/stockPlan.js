@@ -95,7 +95,7 @@ stockPlan.post("/create", async (req, res) => {
 
         console.log("✅ | Created Stock Plan in DB: ", stockPlan);
 
-        res.status(200).send({ stockPlan: { ...stockPlan, tx_hash: receipt.hash } });
+        res.status(200).send({ stockPlan: { ...stockPlan.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);

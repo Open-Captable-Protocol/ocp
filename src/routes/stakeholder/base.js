@@ -117,7 +117,7 @@ router.post("/create", async (req, res) => {
 
         console.log("✅ | Stakeholder created offchain:", stakeholder);
 
-        res.status(200).send({ stakeholder: { ...stakeholder, tx_hash: receipt.hash } });
+        res.status(200).send({ stakeholder: { ...stakeholder.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);

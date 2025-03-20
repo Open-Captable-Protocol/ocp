@@ -27,7 +27,6 @@ import {
     readStakeholderById,
     readStockClassById,
     readConvertibleIssuanceBySecurityId,
-    readEquityCompensationIssuanceBySecurityId,
     readEquityCompensationExerciseBySecurityId,
     readWarrantIssuanceBySecurityId,
 } from "../../db/operations/read.js";
@@ -37,6 +36,9 @@ import get from "lodash/get";
 import { checkStakeholderExistsOnFairmint } from "../../fairmint/checkStakeholder.js";
 import { upsertFairmintDataBySecurityId } from "../../db/operations/update";
 import { convertAndCreateEquityCompensationExerciseOnchain } from "../../controllers/transactions/exerciseController";
+import StockIssuance from "../../db/objects/transactions/issuance/StockIssuance.js";
+import EquityCompensationIssuance from "../../db/objects/transactions/issuance/EquityCompensationIssuance.js";
+import { ConvertibleIssuance } from "../../db/objects/transactions/issuance";
 
 const fairmintTransactions = Router();
 
@@ -44,9 +46,7 @@ fairmintTransactions.post("/issuance/stock-fairmint-reflection", async (req, res
     const { contract } = req;
     const { issuerId } = req.body;
 
-    /*
-    We need new information to pass to Fairmint, like series name
-    */
+    /* This route is used to pass information from Fairmint that is not part of the OCF schema, like series name  and series id*/
     const schema = Joi.object({
         issuerId: Joi.string().uuid().required(),
         series_id: Joi.string().uuid().required(),
@@ -102,18 +102,12 @@ fairmintTransactions.post("/issuance/stock-fairmint-reflection", async (req, res
         // Create the stock issuance in the DB
         const stockIssuance = await createStockIssuance({ ...incomingStockIssuance, issuer: issuerId });
 
-        await convertAndCreateIssuanceStockOnchain(contract, {
-            security_id: incomingStockIssuance.security_id,
-            stock_class_id: incomingStockIssuance.stock_class_id,
-            stakeholder_id: incomingStockIssuance.stakeholder_id,
-            quantity: incomingStockIssuance.quantity,
-            share_price: incomingStockIssuance.share_price,
-            custom_id: incomingStockIssuance.custom_id || "",
-            id: incomingStockIssuance.id,
-        });
+        const receipt = await convertAndCreateIssuanceStockOnchain(contract, stockIssuance);
 
-        // TODO: Store Historical Transactions
-        res.status(200).send({ stockIssuance });
+        // Update the stock issuance with tx_hash
+        await StockIssuance.findByIdAndUpdate(stockIssuance._id, { tx_hash: receipt.hash });
+
+        res.status(200).send({ stockIssuance: { ...stockIssuance.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -122,12 +116,13 @@ fairmintTransactions.post("/issuance/stock-fairmint-reflection", async (req, res
 
 fairmintTransactions.post("/issuance/equity-compensation-fairmint-reflection", async (req, res) => {
     const { contract } = req;
-    const { issuerId, data } = req.body;
+    const { issuerId } = req.body;
+
     const schema = Joi.object({
         issuerId: Joi.string().uuid().required(),
         series_id: Joi.string().uuid().required(),
-        series_name: Joi.string().required(),
         data: Joi.object().required(),
+        series_name: Joi.string().required(),
     });
 
     const { error, value: payload } = schema.validate(req.body);
@@ -137,16 +132,16 @@ fairmintTransactions.post("/issuance/equity-compensation-fairmint-reflection", a
             error: getJoiErrorMessage(error),
         });
     }
+
     try {
-        // ensuring issuer exists
         await readIssuerById(issuerId);
 
         const incomingEquityCompensationIssuance = {
             id: uuid(), // for OCF Validation
-            security_id: uuid(), // for OCF Validation,
-            date: new Date().toISOString().slice(0, 10), // for OCF Validation, it gets overriden if date exists in data
+            security_id: uuid(), // for OCF Validation
+            date: new Date().toISOString().slice(0, 10), // for OCF Validation
             object_type: "TX_EQUITY_COMPENSATION_ISSUANCE",
-            ...data,
+            ...payload.data,
         };
 
         // Enforce data.stock_class_id and data.stock_plan_id are present
@@ -159,37 +154,18 @@ fairmintTransactions.post("/issuance/equity-compensation-fairmint-reflection", a
 
         await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
 
-        const stock_class_id = get(incomingEquityCompensationIssuance, "stock_class_id");
-
-        if (!stock_class_id) {
-            return res.status(400).send({ error: "Stock class id is required" });
-        }
-
-        const stockClass = await readStockClassById(stock_class_id);
-        if (!stockClass || !stockClass._id) {
-            return res.status(404).send({ error: "Stock class not found on OCP" });
-        }
-
         const stakeholder = await readStakeholderById(incomingEquityCompensationIssuance.stakeholder_id);
+        const stockClass = await readStockClassById(incomingEquityCompensationIssuance.stock_class_id);
 
-        // check if the stakeholder exists on OCP
         if (!stakeholder || !stakeholder._id) {
             return res.status(404).send({ error: "Stakeholder not found on OCP" });
         }
 
-        await checkStakeholderExistsOnFairmint({
-            stakeholder_id: stakeholder._id,
-            portal_id: issuerId,
-        });
-
-        // Check if equity compensation exists
-        const equityExists = await readEquityCompensationIssuanceBySecurityId(incomingEquityCompensationIssuance.security_id);
-        if (equityExists && equityExists._id) {
-            return res.status(200).send({
-                message: "Equity Compensation Issuance Already Exists",
-                equityCompensationIssuance: equityExists,
-            });
+        if (!stockClass || !stockClass._id) {
+            return res.status(404).send({ error: "Stock class not found on OCP" });
         }
+
+        await checkStakeholderExistsOnFairmint({ stakeholder_id: stakeholder._id, portal_id: issuerId });
 
         // Save Fairmint data
         await createFairmintData({
@@ -204,23 +180,12 @@ fairmintTransactions.post("/issuance/equity-compensation-fairmint-reflection", a
         const createdIssuance = await createEquityCompensationIssuance({ ...incomingEquityCompensationIssuance, issuer: issuerId });
 
         // Save onchain
-        await convertAndCreateIssuanceEquityCompensationOnchain(contract, {
-            security_id: incomingEquityCompensationIssuance.security_id,
-            stakeholder_id: incomingEquityCompensationIssuance.stakeholder_id,
-            stock_class_id: incomingEquityCompensationIssuance.stock_class_id,
-            stock_plan_id: incomingEquityCompensationIssuance.stock_plan_id,
-            quantity: incomingEquityCompensationIssuance.quantity,
-            compensation_type: incomingEquityCompensationIssuance.compensation_type,
-            exercise_price: incomingEquityCompensationIssuance.exercise_price,
-            base_price: incomingEquityCompensationIssuance.base_price,
-            expiration_date: incomingEquityCompensationIssuance.expiration_date,
-            custom_id: incomingEquityCompensationIssuance.custom_id || "",
-            id: incomingEquityCompensationIssuance.id,
-        });
+        const receipt = await convertAndCreateIssuanceEquityCompensationOnchain(contract, createdIssuance);
 
-        // TODO: Store Historical Transactions
+        // Update the equity compensation issuance with tx_hash
+        await EquityCompensationIssuance.findByIdAndUpdate(createdIssuance._id, { tx_hash: receipt.hash });
 
-        res.status(200).send({ equityCompensationIssuance: createdIssuance });
+        res.status(200).send({ equityCompensationIssuance: { ...createdIssuance, tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -318,7 +283,7 @@ fairmintTransactions.post("/issuance/convertible-fairmint-reflection", async (re
             portal_id: issuerId,
         });
 
-        // Check if convertible exists - updated to use securityId
+        // Check if convertible exists - updated to use securityId -- TODO use id instead of securityId
         const convertibleExists = await readConvertibleIssuanceBySecurityId(incomingConvertibleIssuance.security_id);
         if (convertibleExists && convertibleExists._id) {
             return res.status(200).send({
@@ -344,19 +309,11 @@ fairmintTransactions.post("/issuance/convertible-fairmint-reflection", async (re
         });
 
         // save onchain
-        await convertAndCreateIssuanceConvertibleOnchain(contract, {
-            security_id: incomingConvertibleIssuance.security_id,
-            stakeholder_id: incomingConvertibleIssuance.stakeholder_id,
-            investment_amount: incomingConvertibleIssuance.investment_amount,
-            convertible_type: incomingConvertibleIssuance.convertible_type,
-            seniority: incomingConvertibleIssuance.seniority,
-            custom_id: incomingConvertibleIssuance.custom_id || "",
-            id: incomingConvertibleIssuance.id,
-        });
+        const receipt = await convertAndCreateIssuanceConvertibleOnchain(contract, createdIssuance);
 
-        // TODO: Store Historical Transactions
+        await ConvertibleIssuance.findByIdAndUpdate(createdIssuance._id, { tx_hash: receipt.hash });
 
-        res.status(200).send({ convertibleIssuance: createdIssuance });
+        res.status(200).send({ convertibleIssuance: { ...createdIssuance.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -429,16 +386,7 @@ fairmintTransactions.post("/issuance/warrant-fairmint-reflection", async (req, r
         const createdIssuance = await createWarrantIssuance({ ...incomingWarrantIssuance, issuer: issuerId });
 
         // Save Onchain
-        await convertAndCreateIssuanceWarrantOnchain(contract, {
-            security_id: incomingWarrantIssuance.security_id,
-            stakeholder_id: incomingWarrantIssuance.stakeholder_id,
-            quantity: incomingWarrantIssuance.quantity,
-            purchase_price: incomingWarrantIssuance.purchase_price,
-            custom_id: incomingWarrantIssuance.custom_id || "",
-            id: incomingWarrantIssuance.id,
-        });
-
-        // TODO: Store Historical Transactions
+        await convertAndCreateIssuanceWarrantOnchain(contract, createdIssuance);
 
         res.status(200).send({ warrantIssuance: createdIssuance });
     } catch (error) {
