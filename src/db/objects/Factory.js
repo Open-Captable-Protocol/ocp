@@ -16,6 +16,11 @@ const FactorySchema = new mongoose.Schema(
                 "31337", // anvil
             ],
         },
+        version: {
+            type: String,
+            required: true,
+            enum: ["DIAMOND", "LEGACY"],
+        },
         tx_hash: { type: String, default: null },
     },
     { timestamps: true }
