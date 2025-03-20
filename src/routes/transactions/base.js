@@ -54,6 +54,13 @@ import validateInputAgainstOCF from "../../utils/validateInputAgainstSchema.js";
 import get from "lodash/get";
 import { convertAndCreateEquityCompensationExerciseOnchain } from "../../controllers/transactions/exerciseController";
 import { adjustStockPlanPoolOnchain } from "../../controllers/stockPlanController";
+import StockIssuance from "../../db/objects/transactions/issuance/StockIssuance.js";
+import ConvertibleIssuance from "../../db/objects/transactions/issuance/ConvertibleIssuance.js";
+import EquityCompensationIssuance from "../../db/objects/transactions/issuance/EquityCompensationIssuance.js";
+import WarrantIssuance from "../../db/objects/transactions/issuance/WarrantIssuance.js";
+import StockClassAuthorizedSharesAdjustment from "../../db/objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
+import StockPlanPoolAdjustment from "../../db/objects/transactions/adjustment/StockPlanPoolAdjustment.js";
+import { EquityCompensationExercise } from "../../db/objects/transactions/exercise";
 
 const transactions = Router();
 
@@ -82,7 +89,7 @@ transactions.post("/issuance/stock", async (req, res) => {
 
         const stockIssuance = await createStockIssuance({ ...incomingStockIssuance, issuer: issuerId });
 
-        await convertAndCreateIssuanceStockOnchain(contract, {
+        const receipt = await convertAndCreateIssuanceStockOnchain(contract, {
             security_id: incomingStockIssuance.security_id,
             stock_class_id: incomingStockIssuance.stock_class_id,
             stakeholder_id: incomingStockIssuance.stakeholder_id,
@@ -93,9 +100,10 @@ transactions.post("/issuance/stock", async (req, res) => {
             id: incomingStockIssuance.id,
         });
 
-        // TODO: Store Historical Transactions
+        // Update the stock issuance with tx_hash
+        await StockIssuance.findByIdAndUpdate(stockIssuance._id, { tx_hash: receipt.hash });
 
-        res.status(200).send({ stockIssuance });
+        res.status(200).send({ stockIssuance: { ...stockIssuance.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -111,8 +119,6 @@ transactions.post("/transfer/stock", async (req, res) => {
 
         // @dev: Transfer Validation is not possible through schema because it validates that the transfer has occurred,at this stage it has not yet.
         await convertAndCreateTransferStockOnchain(contract, data);
-
-        // TODO: store historical transaction
 
         res.status(200).send("success");
     } catch (error) {
@@ -301,14 +307,14 @@ transactions.post("/adjust/issuer/authorized-shares", async (req, res) => {
         };
 
         await validateInputAgainstOCF(issuerAuthorizedSharesAdj, issuerAuthorizedSharesAdjustmentSchema);
-        // TODO: store tranaction on db  + historical transactions
+
         const createdIssuerAdjustment = await createIssuerAuthorizedSharesAdjustment({
             ...issuerAuthorizedSharesAdj,
             issuer: issuerId,
         });
 
         const receipt = await convertAndAdjustIssuerAuthorizedSharesOnChain(contract, createdIssuerAdjustment);
-        res.status(200).send({ ...issuerAuthorizedSharesAdj, txhash: receipt.hash });
+        res.status(200).send({ ...createdIssuerAdjustment.toObject(), txhash: receipt.hash });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -346,7 +352,10 @@ transactions.post("/adjust/stock-class/authorized-shares", async (req, res) => {
 
         const receipt = await convertAndAdjustStockClassAuthorizedSharesOnchain(contract, createdStockClassAdjustment);
 
-        res.status(200).send({ stockClassAdjustment: { ...stockClassAuthorizedSharesAdjustment, txhash: receipt.hash } });
+        // Update the stock class adjustment with tx_hash
+        await StockClassAuthorizedSharesAdjustment.findByIdAndUpdate(createdStockClassAdjustment._id, { tx_hash: receipt.hash });
+
+        res.status(200).send({ stockClassAdjustment: { ...createdStockClassAdjustment.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(`error: ${error.stack}`);
         res.status(500).send(`${error}`);
@@ -377,14 +386,17 @@ transactions.post("/adjust/stock-plan-pool", async (req, res) => {
             return res.status(404).send({ error: "Stock plan not found on OCP" });
         }
 
-        await createStockPlanPoolAdjustment({
+        const createdStockPlanAdjustment = await createStockPlanPoolAdjustment({
             ...stockPlanPoolAdjustment,
             issuer: issuerId,
         });
 
         const receipt = await adjustStockPlanPoolOnchain(contract, stockPlanPoolAdjustment);
 
-        res.status(200).send({ stockPlanAdjustment: { ...stockPlanPoolAdjustment, txhash: receipt.hash } });
+        // Update the stock plan pool adjustment with tx_hash
+        await StockPlanPoolAdjustment.findByIdAndUpdate(createdStockPlanAdjustment._id, { tx_hash: receipt.hash });
+
+        res.status(200).send({ stockPlanAdjustment: { ...createdStockPlanAdjustment.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(`error: ${error.stack}`);
         res.status(500).send(`${error}`);
@@ -406,12 +418,9 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
             object_type: "TX_EQUITY_COMPENSATION_ISSUANCE",
             ...data,
         };
-        // Enforce data.stock_class_id and data.stock_plan_id are present
+        // Enforce data.stock_class_id is present
         if (!get(incomingEquityCompensationIssuance, "stock_class_id")) {
             return res.status(400).send({ error: "Stock class id is required" });
-        }
-        if (!get(incomingEquityCompensationIssuance, "stock_plan_id")) {
-            return res.status(400).send({ error: "Stock plan id is required" });
         }
 
         await validateInputAgainstOCF(incomingEquityCompensationIssuance, equityCompensationIssuanceSchema);
@@ -438,24 +447,12 @@ transactions.post("/issuance/equity-compensation", async (req, res) => {
         // Save offchain
         const createdIssuance = await createEquityCompensationIssuance({ ...incomingEquityCompensationIssuance, issuer: issuerId });
 
-        // Save onchain
-        await convertAndCreateIssuanceEquityCompensationOnchain(contract, {
-            security_id: incomingEquityCompensationIssuance.security_id,
-            stakeholder_id: incomingEquityCompensationIssuance.stakeholder_id,
-            stock_class_id: incomingEquityCompensationIssuance.stock_class_id,
-            stock_plan_id: incomingEquityCompensationIssuance.stock_plan_id,
-            quantity: incomingEquityCompensationIssuance.quantity,
-            compensation_type: incomingEquityCompensationIssuance.compensation_type,
-            exercise_price: incomingEquityCompensationIssuance.exercise_price,
-            base_price: incomingEquityCompensationIssuance.base_price,
-            expiration_date: incomingEquityCompensationIssuance.expiration_date,
-            custom_id: incomingEquityCompensationIssuance.custom_id || "",
-            id: incomingEquityCompensationIssuance.id,
-        });
+        const receipt = await convertAndCreateIssuanceEquityCompensationOnchain(contract, createdIssuance);
 
-        // TODO: Store Historical Transactions
+        // Update the equity compensation issuance with tx_hash
+        await EquityCompensationIssuance.findByIdAndUpdate(createdIssuance._id, { tx_hash: receipt.hash });
 
-        res.status(200).send({ equityCompensationIssuance: createdIssuance });
+        res.status(200).send({ equityCompensationIssuance: { ...createdIssuance, tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -496,11 +493,12 @@ transactions.post("/exercise/equity-compensation", async (req, res) => {
         const createdExercise = await createEquityCompensationExercise({ ...incomingEquityCompensationExercise, issuer: issuerId });
 
         // Save onchain
-        await convertAndCreateEquityCompensationExerciseOnchain(contract, incomingEquityCompensationExercise);
+        const receipt = await convertAndCreateEquityCompensationExerciseOnchain(contract, incomingEquityCompensationExercise);
 
-        // TODO: Store Historical Transactions
+        // Update the equity compensation exercise with tx_hash
+        await EquityCompensationExercise.findByIdAndUpdate(createdExercise._id, { tx_hash: receipt.hash });
 
-        res.status(200).send({ equityCompensationExercise: createdExercise });
+        res.status(200).send({ equityCompensationExercise: { ...createdExercise.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -523,10 +521,9 @@ transactions.post("/issuance/convertible", async (req, res) => {
             ...data,
         };
 
-        console.log("incomingConvertibleIssuance", incomingConvertibleIssuance);
         await validateInputAgainstOCF(incomingConvertibleIssuance, convertibleIssuanceSchema);
 
-        // Check if convertible exists - updated to use securityId
+        // Check if convertible exists - TODO use id instead of securityId
         const convertibleExists = await readConvertibleIssuanceBySecurityId(incomingConvertibleIssuance.security_id);
         if (convertibleExists && convertibleExists._id) {
             return res.status(200).send({
@@ -535,15 +532,14 @@ transactions.post("/issuance/convertible", async (req, res) => {
             });
         }
 
-        // save to DB
-        const createdIssuance = await createConvertibleIssuance({ ...incomingConvertibleIssuance, issuer: issuerId });
+        const convertibleIssuance = await createConvertibleIssuance({ ...incomingConvertibleIssuance, issuer: issuerId });
 
-        // Create convertible onchain
-        await convertAndCreateIssuanceConvertibleOnchain(contract, createdIssuance);
+        const receipt = await convertAndCreateIssuanceConvertibleOnchain(contract, convertibleIssuance);
 
-        // TODO: Store Historical Transactions
+        // Update the convertible issuance with tx_hash
+        await ConvertibleIssuance.findByIdAndUpdate(convertibleIssuance._id, { tx_hash: receipt.hash });
 
-        res.status(200).send({ convertibleIssuance: createdIssuance });
+        res.status(200).send({ convertibleIssuance: { ...convertibleIssuance.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
@@ -578,22 +574,14 @@ transactions.post("/issuance/warrant", async (req, res) => {
             });
         }
 
-        // Save Offchain
-        const createdIssuance = await createWarrantIssuance({ ...incomingWarrantIssuance, issuer: issuerId });
+        const warrantIssuance = await createWarrantIssuance({ ...incomingWarrantIssuance, issuer: issuerId });
 
-        // Save Onchain
-        await convertAndCreateIssuanceWarrantOnchain(contract, {
-            security_id: incomingWarrantIssuance.security_id,
-            stakeholder_id: incomingWarrantIssuance.stakeholder_id,
-            quantity: incomingWarrantIssuance.quantity,
-            purchase_price: incomingWarrantIssuance.purchase_price,
-            custom_id: incomingWarrantIssuance.custom_id || "",
-            id: incomingWarrantIssuance.id,
-        });
+        const receipt = await convertAndCreateIssuanceWarrantOnchain(contract, warrantIssuance);
 
-        // TODO: Store Historical Transactions
+        // Update the warrant issuance with tx_hash
+        await WarrantIssuance.findByIdAndUpdate(warrantIssuance._id, { tx_hash: receipt.hash });
 
-        res.status(200).send({ warrantIssuance: createdIssuance });
+        res.status(200).send({ warrantIssuance: { ...warrantIssuance.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);

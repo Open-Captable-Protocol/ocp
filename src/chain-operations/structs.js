@@ -18,6 +18,7 @@ export const StockClassAuthorizedSharesAdjustment = {
     type: "tuple",
     baseType: "tuple",
     components: [
+        { type: "bytes16", baseType: "bytes16", name: "id" },
         { type: "bytes16", baseType: "bytes16", name: "stock_class_id" },
         { type: "uint256", baseType: "uint256", name: "new_shares_authorized" },
     ],
@@ -27,6 +28,7 @@ export const StockPlanPoolAdjustment = {
     type: "tuple",
     baseType: "tuple",
     components: [
+        { type: "bytes16", baseType: "bytes16", name: "id" },
         { type: "bytes16", baseType: "bytes16", name: "stock_plan_id" },
         { type: "uint256", baseType: "uint256", name: "new_shares_reserved" },
     ],

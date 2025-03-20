@@ -28,6 +28,7 @@ const StockIssuanceSchema = new mongoose.Schema(
             ref: "Issuer",
         },
         is_onchain_synced: { type: Boolean, default: false },
+        tx_hash: { type: String, default: null },
     },
     { timestamps: true }
 );

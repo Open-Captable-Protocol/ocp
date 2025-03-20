@@ -18,10 +18,10 @@ const IssuerSchema = new mongoose.Schema(
         initial_shares_authorized: String,
         comments: [String],
         deployed_to: String, // Address of its CapTable
-        tx_hash: String,
         last_processed_block: { type: Number, default: null },
         is_manifest_created: { type: Boolean, default: false },
         chain_id: { type: Number, required: true },
+        tx_hash: { type: String, default: null },
     },
     { timestamps: true }
 );

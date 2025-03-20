@@ -6,7 +6,6 @@ import StockLegendTemplate from "../db/objects/StockLegendTemplate";
 import StockPlan from "../db/objects/StockPlan";
 import Valuation from "../db/objects/Valuation";
 import VestingTerm from "../db/objects/VestingTerms";
-import HistoricalTransaction from "../db/objects/HistoricalTransaction";
 
 import { find } from "../db/operations/atomic";
 const exportCaptable = Router();
@@ -26,7 +25,6 @@ exportCaptable.get("/ocf", async (req, res) => {
         const stockLegendTemplates = await find(StockLegendTemplate, { issuer: issuerId });
         const valuations = await find(Valuation, { issuer: issuerId });
         const vestingTerms = await find(VestingTerm, { issuer: issuerId });
-        const historicalTransactions = await find(HistoricalTransaction, { issuer: issuerId });
 
         res.status(200).json({
             issuer,
@@ -36,7 +34,6 @@ exportCaptable.get("/ocf", async (req, res) => {
             stockLegendTemplates,
             valuations,
             vestingTerms,
-            historicalTransactions,
         });
     } catch (error) {
         console.error("Error fetching data:", error);

@@ -41,12 +41,26 @@ export const updateStockClassById = async (id, updatedData) => {
     return await findByIdAndUpdate(StockClass, id, updatedData, { new: true });
 };
 
+export const upsertStockClassById = async (id, updatedData) => {
+    return await findByIdAndUpdate(StockClass, id, updatedData, { new: true, upsert: true });
+};
+
 export const updateStockLegendTemplateById = async (id, updatedData) => {
     return await findByIdAndUpdate(StockLegendTemplate, id, updatedData, { new: true });
 };
 
 export const updateStockPlanById = async (id, update) => {
     const stockPlan = await StockPlan.findByIdAndUpdate(id, { $set: update }, { new: true });
+
+    if (!stockPlan) {
+        throw new Error(`Stock Plan with id ${id} not found`);
+    }
+
+    return stockPlan;
+};
+
+export const upsertStockPlanById = async (id, update) => {
+    const stockPlan = await StockPlan.findByIdAndUpdate(id, { $set: update }, { new: true, upsert: true });
 
     if (!stockPlan) {
         throw new Error(`Stock Plan with id ${id} not found`);

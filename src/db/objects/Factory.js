@@ -7,7 +7,21 @@ const FactorySchema = new mongoose.Schema(
         object_type: { type: String, default: "FACTORY" },
         implementation_address: String,
         factory_address: String,
-        chain_id: { type: Number, required: true },
+        chain_id: {
+            type: String,
+            required: true,
+            enum: [
+                "8453", // Base mainnet
+                "84532", // Base Sepolia
+                "31337", // anvil
+            ],
+        },
+        version: {
+            type: String,
+            required: true,
+            enum: ["DIAMOND", "LEGACY"],
+        },
+        tx_hash: { type: String, default: null },
     },
     { timestamps: true }
 );

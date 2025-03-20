@@ -19,6 +19,7 @@ const StakeholderSchema = new mongoose.Schema(
         is_onchain_synced: { type: Boolean, default: false },
         addresses: [{}],
         tax_ids: [{}],
+        tx_hash: { type: String, default: null },
     },
     { timestamps: true }
 );

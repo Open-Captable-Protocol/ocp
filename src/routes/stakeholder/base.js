@@ -11,6 +11,7 @@ import stakeholderSchema from "../../../ocf/schema/objects/Stakeholder.schema.js
 import { createStakeholder } from "../../db/operations/create.js";
 import { readIssuerById, readStakeholderById, getAllStakeholdersByIssuerId } from "../../db/operations/read.js";
 import validateInputAgainstOCF from "../../utils/validateInputAgainstSchema.js";
+import Stakeholder from "../../db/objects/Stakeholder.js";
 
 const router = Router();
 
@@ -111,11 +112,12 @@ router.post("/create", async (req, res) => {
         const stakeholder = await createStakeholder(incomingStakeholderForDB);
 
         // Save onchain
-        await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id);
+        const receipt = await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id);
+        await Stakeholder.findByIdAndUpdate(stakeholder._id, { tx_hash: receipt.hash });
 
         console.log("✅ | Stakeholder created offchain:", stakeholder);
 
-        res.status(200).send({ stakeholder });
+        res.status(200).send({ stakeholder: { ...stakeholder.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);

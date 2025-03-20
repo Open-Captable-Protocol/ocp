@@ -79,7 +79,7 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
         security_id,
         stakeholder_id,
         stock_class_id,
-        stock_plan_id,
+        stock_plan_id = "00000000-0000-0000-0000-000000000000", // default to empty uuid to pass onchain validation
         quantity,
         compensation_type,
         exercise_price,
