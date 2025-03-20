@@ -117,7 +117,7 @@ issuer.post("/create-fairmint-reflection", async (req, res) => {
 
         console.log("💾 | Issuer id in bytes16 ", issuerIdBytes16);
 
-        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized, Number(chain_id));
+        const { address, deployHash } = await deployCapTable(issuerIdBytes16, incomingIssuerToValidate.initial_shares_authorized, chain_id);
 
         const incomingIssuerForDB = {
             ...incomingIssuerToValidate,

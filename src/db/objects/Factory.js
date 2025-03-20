@@ -8,7 +8,7 @@ const FactorySchema = new mongoose.Schema(
         implementation_address: String,
         factory_address: String,
         chain_id: {
-            type: Number,
+            type: String,
             required: true,
             enum: [
                 "8453", // Base mainnet
