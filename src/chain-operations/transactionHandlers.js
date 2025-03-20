@@ -52,7 +52,7 @@ const options = {
 
 // @dev, this file is where you would create the mapping for the "_mapping" fields.
 
-export const handleStockIssuance = async (stock, issuerId, timestamp) => {
+export const handleStockIssuance = async (stock, issuerId, timestamp, hash) => {
     console.log("StockIssuanceCreated Event Emitted!", stock);
     const {
         id,
@@ -89,6 +89,7 @@ export const handleStockIssuance = async (stock, issuerId, timestamp) => {
         issuer: issuerId,
         is_onchain_synced: true,
         custom_id,
+        tx_hash: hash,
     });
 
     if (isUUID(get(fairmintData, "series_id")) && fairmintData && fairmintData._id) {
@@ -446,13 +447,7 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
         seniority: Number(toDecimal(seniority).toString()),
         security_law_exemptions_mapping,
         custom_id,
-    });
-
-    await createHistoricalTransaction({
-        transaction: createdConvertibleIssuance._id,
-        issuer: issuerId,
-        transactionType: "ConvertibleIssuance",
-        hash,
+        tx_hash: hash,
     });
 
     if (fairmintData && fairmintData._id) {
@@ -516,13 +511,7 @@ export const handleWarrantIssuance = async (warrant, issuerId, timestamp, hash) 
                 : undefined,
         security_law_exemptions: security_law_exemptions_mapping,
         exercise_triggers: exercise_triggers_mapping,
-    });
-
-    await createHistoricalTransaction({
-        transaction: createdWarrantIssuance._id,
-        issuer: issuerId,
-        transactionType: "WarrantIssuance",
-        hash,
+        tx_hash: hash,
     });
 
     if (fairmintData && fairmintData._id) {
@@ -612,13 +601,7 @@ export const handleEquityCompensationIssuance = async (equity, issuerId, timesta
         termination_exercise_windows_mapping,
         security_law_exemptions_mapping,
         custom_id,
-    });
-
-    await createHistoricalTransaction({
-        transaction: createdEquityCompIssuance._id,
-        issuer: issuerId,
-        transactionType: "EquityCompensationIssuance",
-        hash,
+        tx_hash: hash,
     });
 
     if (fairmintData && fairmintData._id) {
@@ -676,13 +659,7 @@ export const handleEquityCompensationExercise = async (exercise, issuerId, times
         quantity: toDecimal(quantity).toString(),
         issuer: issuerId,
         is_onchain_synced: true,
-    });
-
-    await createHistoricalTransaction({
-        transaction: createdExercise._id,
-        issuer: issuerId,
-        transactionType: "EquityCompensationExercise",
-        hash,
+        tx_hash: hash,
     });
 
     if (fairmintData && fairmintData._id) {
