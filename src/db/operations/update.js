@@ -41,6 +41,10 @@ export const updateStockClassById = async (id, updatedData) => {
     return await findByIdAndUpdate(StockClass, id, updatedData, { new: true });
 };
 
+export const upsertStockClassById = async (id, updatedData) => {
+    return await findByIdAndUpdate(StockClass, id, updatedData, { new: true, upsert: true });
+};
+
 export const updateStockLegendTemplateById = async (id, updatedData) => {
     return await findByIdAndUpdate(StockLegendTemplate, id, updatedData, { new: true });
 };
