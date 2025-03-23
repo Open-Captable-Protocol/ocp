@@ -1,36 +1,15 @@
 import { ethers } from "ethers";
 import CAP_TABLE_FACTORY from "../../chain/out/CapTableFactory.sol/CapTableFactory.json";
-import STAKEHOLDER_FACET from "../../chain/out/StakeholderFacet.sol/StakeholderFacet.json";
-import ISSUER_FACET from "../../chain/out/IssuerFacet.sol/IssuerFacet.json";
-import STOCK_CLASS_FACET from "../../chain/out/StockClassFacet.sol/StockClassFacet.json";
-import STOCK_FACET from "../../chain/out/StockFacet.sol/StockFacet.json";
-import CONVERTIBLE_FACET from "../../chain/out/ConvertiblesFacet.sol/ConvertiblesFacet.json";
-import WARRANT_FACET from "../../chain/out/WarrantFacet.sol/WarrantFacet.json";
-import EQUITY_COMPENSATION_FACET from "../../chain/out/EquityCompensationFacet.sol/EquityCompensationFacet.json";
-import STOCK_PLAN_FACET from "../../chain/out/StockPlanFacet.sol/StockPlanFacet.json";
-import STAKEHOLDER_NFT_FACET from "../../chain/out/StakeholderNFTFacet.sol/StakeholderNFTFacet.json";
-import ACCESS_CONTROL_FACET from "../../chain/out/AccessControlFacet.sol/AccessControlFacet.json";
+import { facetsABI } from "../utils/errorDecoder.js";
 import { toScaledBigNumber } from "../utils/convertToFixedPointDecimals.js";
 import { setupEnv } from "../utils/env.js";
 import getProvider from "./getProvider.js";
 import { findOne } from "../db/operations/atomic";
 import Factory from "../db/objects/Factory.js";
 import assert from "node:assert";
+import { decodeError } from "../utils/errorDecoder";
 
 setupEnv();
-
-export const facetsABI = [
-    ...STAKEHOLDER_FACET.abi,
-    ...ISSUER_FACET.abi,
-    ...STOCK_CLASS_FACET.abi,
-    ...STOCK_FACET.abi,
-    ...STOCK_PLAN_FACET.abi,
-    ...CONVERTIBLE_FACET.abi,
-    ...WARRANT_FACET.abi,
-    ...EQUITY_COMPENSATION_FACET.abi,
-    ...STAKEHOLDER_NFT_FACET.abi,
-    ...ACCESS_CONTROL_FACET.abi,
-];
 
 const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
 
@@ -58,16 +37,24 @@ async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
 
     const capTableFactory = new ethers.Contract(factoryAddress, CAP_TABLE_FACTORY.abi, wallet);
 
-    console.log("Creating a new cap table...");
-    const tx = await capTableFactory.createCapTable(issuerId, toScaledBigNumber(initial_shares_authorized));
-    const receipt = await tx.wait();
-    console.log("Cap table created");
+    let receipt;
+    let captableAddress;
+    try {
+        console.log("Creating a new cap table...");
+        const tx = await capTableFactory.createCapTable(issuerId, toScaledBigNumber(initial_shares_authorized));
+        receipt = await tx.wait();
+        console.log("Cap table created");
 
-    const capTableCount = await capTableFactory.getCapTableCount();
-    console.log("📄 | Cap table count: ", capTableCount);
+        const capTableCount = await capTableFactory.getCapTableCount();
+        console.log("📄 | Cap table count: ", capTableCount);
 
-    const captableAddress = await capTableFactory.capTables(capTableCount - BigInt(1));
-    console.log("✅ | Cap table address: ", captableAddress);
+        captableAddress = await capTableFactory.capTables(capTableCount - BigInt(1));
+        console.log("✅ | Cap table address: ", captableAddress);
+    } catch (error) {
+        const decodedError = decodeError(error);
+        console.log("Error creating cap table:", decodedError);
+        throw decodedError;
+    }
 
     return {
         contract: new ethers.Contract(captableAddress, facetsABI, wallet),
