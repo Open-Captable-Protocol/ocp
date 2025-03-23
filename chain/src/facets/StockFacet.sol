@@ -83,7 +83,7 @@ contract StockFacet {
                 && !AccessControl.hasAdminRole(msg.sender)
         ) {
             bytes16 stakeholderId = ds.stockActivePositions.securityToStakeholder[securityId];
-            require(ds.addressToStakeholderId[msg.sender] == stakeholderId, "Can only view own positions");
+            require(ds.addressToStakeholderId[msg.sender] == stakeholderId, "Can only view own positions"); // rewrite to custom error
         }
 
         return ds.stockActivePositions.securities[securityId];
@@ -147,7 +147,7 @@ contract StockFacet {
             AccessControl.hasInvestorRole(msg.sender) && !AccessControl.hasOperatorRole(msg.sender)
                 && !AccessControl.hasAdminRole(msg.sender)
         ) {
-            require(ds.addressToStakeholderId[msg.sender] == stakeholder_id, "Can only view own positions");
+            require(ds.addressToStakeholderId[msg.sender] == stakeholder_id, "Can only view own positions"); // rewrite to custom error
         }
 
         return _getStakeholderSecurities(stakeholder_id, stock_class_id);
@@ -283,7 +283,7 @@ contract StockFacet {
 
         // Get consolidated position
         StockActivePosition storage consolidated_position = ds.stockActivePositions.securities[consolidated_security_id];
-        require(consolidated_position.quantity >= quantity, "Insufficient shares for transfer");
+        require(consolidated_position.quantity >= quantity, "Insufficient shares for transfer"); // rewrite to custom error
 
         // Generate new security IDs
         bytes16 transferee_security_id = bytes16(
