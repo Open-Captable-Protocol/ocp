@@ -2,6 +2,10 @@
 
 # Sets default environment to "local" if no environment is specified
 ENVIRONMENT="local"
+CHECK_ONLY=false
+
+# Add this line to store the root directory
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Function to cleanup processes on exit
 cleanup() {
@@ -23,6 +27,7 @@ trap cleanup EXIT INT TERM
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --env=*) ENVIRONMENT="${1#*=}" ;;
+        --check) CHECK_ONLY=true ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
     shift
@@ -199,4 +204,98 @@ if echo "$SYNC_OUTPUT" | grep -q "CHANGES_DETECTED=true"; then
     echo "✅ Changes applied successfully!"
 else
     echo "✅ No changes detected"
+fi
+
+# Function to get user confirmation for non-local environments
+confirm_non_local() {
+    local action=$1
+    if [ "$ENVIRONMENT" != "local" ]; then
+        read -p "Would you like to $action? (yes/no): " -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+            echo "Operation cancelled"
+            return 1
+        fi
+        
+        echo "⚠️  WARNING: You are about to $action in $ENVIRONMENT environment"
+        read -p "Type 'I understand' to proceed: " -r
+        echo
+        if [[ ! $REPLY == "I understand" ]]; then
+            echo "Operation cancelled"
+            return 1
+        fi
+    else
+        read -p "Would you like to $action? (y/N): " -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Operation cancelled"
+            return 1
+        fi
+    fi
+    return 0
+}
+
+# Function to check and sync cap tables
+check_cap_tables() {
+    local force_sync=$1
+    
+    echo "🔍 Checking for out-of-sync cap tables..."
+    # Ensure we're in the chain directory using absolute path
+    cd "${ROOT_DIR}/chain" || exit 1
+    
+    # Run detection script
+    local CHECK_OUTPUT=$(LOCAL_RPC=${LOCAL_RPC:-"http://localhost:8546"} REMOTE_RPC=$RPC_URL forge script script/SyncDiamonds.s.sol:SyncDiamondsScript \
+        --sig "detectOutOfSyncCapTables()" \
+        --rpc-url $RPC_URL \
+        --private-key $PRIVATE_KEY \
+        -vvvv 2>&1 || true)
+    
+    echo "$CHECK_OUTPUT"
+    
+    # Check if any cap tables need updates
+    if echo "$CHECK_OUTPUT" | grep -q "Cap table out of sync:"; then
+        echo -e "\n📝 Cap tables requiring updates:"
+        echo "$CHECK_OUTPUT" | grep -A 10 "Cap table out of sync:" | grep -v "Script ran successfully"
+        
+        if [ "$force_sync" = true ] || confirm_non_local "sync these cap tables"; then
+            echo "🔄 Syncing cap tables..."
+            LOCAL_RPC=${LOCAL_RPC:-"http://localhost:8546"} REMOTE_RPC=$RPC_URL forge script script/SyncDiamonds.s.sol:SyncDiamondsScript \
+                --broadcast \
+                --rpc-url $RPC_URL \
+                --private-key $PRIVATE_KEY \
+                -vvvv
+            
+            if [ $? -ne 0 ]; then
+                echo "❌ Failed to sync cap tables"
+                cd - > /dev/null  # Return to previous directory
+                return 1
+            fi
+            echo "✅ Cap tables synced successfully!"
+        fi
+    else
+        echo "✅ All cap tables are in sync"
+    fi
+    
+    # Return to previous directory
+    cd - > /dev/null
+}
+
+if [ "$CHECK_ONLY" = true ]; then
+    check_cap_tables false
+    exit $?
+fi
+
+# After facet changes are applied, check and sync cap tables
+if echo "$SYNC_OUTPUT" | grep -q "CHANGES_DETECTED=true"; then
+    # ... existing facet sync code ...
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Facet changes applied successfully!"
+        echo -e "\n🔄 Checking if cap tables need to be updated..."
+        check_cap_tables true
+    fi
+else
+    echo "✅ No facet changes detected"
+    echo -e "\n🔄 Checking if cap tables need to be updated..."
+    check_cap_tables false
 fi
