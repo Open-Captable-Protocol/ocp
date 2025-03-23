@@ -66,8 +66,11 @@ contract SyncDiamondsScript is Script, SyncFacetsScript {
         address referenceDiamond = vm.envAddress("REFERENCE_DIAMOND");
         address factory = vm.envAddress("FACTORY_ADDRESS");
 
+        console.log("Using factory address:", factory);
+
         // Get all deployed cap tables
         CapTableFactory capTableFactory = CapTableFactory(factory);
+
         uint256 count = capTableFactory.getCapTableCount();
 
         // Get reference diamond facets and hashes
@@ -81,7 +84,10 @@ contract SyncDiamondsScript is Script, SyncFacetsScript {
         // Check each cap table
         for (uint256 i = 0; i < count; i++) {
             address capTable = capTableFactory.capTables(i);
-            if (capTable == address(0)) continue;
+            if (capTable == address(0)) {
+                console.log("Skipping zero address cap table at index %d", i);
+                continue;
+            }
 
             // Get target facets and hashes
             IDiamondLoupe.Facet[] memory targetFacets = IDiamondLoupe(capTable).facets();

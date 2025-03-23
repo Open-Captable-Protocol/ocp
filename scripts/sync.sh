@@ -150,6 +150,8 @@ SYNC_OUTPUT=$(LOCAL_RPC=${LOCAL_RPC:-"http://localhost:8546"} REMOTE_RPC=$RPC_UR
     --private-key $PRIVATE_KEY \
     -vvvv 2>&1 || true)
 
+sleep 5 # wait for the script to finish and transaction to be mined
+
 # Check if changes were detected
 if echo "$SYNC_OUTPUT" | grep -q "CHANGES_DETECTED=true"; then
     echo -e "\n📝 Changes detected in facets:"
@@ -243,35 +245,56 @@ check_cap_tables() {
     # Ensure we're in the chain directory using absolute path
     cd "${ROOT_DIR}/chain" || exit 1
     
-    # Run detection script
+    # Run detection script with error handling
     local CHECK_OUTPUT=$(LOCAL_RPC=${LOCAL_RPC:-"http://localhost:8546"} REMOTE_RPC=$RPC_URL forge script script/SyncDiamonds.s.sol:SyncDiamondsScript \
         --sig "detectOutOfSyncCapTables()" \
         --rpc-url $RPC_URL \
         --private-key $PRIVATE_KEY \
         -vvvv 2>&1 || true)
     
-    echo "$CHECK_OUTPUT"
+    # Check for errors in the output
+    if echo "$CHECK_OUTPUT" | grep -q "Error:"; then
+        echo "❌ Error detecting out-of-sync cap tables:"
+        echo "$CHECK_OUTPUT" | grep "Error:"
+        cd - > /dev/null  # Return to previous directory
+        return 1
+    fi
+    
+    # Count how many cap tables need updates
+    local OUT_OF_SYNC_COUNT=$(echo "$CHECK_OUTPUT" | grep -c "Cap table out of sync:")
     
     # Check if any cap tables need updates
-    if echo "$CHECK_OUTPUT" | grep -q "Cap table out of sync:"; then
-        echo -e "\n📝 Cap tables requiring updates:"
+    if [ "$OUT_OF_SYNC_COUNT" -gt 0 ]; then
+        echo -e "\n📝 Found $OUT_OF_SYNC_COUNT cap tables that need updates:"
         echo "$CHECK_OUTPUT" | grep -A 10 "Cap table out of sync:" | grep -v "Script ran successfully"
         
-        if [ "$force_sync" = true ] || confirm_non_local "sync these cap tables"; then
-            echo "🔄 Syncing cap tables..."
-            LOCAL_RPC=${LOCAL_RPC:-"http://localhost:8546"} REMOTE_RPC=$RPC_URL forge script script/SyncDiamonds.s.sol:SyncDiamondsScript \
-                --broadcast \
-                --rpc-url $RPC_URL \
-                --private-key $PRIVATE_KEY \
-                -vvvv
-            
-            if [ $? -ne 0 ]; then
-                echo "❌ Failed to sync cap tables"
-                cd - > /dev/null  # Return to previous directory
-                return 1
-            fi
-            echo "✅ Cap tables synced successfully!"
+        echo -e "\n🔄 Ready to sync $OUT_OF_SYNC_COUNT cap tables"
+        echo "Environment: $ENVIRONMENT"
+        echo "Reference Diamond: $REFERENCE_DIAMOND"
+        echo "Factory Address: $FACTORY_ADDRESS"
+        echo -e "RPC URL: $RPC_URL\n"
+        
+        read -p "Would you like to sync these cap tables? (y/N): " -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Sync cancelled"
+            cd - > /dev/null  # Return to previous directory
+            return 1
         fi
+        
+        echo "🔄 Syncing cap tables..."
+        LOCAL_RPC=${LOCAL_RPC:-"http://localhost:8546"} REMOTE_RPC=$RPC_URL forge script script/SyncDiamonds.s.sol:SyncDiamondsScript \
+            --broadcast \
+            --rpc-url $RPC_URL \
+            --private-key $PRIVATE_KEY \
+            -vvvv 2>&1
+        
+        if [ $? -ne 0 ]; then
+            echo "❌ Failed to sync cap tables"
+            cd - > /dev/null  # Return to previous directory
+            return 1
+        fi
+        echo "✅ Cap tables synced successfully!"
     else
         echo "✅ All cap tables are in sync"
     fi
