@@ -342,15 +342,15 @@ contract DeployFactoryScript is Script {
         address referenceDiamond = vm.envOr("REFERENCE_DIAMOND", address(0));
         console.log("deployerWallet: ", deployerWallet);
 
-        // Deploy new facets if addresses not in env
+        // If no reference diamond is provided, deploy new facets
         if (referenceDiamond == address(0)) {
-            console.log("Deploying new facets");
+            console.log("\nDeploying new reference diamond and facets...");
             referenceDiamond = LibDeployment.deployInitialFacets(deployerWallet);
         }
 
         console.log("------- New Facet Addresses (Add to .env) -------");
         console.log("REFERENCE_DIAMOND=", referenceDiamond);
-        console.log("-------------------------------------------------");
+        console.log("---------------------------------");
 
         // Deploy factory with facet addresses
         CapTableFactory factory = new CapTableFactory(referenceDiamond);
