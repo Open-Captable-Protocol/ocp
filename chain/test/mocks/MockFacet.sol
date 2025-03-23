@@ -16,3 +16,11 @@ contract MockFacetV2 {
         return value + 2;
     }
 }
+
+interface IMockFacet {
+    function getValuePlusOne() external view returns (uint256);
+}
+
+interface IMockFacetV2 {
+    function getValuePlusTwo() external view returns (uint256);
+}
