@@ -29,8 +29,8 @@
     "accept-transfer": "sh ./scripts/acceptTransfer.sh",
     "setup": "sh setup.sh",
     "deseed": "npx tsx src/db/scripts/deseed.js",
-    "test": "cd chain && forge test --summary && cd ..",
-    "test-js": "jest --testPathPattern src/tests/unit",
+    "test:chain": "cd chain && forge test --summary && cd ..",
+    "test:js": "jest --testPathPattern src/tests",
     "test-js-integration": "jest --testPathPattern src/tests/integration"
   },
   "dependencies": {
