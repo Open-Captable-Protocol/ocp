@@ -73,7 +73,7 @@ stockClass.post("/create", async (req, res) => {
 
         console.log("✅ | Stock Class created offchain:", stockClass);
 
-        res.status(200).send({ stockClass: { ...stockClass, tx_hash: receipt.hash } });
+        res.status(200).send({ stockClass: { ...stockClass.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
