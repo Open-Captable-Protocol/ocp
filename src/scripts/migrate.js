@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
 import { readIssuerById, getAllStateMachineObjectsById, readAllIssuers } from "../db/operations/read.js";
 import { updateIssuerById } from "../db/operations/update.js";
-import deployCapTable, { facetsABI, getWallet } from "../chain-operations/deployCapTable.js";
+import deployCapTable, { getWallet } from "../chain-operations/deployCapTable.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import { convertAndReflectStockClassOnchain } from "../controllers/stockClassController.js";
 import { convertAndReflectStakeholderOnchain } from "../controllers/stakeholderController.js";
@@ -24,6 +24,7 @@ import chalk from "chalk";
 import readline from "readline";
 import { addAddressesToWatch, reamoveAllListeners } from "../utils/websocket.ts";
 import { validateIssuerForMigration } from "./validate.js";
+import { facetsABI } from "../utils/errorDecoder.js";
 
 // Load environment variables
 dotenv.config();

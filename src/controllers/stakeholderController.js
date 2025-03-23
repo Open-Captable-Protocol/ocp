@@ -1,11 +1,16 @@
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
-
+import { decodeError } from "../utils/errorDecoder.js";
 /// @dev: controller handles conversion from OCF type to Onchain types and creates the stakeholder.
 export const convertAndReflectStakeholderOnchain = async (contract, stakeholderId) => {
-    const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholderId);
-    const tx = await contract.createStakeholder(stakeholderIdBytes16);
-    const receipt = await tx.wait();
-    return receipt;
+    try {
+        const stakeholderIdBytes16 = convertUUIDToBytes16(stakeholderId);
+        const tx = await contract.createStakeholder(stakeholderIdBytes16);
+        const receipt = await tx.wait();
+        return receipt;
+    } catch (error) {
+        const decodedError = decodeError(error);
+        throw new Error(decodedError.message);
+    }
 };
 
 export const addWalletToStakeholder = async (contract, id, wallet) => {
