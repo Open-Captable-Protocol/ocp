@@ -8,99 +8,121 @@ import { IDiamondLoupe } from "diamond-3-hardhat/interfaces/IDiamondLoupe.sol";
 import { DiamondCutFacet } from "diamond-3-hardhat/facets/DiamondCutFacet.sol";
 import { IDiamondCut } from "diamond-3-hardhat/interfaces/IDiamondCut.sol";
 import { CapTable } from "@core/CapTable.sol";
+import { SyncFacetsScript, FacetHelper } from "./SyncFacets.s.sol";
+import { LibDeployment } from "./DeployFactory.s.sol";
 
-library LibSyncDiamonds {
-    // After updating or creating a new facet, we need to ensure deployed instances are updated
-    function syncDiamond(address targetDiamond, address referenceDiamond) internal {
-        // Get current owner
-        IDiamondLoupe loupe = IDiamondLoupe(referenceDiamond);
-        IDiamondLoupe targetLoupe = IDiamondLoupe(targetDiamond);
-
-        // Get all facets from reference
-        IDiamondLoupe.Facet[] memory referenceFacets = loupe.facets();
-
-        // Get all facets from target
-        IDiamondLoupe.Facet[] memory targetFacets = targetLoupe.facets();
-
-        console.log("target facets length: ", targetFacets.length);
-        console.log("reference facets length: ", referenceFacets.length);
-
-        // Compare and create necessary cuts
-        for (uint256 i = 0; i < referenceFacets.length; i++) {
-            address refFacetAddr = referenceFacets[i].facetAddress;
-            bytes4[] memory refSelectors = referenceFacets[i].functionSelectors;
-
-            // Check if any of these selectors already exist in target
-            bool[] memory selectorExists = new bool[](refSelectors.length);
-            uint256 newSelectorsCount = 0;
-
-            for (uint256 k = 0; k < refSelectors.length; k++) {
-                bytes4 selector = refSelectors[k];
-                bool exists = false;
-
-                // Check if selector exists in any target facet
-                for (uint256 j = 0; j < targetFacets.length; j++) {
-                    bytes4[] memory targetSelectors = targetFacets[j].functionSelectors;
-                    for (uint256 m = 0; m < targetSelectors.length; m++) {
-                        if (targetSelectors[m] == selector) {
-                            exists = true;
-                            break;
-                        }
-                    }
-                    if (exists) break;
-                }
-
-                selectorExists[k] = exists;
-                if (!exists) newSelectorsCount++;
-            }
-
-            // If we found new selectors, add them
-            if (newSelectorsCount > 0) {
-                bytes4[] memory newSelectors = new bytes4[](newSelectorsCount);
-                uint256 index = 0;
-                for (uint256 k = 0; k < refSelectors.length; k++) {
-                    if (!selectorExists[k]) {
-                        newSelectors[index] = refSelectors[k];
-                        console.log("Adding selector:", uint32(refSelectors[k]));
-                        index++;
-                    }
-                }
-
-                console.log("Adding", newSelectorsCount, "new selectors for facet:", refFacetAddr);
-                IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
-                cut[0] = IDiamondCut.FacetCut({
-                    facetAddress: refFacetAddr,
-                    action: IDiamondCut.FacetCutAction.Add,
-                    functionSelectors: newSelectors
-                });
-                DiamondCutFacet(targetDiamond).diamondCut(cut, address(0), "");
-                console.log("Successfully added selectors");
-            }
-        }
-    }
-}
-
-contract SyncDiamondsScript is Script {
-    function run() external {
+contract SyncDiamondsScript is Script, SyncFacetsScript {
+    function run() external override {
         console.log("SyncDiamondsScript started");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address referenceDiamond = vm.envAddress("REFERENCE_DIAMOND");
         address factory = vm.envAddress("FACTORY_ADDRESS");
 
-        vm.startBroadcast(deployerPrivateKey);
-
         // Get all deployed cap tables
         CapTableFactory capTableFactory = CapTableFactory(factory);
         uint256 count = capTableFactory.getCapTableCount();
 
-        // Sync each cap table
+        // Get reference diamond facets and hashes
+        IDiamondLoupe.Facet[] memory referenceFacets = IDiamondLoupe(referenceDiamond).facets();
+        FacetHelper.BytecodeHash[] memory referenceHashes = FacetHelper.getHashes(referenceFacets);
+
+        vm.startBroadcast(deployerPrivateKey);
+
+        // Sync each cap table using the same logic as SyncFacets
         for (uint256 i = 0; i < count; i++) {
             address capTable = capTableFactory.capTables(i);
-            LibSyncDiamonds.syncDiamond(capTable, referenceDiamond);
-            console.log("Synced cap table:", capTable);
+            if (capTable == address(0)) continue; // Skip zero addresses
+            console.log("\nSyncing cap table:", capTable);
+
+            // Get target facets and hashes
+            IDiamondLoupe.Facet[] memory targetFacets = IDiamondLoupe(capTable).facets();
+            FacetHelper.BytecodeHash[] memory targetHashes = FacetHelper.getHashes(targetFacets);
+
+            // Detect and apply changes
+            (FacetHelper.FacetChange[] memory changes, uint256 changeCount) =
+                FacetHelper.detectChanges(referenceFacets, targetFacets, referenceHashes, targetHashes);
+
+            if (changeCount > 0) {
+                for (uint256 j = 0; j < changeCount; j++) {
+                    processChanges(changes[j], capTable, targetFacets, referenceFacets);
+                }
+                console.log("Cap table updated successfully");
+            } else {
+                console.log("Cap table already in sync");
+            }
         }
 
         vm.stopBroadcast();
-        console.log("SyncDiamondsScript completed");
+        console.log("\nSyncDiamondsScript completed");
+    }
+
+    struct CapTableChanges {
+        address capTable;
+        FacetHelper.FacetChange[] changes;
+        uint256 changeCount;
+    }
+
+    function detectOutOfSyncCapTables() external returns (CapTableChanges[] memory, uint256) {
+        address referenceDiamond = vm.envAddress("REFERENCE_DIAMOND");
+        address factory = vm.envAddress("FACTORY_ADDRESS");
+
+        console.log("Using factory address:", factory);
+
+        // Get all deployed cap tables
+        CapTableFactory capTableFactory = CapTableFactory(factory);
+
+        uint256 count = capTableFactory.getCapTableCount();
+
+        // Get reference diamond facets and hashes
+        IDiamondLoupe.Facet[] memory referenceFacets = IDiamondLoupe(referenceDiamond).facets();
+        FacetHelper.BytecodeHash[] memory referenceHashes = FacetHelper.getHashes(referenceFacets);
+
+        // Pre-allocate max possible size
+        CapTableChanges[] memory outOfSync = new CapTableChanges[](count);
+        uint256 outOfSyncCount = 0;
+
+        // Check each cap table
+        for (uint256 i = 0; i < count; i++) {
+            address capTable = capTableFactory.capTables(i);
+            if (capTable == address(0)) {
+                console.log("Skipping zero address cap table at index %d", i);
+                continue;
+            }
+
+            // Get target facets and hashes
+            IDiamondLoupe.Facet[] memory targetFacets = IDiamondLoupe(capTable).facets();
+            FacetHelper.BytecodeHash[] memory targetHashes = FacetHelper.getHashes(targetFacets);
+
+            // Detect changes
+            (FacetHelper.FacetChange[] memory changes, uint256 changeCount) =
+                FacetHelper.detectChanges(referenceFacets, targetFacets, referenceHashes, targetHashes);
+
+            if (changeCount > 0) {
+                outOfSync[outOfSyncCount] =
+                    CapTableChanges({ capTable: capTable, changes: changes, changeCount: changeCount });
+                outOfSyncCount++;
+
+                // Log changes for this cap table
+                console.log("\nCap table out of sync:", capTable);
+                for (uint256 j = 0; j < changeCount; j++) {
+                    FacetHelper.FacetChange memory change = changes[j];
+                    string memory changeTypeStr = change.changeType == FacetHelper.ChangeType.Add
+                        ? "Add"
+                        : change.changeType == FacetHelper.ChangeType.Update ? "Update" : "Remove";
+
+                    // Get facet type and name
+                    LibDeployment.FacetType facetType = LibDeployment.getFacetTypeFromSelector(change.selector);
+                    string memory facetName = LibDeployment.getFacetCutInfo(facetType).name;
+
+                    console.log(
+                        string.concat(changeTypeStr, " ", facetName, ":"),
+                        change.newAddress == address(0) ? change.currentAddress : change.newAddress
+                    );
+                    console.log("  Function:", facetName);
+                }
+            }
+        }
+
+        return (outOfSync, outOfSyncCount);
     }
 }

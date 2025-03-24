@@ -134,7 +134,7 @@ library FacetHelper {
                             LibDeployment.getFacetTypeFromSelector(deployedFacets[i].functionSelectors[0]);
                         string memory facetName = LibDeployment.getFacetCutInfo(facetType).name;
                         console.log(
-                            "\nForce updating facet",
+                            "\nChange detected in facet",
                             facetName,
                             "due to:",
                             !selectorsMatch ? "selector mismatch" : "code change"
@@ -269,7 +269,64 @@ contract SyncFacetsScript is Script {
         }
     }
 
-    function run() external {
+    function detectChanges() external {
+        address referenceDiamond = vm.envAddress("REFERENCE_DIAMOND");
+        string memory LOCAL_RPC = vm.envOr("LOCAL_RPC", string("http://localhost:8546"));
+        string memory REMOTE_RPC = vm.envOr("REMOTE_RPC", string("http://localhost:8545"));
+        console.log("LOCAL_RPC: %s", LOCAL_RPC);
+        console.log("REMOTE_RPC: %s", REMOTE_RPC);
+
+        // Deploy locally to get latest implementations
+        uint256 localFork = vm.createFork(LOCAL_RPC);
+        vm.selectFork(localFork);
+        address localDiamond = LibDeployment.deployInitialFacets(address(this));
+        IDiamondLoupe.Facet[] memory localFacets = IDiamondLoupe(localDiamond).facets();
+        console.log("\nNumber of local facets: ", localFacets.length);
+
+        // Get deployed facets from remote
+        uint256 remoteFork = vm.createFork(REMOTE_RPC);
+        vm.selectFork(remoteFork);
+        IDiamondLoupe.Facet[] memory deployedFacets = IDiamondLoupe(referenceDiamond).facets();
+        console.log("Number of deployed facets: ", deployedFacets.length);
+
+        // Pre-compute all bytecode hashes once
+        vm.selectFork(localFork);
+        FacetHelper.BytecodeHash[] memory localHashes = FacetHelper.getHashes(localFacets);
+        vm.selectFork(remoteFork);
+        FacetHelper.BytecodeHash[] memory remoteHashes = FacetHelper.getHashes(deployedFacets);
+
+        // Now we can do pure comparison
+        (FacetHelper.FacetChange[] memory changes, uint256 changeCount) =
+            FacetHelper.detectChanges(localFacets, deployedFacets, localHashes, remoteHashes);
+
+        if (changeCount > 0) {
+            console.log("\n=== Changes Detected ===");
+            console.log("CHANGES_DETECTED=true");
+            console.log("CHANGE_COUNT=", changeCount);
+            for (uint256 i = 0; i < changeCount; i++) {
+                LibDeployment.FacetType facetType = LibDeployment.getFacetTypeFromSelector(changes[i].selector);
+                string memory facetName = LibDeployment.getFacetCutInfo(facetType).name;
+                console.log(
+                    string.concat(
+                        "CHANGE_",
+                        vm.toString(i),
+                        "=",
+                        facetName,
+                        ":",
+                        changes[i].changeType == FacetHelper.ChangeType.Add
+                            ? "Add"
+                            : changes[i].changeType == FacetHelper.ChangeType.Remove ? "Remove" : "Update"
+                    )
+                );
+            }
+            console.log("=====================");
+            revert("Changes detected - requires confirmation");
+        } else {
+            console.log("\nNo changes detected");
+        }
+    }
+
+    function run() external virtual {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address referenceDiamond = vm.envAddress("REFERENCE_DIAMOND");
         string memory LOCAL_RPC = vm.envOr("LOCAL_RPC", string("http://localhost:8546"));
@@ -301,7 +358,7 @@ contract SyncFacetsScript is Script {
             FacetHelper.detectChanges(localFacets, deployedFacets, localHashes, remoteHashes);
 
         if (changeCount > 0) {
-            console.log("\n=== Processing Changes ===");
+            console.log("\n=== Applying Changes ===");
             vm.selectFork(remoteFork);
             vm.startBroadcast(deployerPrivateKey);
 
@@ -310,7 +367,9 @@ contract SyncFacetsScript is Script {
             }
 
             vm.stopBroadcast();
-            console.log("\n=== Changes Completed ===");
+            console.log("\n=== Changes Applied Successfully ===");
+        } else {
+            console.log("\nNo changes detected");
         }
     }
 }

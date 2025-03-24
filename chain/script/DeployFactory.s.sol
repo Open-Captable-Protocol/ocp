@@ -342,15 +342,15 @@ contract DeployFactoryScript is Script {
         address referenceDiamond = vm.envOr("REFERENCE_DIAMOND", address(0));
         console.log("deployerWallet: ", deployerWallet);
 
-        // Deploy new facets if addresses not in env
+        // If no reference diamond is provided, deploy new facets
         if (referenceDiamond == address(0)) {
-            console.log("Deploying new facets");
+            console.log("\nDeploying new reference diamond and facets...");
             referenceDiamond = LibDeployment.deployInitialFacets(deployerWallet);
         }
 
         console.log("------- New Facet Addresses (Add to .env) -------");
         console.log("REFERENCE_DIAMOND=", referenceDiamond);
-        console.log("-------------------------------------------------");
+        console.log("---------------------------------");
 
         // Deploy factory with facet addresses
         CapTableFactory factory = new CapTableFactory(referenceDiamond);
@@ -390,6 +390,37 @@ contract DeployFactoryScript is Script {
         //     "Factory is admin:", AccessControlFacet(diamond).hasRole(AccessControl.DEFAULT_ADMIN_ROLE, address(factory))
         // );
         vm.stopPrank();
+        vm.stopBroadcast();
+    }
+
+    function createCapTable() external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        if (deployerPrivateKey == 0) {
+            revert("Missing PRIVATE_KEY in .env");
+        }
+        address deployerWallet = vm.addr(deployerPrivateKey);
+        console.log("Creating a new cap table");
+
+        // Get addresses from env
+        address referenceDiamond = vm.envOr("REFERENCE_DIAMOND", address(0));
+        address factoryAddress = vm.envOr("FACTORY_ADDRESS", address(0));
+
+        if (referenceDiamond == address(0)) {
+            revert("Missing REFERENCE_DIAMOND in .env");
+        }
+        if (factoryAddress == address(0)) {
+            revert("Missing FACTORY_ADDRESS in .env");
+        }
+
+        vm.startBroadcast(deployerPrivateKey);
+
+        // Use existing factory
+        CapTableFactory factory = CapTableFactory(factoryAddress);
+        // Pass EIN and initial authorized shares (1 billion with 18 decimals)
+        address capTable = factory.createCapTable("1234567890", 1_000_000_000_000_000_000_000_000_000);
+
+        console.log("\nNew CapTable created at:", capTable);
+
         vm.stopBroadcast();
     }
 }
