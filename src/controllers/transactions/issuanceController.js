@@ -55,7 +55,7 @@ export const convertAndCreateIssuanceConvertibleOnchain = async (
 // Warrant Issuance
 export const convertAndCreateIssuanceWarrantOnchain = async (
     contract,
-    { id, security_id, stakeholder_id, quantity, purchase_price = { amount: 0 }, custom_id = "" }
+    { id, security_id, stakeholder_id, quantity = "0", purchase_price = { amount: 0 }, custom_id = "" }
 ) => {
     try {
         const tx = await contract.issueWarrant({
@@ -87,9 +87,9 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
         stock_plan_id = "00000000-0000-0000-0000-000000000000", // default to empty uuid to pass onchain validation
         quantity,
         compensation_type,
-        exercise_price,
-        base_price,
-        expiration_date,
+        exercise_price = { amount: "0" },
+        base_price = { amount: "0" },
+        expiration_date = null,
         custom_id = "",
     }
 ) => {
@@ -102,9 +102,9 @@ export const convertAndCreateIssuanceEquityCompensationOnchain = async (
             quantity: toScaledBigNumber(quantity),
             security_id: convertUUIDToBytes16(security_id),
             compensation_type,
-            exercise_price: toScaledBigNumber(exercise_price?.amount || 0),
-            base_price: toScaledBigNumber(base_price?.amount || 0),
-            expiration_date,
+            exercise_price: toScaledBigNumber(exercise_price.amount),
+            base_price: toScaledBigNumber(base_price.amount),
+            expiration_date: expiration_date || "",
             custom_id,
             termination_exercise_windows_mapping: "",
             security_law_exemptions_mapping: "",

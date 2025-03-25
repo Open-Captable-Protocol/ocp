@@ -556,7 +556,7 @@ export const handleEquityCompensationIssuance = async (equity, issuerId, timesta
                       currency: "USD", // Default to USD, can be made configurable if needed
                   }
                 : undefined,
-        expiration_date,
+        expiration_date: expiration_date === "" ? null : expiration_date, // smart contract value type is string yet we want to store null if we want to pass ocf validation
         termination_exercise_windows_mapping,
         security_law_exemptions_mapping,
         custom_id,
