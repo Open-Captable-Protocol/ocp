@@ -111,9 +111,9 @@ function validateTransactionByType(tx, referenceSets) {
                 }
 
                 // Find the resulting stock issuance transaction
-                const resultingStockIssuances = tx.resulting_security_ids.map((securityId) =>
-                    transactions.find((t) => t.security_id === securityId && t.object_type === "TX_STOCK_ISSUANCE")
-                );
+                const resultingStockIssuances = tx.resulting_security_ids
+                    .map((securityId) => transactions.find((t) => t.security_id === securityId && t.object_type === "TX_STOCK_ISSUANCE"))
+                    .filter(Boolean); // Filter out any undefined values
 
                 if (resultingStockIssuances.length == 0) {
                     errors.push(`Transaction ${tx.id} references non-existent stock issuance with security_id: ${tx.resulting_security_ids[0]}`);
