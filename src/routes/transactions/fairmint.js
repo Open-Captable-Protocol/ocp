@@ -92,6 +92,7 @@ fairmintTransactions.post("/issuance/stock-fairmint-reflection", async (req, res
 
         // TODO use createFairmintData instead
         await upsertFairmintDataBySecurityId(incomingStockIssuance.security_id, {
+            issuer: issuerId,
             security_id: incomingStockIssuance.security_id,
             series_id: payload.series_id,
             date: incomingStockIssuance.date,
@@ -167,6 +168,7 @@ fairmintTransactions.post("/issuance/equity-compensation-fairmint-reflection", a
 
         // Save Fairmint data
         await createFairmintData({
+            issuer: issuerId,
             security_id: incomingEquityCompensationIssuance.security_id,
             series_id: payload.series_id,
             attributes: {
@@ -301,6 +303,7 @@ fairmintTransactions.post("/issuance/convertible-fairmint-reflection", async (re
 
         // TODO use createFairmintData instead
         await upsertFairmintDataBySecurityId(incomingConvertibleIssuance.security_id, {
+            issuer: issuerId,
             security_id: incomingConvertibleIssuance.security_id,
             series_id: payload.series_id,
             date: incomingConvertibleIssuance.date,
@@ -375,6 +378,7 @@ fairmintTransactions.post("/issuance/warrant-fairmint-reflection", async (req, r
 
         // Save Fairmint data: TODO use createFairmintData instead
         await upsertFairmintDataBySecurityId(incomingWarrantIssuance.security_id, {
+            issuer: issuerId,
             security_id: incomingWarrantIssuance.security_id,
             series_id: payload.series_id,
             date: incomingWarrantIssuance.date,
