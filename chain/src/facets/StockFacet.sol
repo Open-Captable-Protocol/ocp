@@ -345,14 +345,14 @@ contract StockFacet {
     }
 
     /// @notice Cancel stock from a stakeholder
-    /// @dev Only OPERATOR_ROLE can cancel stock
+    /// @dev Only ADMIN_ROLE can cancel stock
     /// @param security_id The ID of the security to cancel
     /// @param quantity The quantity of shares to cancel
     function cancelStock(bytes16 security_id, uint256 quantity) external {
         Storage storage ds = StorageLib.get();
 
-        if (!AccessControl.hasOperatorRole(msg.sender)) {
-            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.OPERATOR_ROLE);
+        if (!AccessControl.hasAdminRole(msg.sender)) {
+            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.DEFAULT_ADMIN_ROLE);
         }
 
         if (quantity == 0) {
@@ -382,7 +382,20 @@ contract StockFacet {
                 )
             );
 
-            // Create remainder position
+            // Create issuance params for remainder
+            IssueStockParams memory remainderParams = IssueStockParams({
+                id: balance_security_id,
+                stock_class_id: position.stock_class_id,
+                share_price: position.share_price,
+                quantity: position.quantity - quantity,
+                stakeholder_id: position.stakeholder_id,
+                security_id: balance_security_id,
+                custom_id: "CANCELLATION_REMAINDER", // TODO(adam): add custom id
+                stock_legend_ids_mapping: "",
+                security_law_exemptions_mapping: ""
+            });
+
+            // Issue the remainder shares
             ds.stockActivePositions.securities[balance_security_id] = StockActivePosition({
                 stakeholder_id: position.stakeholder_id,
                 stock_class_id: position.stock_class_id,
@@ -393,6 +406,10 @@ contract StockFacet {
             // Update mappings for remainder
             ds.stockActivePositions.stakeholderToSecurities[position.stakeholder_id].push(balance_security_id);
             ds.stockActivePositions.securityToStakeholder[balance_security_id] = position.stakeholder_id;
+
+            // Record issuance transaction for remainder
+            bytes memory remainderTxData = abi.encode(remainderParams);
+            TxHelper.createTx(TxType.STOCK_ISSUANCE, remainderTxData);
         }
 
         // Remove the original security

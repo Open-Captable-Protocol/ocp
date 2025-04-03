@@ -6,12 +6,25 @@ import { StorageLib } from "@core/Storage.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { IssueStockParams, StockActivePosition } from "@libraries/Structs.sol";
 import { IStockFacet } from "@interfaces/IStockFacet.sol";
-import { IIssuerFacet } from "@interfaces/IIssuerFacet.sol";
+import { IStakeholderFacet } from "@interfaces/IStakeholderFacet.sol";
 import { IStockClassFacet } from "@interfaces/IStockClassFacet.sol";
-import { ValidationLib } from "@libraries/ValidationLib.sol";
+import { AccessControl } from "@libraries/AccessControl.sol";
 import { StockFacet } from "@facets/StockFacet.sol";
+import { IAccessControlFacet } from "@interfaces/IAccessControlFacet.sol";
 
 contract DiamondStockCancellationTest is DiamondTestBase {
+    address operator;
+    address unauthorized;
+
+    function setUp() public override {
+        super.setUp();
+        operator = makeAddr("operator");
+        unauthorized = makeAddr("unauthorized");
+
+        // Grant OPERATOR_ROLE to operator
+        IAccessControlFacet(address(capTable)).grantRole(AccessControl.OPERATOR_ROLE, operator);
+    }
+
     function createStockClassAndStakeholder(uint256 sharesAuthorized) public returns (bytes16, bytes16) {
         bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
         bytes16 stockClassId = 0xd3373e0a4dd940000000000000000000;
@@ -25,6 +38,21 @@ contract DiamondStockCancellationTest is DiamondTestBase {
         IStockClassFacet(address(capTable)).createStockClass(stockClassId, "COMMON", 100, sharesAuthorized);
 
         return (stockClassId, stakeholderId);
+    }
+
+    function createStakeholder() public override returns (bytes16) {
+        bytes16 stakeholderId = 0xd3373e0a4dd940000000000000000005;
+        vm.expectEmit(true, false, false, false, address(capTable));
+        emit StakeholderCreated(stakeholderId);
+        IStakeholderFacet(address(capTable)).createStakeholder(stakeholderId);
+        return stakeholderId;
+    }
+
+    function createStockClass(bytes16 stockClassId) public override returns (bytes16) {
+        vm.expectEmit(true, true, false, false, address(capTable));
+        emit StockClassCreated(stockClassId, "COMMON", 100, 100_000);
+        IStockClassFacet(address(capTable)).createStockClass(stockClassId, "COMMON", 100, 100_000);
+        return stockClassId;
     }
 
     function issueStock(bytes16 stockClassId, bytes16 stakeholderId, uint256 quantity) public returns (bytes16) {
@@ -69,6 +97,12 @@ contract DiamondStockCancellationTest is DiamondTestBase {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
         bytes16 securityId = issueStock(stockClassId, stakeholderId, 1000);
 
+        // Expect both cancellation and issuance events
+        vm.expectEmit(true, false, false, false, address(capTable));
+        emit TxHelper.TxCreated(TxType.STOCK_ISSUANCE, ""); // Remainder issuance
+        vm.expectEmit(true, false, false, false, address(capTable));
+        emit TxHelper.TxCreated(TxType.STOCK_CANCELLATION, ""); // Cancellation
+
         // Perform partial cancellation
         IStockFacet(address(capTable)).cancelStock(securityId, 500);
 
@@ -79,6 +113,7 @@ contract DiamondStockCancellationTest is DiamondTestBase {
 
         StockActivePosition memory position = IStockFacet(address(capTable)).getStockPosition(securities[0]);
         assertEq(position.quantity, 500, "Incorrect remainder quantity");
+        assertEq(position.share_price, 10_000_000_000, "Incorrect share price for remainder");
     }
 
     function test_RevertInvalidSecurityId() public {
@@ -110,20 +145,35 @@ contract DiamondStockCancellationTest is DiamondTestBase {
     }
 
     function test_RevertUnauthorizedCaller() public {
-        (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
-        bytes16 securityId = issueStock(stockClassId, stakeholderId, 1000);
+        // Create a stakeholder and stock class first
+        bytes16 stakeholderId = createStakeholder();
+        bytes16 stockClassId = createStockClass(bytes16(uint128(2)));
+        bytes16 id1 = 0xd3373e0a4dd940000000000000000002;
 
-        // Switch to a non-operator address
-        address nonOperator = address(0x123);
-        vm.startPrank(nonOperator);
+        // Test issueStock with operator role
+        vm.startPrank(operator);
+        IssueStockParams memory params = IssueStockParams({
+            id: id1,
+            stock_class_id: stockClassId,
+            share_price: 1,
+            quantity: 100,
+            stakeholder_id: stakeholderId,
+            security_id: bytes16(keccak256("security1")),
+            custom_id: "custom_id",
+            stock_legend_ids_mapping: "stock_legend_ids_mapping",
+            security_law_exemptions_mapping: "security_law_exemptions_mapping"
+        });
+        IStockFacet(address(capTable)).issueStock(params);
+        vm.stopPrank();
 
+        // Test unauthorized access
+        vm.startPrank(unauthorized);
         vm.expectRevert(
-            abi.encodeWithSignature(
-                "AccessControlUnauthorized(address,bytes32)", nonOperator, keccak256("OPERATOR_ROLE")
+            abi.encodeWithSelector(
+                AccessControl.AccessControlUnauthorized.selector, unauthorized, AccessControl.DEFAULT_ADMIN_ROLE
             )
         );
-        IStockFacet(address(capTable)).cancelStock(securityId, 100);
-
+        IStockFacet(address(capTable)).cancelStock(id1, 50);
         vm.stopPrank();
     }
 }
