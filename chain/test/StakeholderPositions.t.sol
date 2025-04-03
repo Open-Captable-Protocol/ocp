@@ -107,6 +107,9 @@ contract DiamondStakeholderPositionsTest is DiamondTestBase {
         // Ensure it exists
         id = sf.getStakeholderId(wallet, true);
         assertNotEq(id, bytes16(0));
+
+        // Ensure it returns a non-0 idx
+        assertGt(sf.getStakeholderIndex(id), 0);
     }
 
     function testGetStakeholderPositions() public {

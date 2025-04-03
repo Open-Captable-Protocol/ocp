@@ -70,6 +70,11 @@ contract StakeholderFacet {
         return stakeholder_id;
     }
 
+    /// @notice Get stakeholder idx for a stakeholder id
+    function getStakeholderIndex(bytes16 stakeholder_id) external view returns (uint256) {
+        return StorageLib.get().stakeholderIndex[stakeholder_id];
+    }
+
     /// @notice Get all positions for a stakeholder
     /// @dev INVESTOR_ROLE can only view their own positions, OPERATOR_ROLE and above can view any
     function getStakeholderPositions(bytes16 stakeholder_id) external view returns (StakeholderPositions memory) {

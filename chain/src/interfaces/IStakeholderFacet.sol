@@ -41,6 +41,9 @@ interface IStakeholderFacet {
     /// @param ensure_exists If true, will revert if the address is not linked to a stakeholder
     function getStakeholderId(address wallet_address, bool ensure_exists) external view returns (bytes16);
 
+    /// @notice Get stakeholder idx for a stakeholder id
+    function getStakeholderIndex(bytes16 stakeholder_id) external view returns (uint256);
+
     /// @notice Get all positions for a stakeholder
     /// @dev INVESTOR_ROLE can only view their own positions, OPERATOR_ROLE and above can view any
     /// @param stakeholder_id The stakeholder to get positions for
