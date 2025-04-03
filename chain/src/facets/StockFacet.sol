@@ -375,22 +375,23 @@ contract StockFacet {
 
         // Handle partial cancellation
         if (quantity < position.quantity) {
+            uint256 remainder_quantity = position.quantity - quantity;
             // Generate new security ID for remainder
             balance_security_id = bytes16(
                 keccak256(
-                    abi.encodePacked(block.timestamp, security_id, position.stakeholder_id, "CANCELLATION_BALANCE")
+                    abi.encodePacked(block.timestamp, security_id, position.stakeholder_id, "CANCELLATION_REMAINDER")
                 )
             );
 
-            // Create issuance params for remainder
+            // Remainer issuance
             IssueStockParams memory remainderParams = IssueStockParams({
                 id: balance_security_id,
                 stock_class_id: position.stock_class_id,
                 share_price: position.share_price,
-                quantity: position.quantity - quantity,
+                quantity: remainder_quantity,
                 stakeholder_id: position.stakeholder_id,
                 security_id: balance_security_id,
-                custom_id: "CANCELLATION_REMAINDER", // TODO(adam): add custom id
+                custom_id: "CANCELLATION_REMAINDER",
                 stock_legend_ids_mapping: "",
                 security_law_exemptions_mapping: ""
             });
@@ -399,7 +400,7 @@ contract StockFacet {
             ds.stockActivePositions.securities[balance_security_id] = StockActivePosition({
                 stakeholder_id: position.stakeholder_id,
                 stock_class_id: position.stock_class_id,
-                quantity: position.quantity - quantity,
+                quantity: remainder_quantity,
                 share_price: position.share_price
             });
 
@@ -425,6 +426,7 @@ contract StockFacet {
             balance_security_id: balance_security_id,
             quantity: quantity
         });
+
         bytes memory txData = abi.encode(cancellationTx);
         TxHelper.createTx(TxType.STOCK_CANCELLATION, txData);
     }
