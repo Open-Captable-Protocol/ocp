@@ -4,7 +4,6 @@ import { facetsABI } from "../utils/errorDecoder.js";
 import { toScaledBigNumber } from "../utils/convertToFixedPointDecimals.js";
 import { setupEnv } from "../utils/env.js";
 import getProvider from "./getProvider.js";
-import { findOne } from "../db/operations/atomic";
 import Factory from "../db/objects/Factory.js";
 import assert from "node:assert";
 import { decodeError } from "../utils/errorDecoder";
@@ -26,12 +25,23 @@ async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
     const wallet = await getWallet(chainId);
     console.log("🗽 | Wallet address: ", wallet.address);
 
-    // Find factory for this chain
-    const factory = await findOne(Factory, { version: "DIAMOND", chain_id: chainId });
-    const factoryAddress = factory?.factory_address;
+    // Find most recent factory for this chain
+    const factory = await Factory.findOne(
+        {
+            version: "DIAMOND",
+            chain_id: chainId,
+        },
+        null,
+        { sort: { createdAt: -1 } }
+    );
 
+    if (!factory) {
+        throw new Error(`No factory found for chain ${chainId} with version DIAMOND`);
+    }
+
+    const factoryAddress = factory.factory_address;
     if (!factoryAddress) {
-        throw new Error(`Factory not found for chain ${chainId}`);
+        throw new Error(`Factory address not found for chain ${chainId}`);
     }
     console.log("🏭 | Factory address: ", factoryAddress);
 

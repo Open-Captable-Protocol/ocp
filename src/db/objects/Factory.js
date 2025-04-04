@@ -21,7 +21,6 @@ const FactorySchema = new mongoose.Schema(
             required: true,
             enum: ["DIAMOND", "LEGACY"],
         },
-        tx_hash: { type: String, default: null },
     },
     { timestamps: true }
 );

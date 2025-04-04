@@ -399,7 +399,7 @@ contract DeployFactoryScript is Script {
         if (deployerPrivateKey == 0) {
             revert("Missing PRIVATE_KEY in .env");
         }
-        address deployerWallet = vm.addr(deployerPrivateKey);
+        // address deployerWallet = vm.addr(deployerPrivateKey);
         console.log("Creating a new cap table");
 
         // Get addresses from env
