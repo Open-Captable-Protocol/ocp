@@ -149,8 +149,8 @@ export const getAllStateMachineObjectsById = async (issuerId) => {
             TX_STOCK_ISSUANCE: 3,
             TX_EQUITY_COMPENSATION_ISSUANCE: 3,
             TX_CONVERTIBLE_ISSUANCE: 3,
-            TX_EQUITY_COMPENSATION_EXERCISE: 3,
             TX_WARRANT_ISSUANCE: 3,
+            TX_EQUITY_COMPENSATION_EXERCISE: 4,
         };
         const typeCompare = typeOrder[a.object_type] - typeOrder[b.object_type];
 
