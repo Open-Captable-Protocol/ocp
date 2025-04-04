@@ -133,6 +133,34 @@ function validateTransactionByType(tx, referenceSets) {
                 return errors;
             },
         },
+        TX_STOCK_CANCELLATION: {
+            required: [],
+            references: {},
+            customValidation: (tx, transactions) => {
+                const errors = [];
+                if (tx.quantity === 0) {
+                    errors.push(`Transaction ${tx.id} has 0 quantity`);
+                }
+
+                // Find the resulting stock issuance transaction
+                const originalStockIssuance = transactions.find((t) => t.security_id === tx.security_id && t.object_type === "TX_STOCK_ISSUANCE");
+
+                if (!originalStockIssuance) {
+                    errors.push(`Stock cancellation ${tx.id} references a non-existent stock issuance (security_id: ${tx.security_id})`);
+                    return errors;
+                }
+
+                const remainingShares = originalStockIssuance.quantity - tx.quantity;
+                // Validate quantities match if there is only one resulting stock issuance
+                if (remainingShares < 0) {
+                    errors.push(
+                        `Stock cancellation ${tx.id} attempts to cancel ${tx.quantity} shares but only ${originalStockIssuance.quantity} shares were originally issued (security_id: ${tx.security_id})`
+                    );
+                }
+
+                return errors;
+            },
+        },
     };
 
     const validation = transactionValidations[tx.object_type];

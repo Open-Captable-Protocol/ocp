@@ -53,13 +53,15 @@ export const StockTransfer = {
     ],
 };
 
-/* TODO: IMPLEMENT THIS */
-export const StockRepurchase = {};
-export const StockAcceptance = {};
-export const StockCancellation = {};
-export const StockRetraction = {};
-export const StockReissuance = {};
-// export const StockConsolidation = ISTOCK_FACET.abi.find((fn) => fn.name === "consolidateStock").inputs[0];
+export const StockCancellation = {
+    type: "tuple",
+    components: [
+        { type: "bytes16", name: "id" },
+        { type: "bytes16", name: "security_id" },
+        { type: "bytes16", name: "balance_security_id" },
+        { type: "uint256", name: "quantity" },
+    ],
+};
 
 export const StockConsolidation = {
     type: "tuple",
@@ -68,3 +70,9 @@ export const StockConsolidation = {
         { type: "bytes16", name: "resulting_security_id" },
     ],
 };
+
+/* TODO: IMPLEMENT THIS */
+export const StockRepurchase = {};
+export const StockAcceptance = {};
+export const StockRetraction = {};
+export const StockReissuance = {};

@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 import { v4 as uuid } from "uuid";
 
+export const FACTORY_VERSION = {
+    DIAMOND: "DIAMOND",
+    LEGACY: "LEGACY",
+};
+
 const FactorySchema = new mongoose.Schema(
     {
         _id: { type: String, default: () => uuid() },
@@ -19,9 +24,8 @@ const FactorySchema = new mongoose.Schema(
         version: {
             type: String,
             required: true,
-            enum: ["DIAMOND", "LEGACY"],
+            enum: Object.values(FACTORY_VERSION),
         },
-        tx_hash: { type: String, default: null },
     },
     { timestamps: true }
 );

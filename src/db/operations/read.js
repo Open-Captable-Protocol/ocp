@@ -17,6 +17,7 @@ import StockPlanPoolAdjustment from "../objects/transactions/adjustment/StockPla
 import EquityCompensationExercise from "../objects/transactions/exercise/EquityCompensationExercise.js";
 import { countDocuments, find, findById, findOne } from "./atomic.ts";
 import WarrantIssuance from "../objects/transactions/issuance/WarrantIssuance.js";
+import StockCancellation from "../objects/transactions/cancellation/StockCancellation.js";
 
 // READ By ID
 export const readIssuerById = async (id) => {
@@ -129,6 +130,7 @@ export const getAllStateMachineObjectsById = async (issuerId) => {
     const equityCompensationExercises = await find(EquityCompensationExercise, { issuer: issuerId });
     const convertibleIssuances = await find(ConvertibleIssuance, { issuer: issuerId });
     const warrantIssuances = await find(WarrantIssuance, { issuer: issuerId });
+    const stockCancellations = await find(StockCancellation, { issuer: issuerId });
 
     // Combine all transactions into one array
     const allTransactions = [
@@ -140,6 +142,7 @@ export const getAllStateMachineObjectsById = async (issuerId) => {
         ...equityCompensationExercises,
         ...convertibleIssuances,
         ...warrantIssuances,
+        ...stockCancellations,
     ].sort((a, b) => {
         // First sort by transaction type to ensure adjustments happen first
         const typeOrder = {
@@ -149,8 +152,9 @@ export const getAllStateMachineObjectsById = async (issuerId) => {
             TX_STOCK_ISSUANCE: 3,
             TX_EQUITY_COMPENSATION_ISSUANCE: 3,
             TX_CONVERTIBLE_ISSUANCE: 3,
-            TX_EQUITY_COMPENSATION_EXERCISE: 3,
             TX_WARRANT_ISSUANCE: 3,
+            TX_EQUITY_COMPENSATION_EXERCISE: 4,
+            TX_STOCK_CANCELLATION: 4,
         };
         const typeCompare = typeOrder[a.object_type] - typeOrder[b.object_type];
 

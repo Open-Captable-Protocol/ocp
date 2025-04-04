@@ -75,11 +75,12 @@ library LibDeployment {
             return FacetCutInfo({ name: "StockClassFacet", selectors: selectors });
         }
         if (facetType == FacetType.Stock) {
-            bytes4[] memory selectors = new bytes4[](4);
+            bytes4[] memory selectors = new bytes4[](5);
             selectors[0] = StockFacet.issueStock.selector;
             selectors[1] = StockFacet.getStockPosition.selector;
             selectors[2] = StockFacet.transferStock.selector;
             selectors[3] = StockFacet.getStakeholderSecurities.selector;
+            selectors[4] = StockFacet.cancelStock.selector;
             return FacetCutInfo({ name: "StockFacet", selectors: selectors });
         }
         if (facetType == FacetType.Convertibles) {
@@ -398,7 +399,7 @@ contract DeployFactoryScript is Script {
         if (deployerPrivateKey == 0) {
             revert("Missing PRIVATE_KEY in .env");
         }
-        address deployerWallet = vm.addr(deployerPrivateKey);
+        // address deployerWallet = vm.addr(deployerPrivateKey);
         console.log("Creating a new cap table");
 
         // Get addresses from env

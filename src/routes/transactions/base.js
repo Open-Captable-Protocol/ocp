@@ -37,6 +37,7 @@ import {
     createStockIssuance,
     createStockClassAuthorizedSharesAdjustment,
     createIssuerAuthorizedSharesAdjustment,
+    createStockCancellation,
 } from "../../db/operations/create.js";
 
 import {
@@ -61,6 +62,7 @@ import WarrantIssuance from "../../db/objects/transactions/issuance/WarrantIssua
 import StockClassAuthorizedSharesAdjustment from "../../db/objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
 import StockPlanPoolAdjustment from "../../db/objects/transactions/adjustment/StockPlanPoolAdjustment.js";
 import { EquityCompensationExercise } from "../../db/objects/transactions/exercise";
+import { StockCancellation } from "../../db/objects/transactions/cancellation";
 
 const transactions = Router();
 
@@ -134,8 +136,6 @@ transactions.post("/cancel/stock", async (req, res) => {
     try {
         await readIssuerById(issuerId);
 
-        const { stakeholderId, stockClassId } = data;
-        console.log({ data });
         const incomingStockCancellation = {
             id: uuid(),
             security_id: uuid(),
@@ -143,20 +143,17 @@ transactions.post("/cancel/stock", async (req, res) => {
             object_type: "TX_STOCK_CANCELLATION",
             ...data,
         };
-        delete incomingStockCancellation.stakeholderId;
-        delete incomingStockCancellation.stockClassId;
 
         // NOTE: schema validation does not include stakeholder, stockClassId, however these properties are needed on to be passed on chain
 
         await validateInputAgainstOCF(incomingStockCancellation, stockCancellationSchema);
 
-        await convertAndCreateCancellationStockOnchain(contract, {
-            ...incomingStockCancellation,
-            stakeholderId,
-            stockClassId,
-        });
+        const stockCancellation = await createStockCancellation({ ...incomingStockCancellation, issuer: issuerId });
 
-        res.status(200).send({ stockCancellation: incomingStockCancellation });
+        const receipt = await convertAndCreateCancellationStockOnchain(contract, stockCancellation);
+
+        await StockCancellation.findByIdAndUpdate(stockCancellation._id, { tx_hash: receipt.hash });
+        res.status(200).send({ stockCancellation: { ...stockCancellation.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(`error: ${error.stack}`);
         res.status(500).send(`${error}`);

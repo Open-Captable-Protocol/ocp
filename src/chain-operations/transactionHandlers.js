@@ -31,6 +31,8 @@ import StockPlanPoolAdjustment from "../db/objects/transactions/adjustment/Stock
 import StockClassAuthorizedSharesAdjustment from "../db/objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
 import IssuerAuthorizedSharesAdjustment from "../db/objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.js";
 import StockConsolidation from "../db/objects/transactions/consolidation/index.js";
+import { reflectInvestmentCancellation } from "../fairmint/reflectInvestmentCancellation.js";
+import Fairmint from "../db/objects/Fairmint.js";
 
 const isUUID = (value) => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -188,6 +190,18 @@ export const handleStockCancellation = async (stock, issuerId, timestamp) => {
         issuer: issuerId,
         is_onchain_synced: true,
     });
+
+    // Check for Fairmint data and reflect if exists
+    const fairmintData = await Fairmint.findOne({ tx_id: id });
+    if (fairmintData && fairmintData._id) {
+        await reflectInvestmentCancellation({
+            security_id: convertBytes16ToUUID(stock.security_id),
+            issuerId,
+            cancellation_amount: toDecimal(stock.quantity).toString(),
+            balance_security_id: convertBytes16ToUUID(stock.balance_security_id),
+            date: dateOCF,
+        });
+    }
 
     console.log(
         `✅ | StockCancellation confirmation onchain with date ${new Date(Date.now()).toLocaleDateString("en-US", options)}`,

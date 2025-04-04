@@ -37,3 +37,33 @@ export const deseedDatabase = async () => {
     await deleteAll();
     await connection.close();
 };
+
+export const deleteIssuerData = async (issuerId: string) => {
+    console.log(`Deleting data for issuer: ${issuerId}`);
+
+    const issuerCount = await Issuer.deleteMany({ _id: issuerId });
+    console.log(`Deleted ${issuerCount.deletedCount} issuer records`);
+
+    const stakeholderCount = await Stakeholder.deleteMany({ issuer: issuerId });
+    console.log(`Deleted ${stakeholderCount.deletedCount} stakeholder records`);
+
+    const stockClassCount = await StockClass.deleteMany({ issuer: issuerId });
+    console.log(`Deleted ${stockClassCount.deletedCount} stock class records`);
+
+    const stockLegendCount = await StockLegendTemplate.deleteMany({ issuer: issuerId });
+    console.log(`Deleted ${stockLegendCount.deletedCount} stock legend records`);
+
+    const stockPlanCount = await StockPlan.deleteMany({ issuer: issuerId });
+    console.log(`Deleted ${stockPlanCount.deletedCount} stock plan records`);
+
+    const fairmintCount = await Fairmint.deleteMany({ issuer: issuerId });
+    console.log(`Deleted ${fairmintCount.deletedCount} fairmint records`);
+
+    for (const [modelName, ModelType] of Object.entries(typeToModelType)) {
+        // @ts-expect-error
+        const count = await ModelType.deleteMany({ issuer: issuerId });
+        console.log(`Deleted ${count.deletedCount} ${modelName} records`);
+    }
+
+    console.log("Finished deleting issuer data");
+};

@@ -8,7 +8,8 @@ import {
     IssueStockParams,
     StockActivePositions,
     StockConsolidationTx,
-    StockTransferTx
+    StockTransferTx,
+    StockCancellationTx
 } from "@libraries/Structs.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { ValidationLib } from "@libraries/ValidationLib.sol";
@@ -23,6 +24,8 @@ contract StockFacet {
     error NoPositionsToConsolidate();
     error StockClassMismatch(bytes16 expected, bytes16 actual);
     error ZeroQuantityPosition(bytes16 security_id);
+    error InsufficientSharesForCancellation(bytes16 security_id, uint256 requested, uint256 available);
+    error InvalidCancellationQuantity(bytes16 security_id, uint256 quantity);
 
     function issueStock(IssueStockParams calldata params) external {
         Storage storage ds = StorageLib.get();
@@ -339,5 +342,93 @@ contract StockFacet {
             })
         );
         TxHelper.createTx(TxType.STOCK_TRANSFER, transferData);
+    }
+
+    /// @notice Cancel stock from a stakeholder
+    /// @dev Only ADMIN_ROLE can cancel stock
+    /// @param security_id The ID of the security to cancel
+    /// @param quantity The quantity of shares to cancel
+    function cancelStock(bytes16 id, bytes16 security_id, uint256 quantity) external {
+        Storage storage ds = StorageLib.get();
+
+        if (!AccessControl.hasAdminRole(msg.sender)) {
+            revert AccessControl.AccessControlUnauthorized(msg.sender, AccessControl.DEFAULT_ADMIN_ROLE);
+        }
+
+        if (quantity == 0) {
+            revert InvalidCancellationQuantity(security_id, quantity);
+        }
+
+        StockActivePosition storage position = ds.stockActivePositions.securities[security_id];
+        if (position.quantity == 0) {
+            revert ZeroQuantityPosition(security_id);
+        }
+
+        if (position.quantity < quantity) {
+            revert InsufficientSharesForCancellation(security_id, quantity, position.quantity);
+        }
+
+        // Get stock class for share tracking
+        uint256 stockClassIdx = ds.stockClassIndex[position.stock_class_id] - 1;
+        StockClass storage stockClass = ds.stockClasses[stockClassIdx];
+        bytes16 balance_security_id = bytes16(0);
+
+        // Handle partial cancellation
+        if (quantity < position.quantity) {
+            uint256 remainder_quantity = position.quantity - quantity;
+            // Generate new security ID for remainder
+            balance_security_id = bytes16(
+                keccak256(
+                    abi.encodePacked(block.timestamp, security_id, position.stakeholder_id, "CANCELLATION_REMAINDER")
+                )
+            );
+
+            // Remainer issuance
+            IssueStockParams memory remainderParams = IssueStockParams({
+                id: balance_security_id,
+                stock_class_id: position.stock_class_id,
+                share_price: position.share_price,
+                quantity: remainder_quantity,
+                stakeholder_id: position.stakeholder_id,
+                security_id: balance_security_id,
+                custom_id: "CANCELLATION_REMAINDER",
+                stock_legend_ids_mapping: "",
+                security_law_exemptions_mapping: ""
+            });
+
+            // Issue the remainder shares
+            ds.stockActivePositions.securities[balance_security_id] = StockActivePosition({
+                stakeholder_id: position.stakeholder_id,
+                stock_class_id: position.stock_class_id,
+                quantity: remainder_quantity,
+                share_price: position.share_price
+            });
+
+            // Update mappings for remainder
+            ds.stockActivePositions.stakeholderToSecurities[position.stakeholder_id].push(balance_security_id);
+            ds.stockActivePositions.securityToStakeholder[balance_security_id] = position.stakeholder_id;
+
+            // Record issuance transaction for remainder
+            bytes memory remainderTxData = abi.encode(remainderParams);
+            TxHelper.createTx(TxType.STOCK_ISSUANCE, remainderTxData);
+        }
+
+        // Remove the original security
+        removeSecurityFromStakeholder(ds.stockActivePositions, position.stakeholder_id, security_id);
+
+        // Update share counts
+        stockClass.shares_issued -= quantity;
+        ds.issuer.shares_issued -= quantity;
+
+        // Record cancellation transaction
+        StockCancellationTx memory cancellationTx = StockCancellationTx({
+            id: id,
+            security_id: security_id,
+            balance_security_id: balance_security_id,
+            quantity: quantity
+        });
+
+        bytes memory txData = abi.encode(cancellationTx);
+        TxHelper.createTx(TxType.STOCK_CANCELLATION, txData);
     }
 }

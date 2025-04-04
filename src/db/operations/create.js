@@ -18,6 +18,7 @@ import EquityCompensationExercise from "../objects/transactions/exercise/EquityC
 import StockPlanPoolAdjustment from "../objects/transactions/adjustment/StockPlanPoolAdjustment.js";
 import StockClassAuthorizedSharesAdjustment from "../objects/transactions/adjustment/StockClassAuthorizedSharesAdjustment.js";
 import IssuerAuthorizedSharesAdjustment from "../objects/transactions/adjustment/IssuerAuthorizedSharesAdjustment.js";
+import StockCancellation from "../objects/transactions/cancellation/StockCancellation.js";
 
 export const createIssuer = (issuerData) => {
     return save(new Issuer(issuerData));
@@ -81,6 +82,10 @@ export const createFairmintData = (fairmintData) => {
 
 export const createEquityCompensationExercise = (exerciseData) => {
     return save(new EquityCompensationExercise(exerciseData));
+};
+
+export const createStockCancellation = (stockCancellationData) => {
+    return save(new StockCancellation(stockCancellationData));
 };
 
 export const createStockPlanPoolAdjustment = (stockPlanPoolAdjustmentData) => {

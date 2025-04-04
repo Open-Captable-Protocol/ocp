@@ -34,12 +34,10 @@ import txEquityCompensationExerciseSchema from "../../../ocf/schema/objects/tran
 import validateInputAgainstOCF from "../../utils/validateInputAgainstSchema.js";
 
 async function processEntity(inputEntities, createEntityFunction, schema, issuerId) {
-    console.log(`Adding ${createEntityFunction.name.replace("create", "")} to DB`);
     for (let inputEntity of inputEntities.items) {
         await validateInputAgainstOCF(inputEntity, schema);
         inputEntity = { ...inputEntity, issuer: issuerId };
-        const entity = await createEntityFunction(inputEntity);
-        console.log(`${createEntityFunction.name.replace("create", "")} added `, entity);
+        await createEntityFunction(inputEntity);
     }
 }
 
@@ -107,7 +105,6 @@ export async function processTransactionEntity(txs) {
             delete tx.series_name;
         }
 
-        console.log(`Validating Transaction id: ${tx.id}`);
         await validateInputAgainstOCF(tx, schema);
     }
 }
