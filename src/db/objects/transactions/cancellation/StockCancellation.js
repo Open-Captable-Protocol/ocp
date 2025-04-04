@@ -14,6 +14,7 @@ const StockCancellationSchema = new mongoose.Schema({
         type: String,
         ref: "Issuer",
     },
+    tx_hash: String,
 });
 
 const StockCancellation = mongoose.model("StockCancellation", StockCancellationSchema);

@@ -83,3 +83,28 @@ export const processDashboardStockIssuance = (state, transaction, stakeholder) =
         },
     };
 };
+
+export const processDashboardStockCancellation = (state, transaction, stakeholder) => {
+    const { quantity } = transaction;
+    const numShares = parseInt(quantity);
+
+    // Check if stakeholder is founder/board member
+    const shouldCountTowardsRaised = stakeholder && !["FOUNDER", "BOARD_MEMBER"].includes(stakeholder.current_relationship);
+    const amountToSubtract = shouldCountTowardsRaised ? numShares * Number(state.latestSharePrice) : 0;
+
+    return {
+        sharesIssuedByCurrentRelationship: {
+            ...state.sharesIssuedByCurrentRelationship,
+            [stakeholder.current_relationship]: (state.sharesIssuedByCurrentRelationship[stakeholder.current_relationship] || 0) - numShares,
+        },
+        totalRaised: state.totalRaised - amountToSubtract,
+        valuations: {
+            ...state.valuations,
+            stock: {
+                type: "STOCK",
+                amount: (state.issuer.sharesIssued - numShares) * Number(state.latestSharePrice),
+                createdAt: transaction.createdAt,
+            },
+        },
+    };
+};

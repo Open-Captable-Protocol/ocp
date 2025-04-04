@@ -20,6 +20,7 @@ import {
     createEquityCompensationExercise,
     createStockIssuance,
     createFairmintData,
+    createStockCancellation,
 } from "../../db/operations/create.js";
 
 import {
@@ -40,6 +41,9 @@ import StockIssuance from "../../db/objects/transactions/issuance/StockIssuance.
 import EquityCompensationIssuance from "../../db/objects/transactions/issuance/EquityCompensationIssuance.js";
 import { ConvertibleIssuance, WarrantIssuance } from "../../db/objects/transactions/issuance";
 import { EquityCompensationExercise } from "../../db/objects/transactions/exercise";
+import { convertAndCreateCancellationStockOnchain } from "../../controllers/transactions/cancellationController.js";
+import StockCancellation from "../../db/objects/transactions/cancellation/StockCancellation.js";
+import { checkInvestment } from "../../fairmint/checkInvestment.js";
 
 const fairmintTransactions = Router();
 
@@ -397,6 +401,52 @@ fairmintTransactions.post("/issuance/warrant-fairmint-reflection", async (req, r
         await WarrantIssuance.findByIdAndUpdate(createdIssuance._id, { tx_hash: receipt.hash });
 
         res.status(200).send({ warrantIssuance: { ...createdIssuance.toObject(), tx_hash: receipt.hash } });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(`${error}`);
+    }
+});
+
+fairmintTransactions.post("/cancel/stock-fairmint-reflection", async (req, res) => {
+    const { contract } = req;
+    const { issuerId, data } = req.body;
+
+    try {
+        await readIssuerById(issuerId);
+
+        const incomingCancellation = {
+            id: uuid(), // for OCF Validation
+            security_id: data.security_id,
+            date: new Date().toISOString().slice(0, 10), // for OCF Validation
+            object_type: "TX_STOCK_CANCELLATION",
+            ...data,
+        };
+
+        // Verify investment exists on Fairmint
+        await checkInvestment({
+            issuerId,
+            securityId: data.security_id,
+        });
+
+        // Save Fairmint data
+        await createFairmintData({
+            id: incomingCancellation.id,
+            object_type: incomingCancellation.object_type,
+            tx_id: incomingCancellation.id,
+            issuer: issuerId,
+            date: incomingCancellation.date,
+        });
+
+        // Save offchain
+        const createdCancellation = await createStockCancellation({ ...incomingCancellation, issuer: issuerId });
+
+        // Save onchain
+        const receipt = await convertAndCreateCancellationStockOnchain(contract, createdCancellation);
+
+        // Update the cancellation with tx_hash
+        await StockCancellation.findByIdAndUpdate(createdCancellation._id, { tx_hash: receipt.hash });
+
+        res.status(200).send({ stockCancellation: { ...createdCancellation.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);

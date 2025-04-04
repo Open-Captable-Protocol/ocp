@@ -283,3 +283,41 @@ export const processCaptableWarrantAndNonPlanAwardIssuance = (state, transaction
 
     return { summary: newSummary };
 };
+
+export const processCaptableStockCancellation = (state, transaction, originalStockClass) => {
+    const { quantity } = transaction;
+    const numShares = parseInt(quantity);
+    let newSummary = { ...state.summary };
+
+    // Calculate metrics for this cancellation
+    const votingPower = originalStockClass.votes_per_share * numShares;
+    const liquidation = numShares * Number(originalStockClass.price_per_share.amount) * Number(originalStockClass.liquidation_preference_multiple);
+
+    // Check if this is founder preferred stock
+    if (originalStockClass.class_type === StockClassTypes.PREFERRED && originalStockClass.issuance_type === StockIssuanceTypes.FOUNDERS_STOCK) {
+        if (newSummary.founderPreferred) {
+            newSummary.founderPreferred.outstandingShares -= numShares;
+            newSummary.founderPreferred.fullyDilutedShares -= numShares;
+            newSummary.founderPreferred.liquidation -= liquidation;
+            newSummary.founderPreferred.votingPower -= votingPower;
+        }
+        return { summary: newSummary };
+    }
+
+    // Handle regular stock cancellation
+    const section = originalStockClass.class_type === StockClassTypes.COMMON ? newSummary.common : newSummary.preferred;
+    const existingRowIndex = section.rows.findIndex((row) => row.name === originalStockClass.name);
+
+    if (existingRowIndex >= 0) {
+        const existingRow = section.rows[existingRowIndex];
+        section.rows[existingRowIndex] = {
+            ...existingRow,
+            outstandingShares: existingRow.outstandingShares - numShares,
+            fullyDilutedShares: existingRow.fullyDilutedShares - numShares,
+            liquidation: existingRow.liquidation - liquidation,
+            votingPower: existingRow.votingPower - votingPower,
+        };
+    }
+
+    return { summary: newSummary };
+};
