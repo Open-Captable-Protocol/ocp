@@ -97,6 +97,7 @@ const processTransaction = (state, transaction, stakeholders, stockClasses, stoc
             "TX_STOCK_PLAN_POOL_ADJUSTMENT",
             "TX_STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT",
             "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT",
+            "TX_STOCK_CANCELLATION",
         ].includes(transaction.object_type)
     ) {
         return {
@@ -130,6 +131,7 @@ const processTransaction = (state, transaction, stakeholders, stockClasses, stoc
             "TX_EQUITY_COMPENSATION_EXERCISE",
             "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT",
             "TX_STOCK_PLAN_POOL_ADJUSTMENT",
+            "TX_STOCK_CANCELLATION",
         ].includes(transaction.object_type)
     ) {
         return {
@@ -147,6 +149,7 @@ const processTransaction = (state, transaction, stakeholders, stockClasses, stoc
             "TX_STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT",
             "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT",
             "TX_STOCK_PLAN_POOL_ADJUSTMENT",
+            "TX_STOCK_CANCELLATION",
         ].includes(transaction.object_type)
     ) {
         return {
@@ -177,7 +180,7 @@ const processTransaction = (state, transaction, stakeholders, stockClasses, stoc
                 return processWarrantAndNonPlanAwardIssuance(newState, transaction, stakeholder, originalStockClass);
             else return processConvertibleIssuance(newState, transaction, stakeholder);
         case "TX_STOCK_CANCELLATION":
-            return processStockCancellation(newState, transaction, stakeholder, originalStockClass);
+            return processStockCancellation(newState, transaction, stockClasses, stakeholders);
         default:
             return state;
     }
@@ -391,35 +394,37 @@ export const processEquityCompensationExercise = (state, transaction) => {
     };
 };
 
-const processStockCancellation = (state, transaction, stakeholder, originalStockClass) => {
+const processStockCancellation = (state, transaction, stockClasses, stakeholders) => {
     const { quantity } = transaction;
-    const numShares = parseInt(quantity);
+    const cancelledShares = parseInt(quantity);
+    const stockIssuance = state.transactions.find((tx) => tx.security_id === transaction.security_id && tx.object_type === "TX_STOCK_ISSUANCE");
+    const originalStockClass = stockClasses.find((sc) => sc.id === stockIssuance.stock_class_id);
+    const stakeholder = stakeholders.find((s) => s.id === stockIssuance.stakeholder_id);
 
     // Validate using state data
-    if (state.stockClasses[transaction.stock_class_id].sharesIssued < numShares) {
+    if (state.stockClasses[originalStockClass.id].sharesIssued < cancelledShares) {
         return {
             ...state,
-            errors: new Set([...state.errors, `Cannot cancel ${numShares} shares - exceeds stock class issued amount`]),
+            errors: new Set([...state.errors, `Cannot cancel ${cancelledShares} shares - exceeds stock class issued amount`]),
         };
     }
-
     // Core state updates
     const coreUpdates = {
         issuer: {
             ...state.issuer,
-            sharesIssued: state.issuer.sharesIssued - numShares,
+            sharesIssued: state.issuer.sharesIssued - cancelledShares,
         },
         stockClasses: {
             ...state.stockClasses,
-            [transaction.stock_class_id]: {
-                ...state.stockClasses[transaction.stock_class_id],
-                sharesIssued: state.stockClasses[transaction.stock_class_id].sharesIssued - numShares,
+            [originalStockClass.id]: {
+                ...state.stockClasses[originalStockClass.id],
+                sharesIssued: state.stockClasses[originalStockClass.id].sharesIssued - cancelledShares,
             },
         },
     };
 
     const dashboardUpdates = processDashboardStockCancellation(state, transaction, stakeholder);
-    const captableUpdates = processCaptableStockCancellation(state, transaction, originalStockClass);
+    const captableUpdates = processCaptableStockCancellation(state, transaction, stockIssuance, originalStockClass);
 
     return {
         ...state,
@@ -699,14 +704,12 @@ export const captableStats = async ({ issuer, stockClasses, stockPlans, stakehol
         )
     );
 
-    // console.log("finalState", finalState);
     return finalState;
 };
 
 export const verifyCapTable = async (captable) => {
     // Format manifest and get items for each object / transaction
     const { issuer, stockClasses, stockPlans, stakeholders, transactions } = captable;
-    // console.log({ captable });
 
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
@@ -724,8 +727,6 @@ export const verifyCapTable = async (captable) => {
                 createInitialState(issuer, stockClasses, stockPlans, stakeholders)
             ),
             last(),
-            // tap((state) => {
-            // }),
             map((state) => {
                 if (state.errors.size > 0) {
                     return { valid: false, errors: Array.from(state.errors) };
@@ -735,6 +736,5 @@ export const verifyCapTable = async (captable) => {
         )
     );
 
-    // console.log("finalState", finalState);
     return finalState;
 };

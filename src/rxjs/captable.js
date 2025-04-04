@@ -284,20 +284,21 @@ export const processCaptableWarrantAndNonPlanAwardIssuance = (state, transaction
     return { summary: newSummary };
 };
 
-export const processCaptableStockCancellation = (state, transaction, originalStockClass) => {
+export const processCaptableStockCancellation = (state, transaction, stockIssuance, originalStockClass) => {
     const { quantity } = transaction;
-    const numShares = parseInt(quantity);
+    const cancelledShares = parseInt(quantity);
     let newSummary = { ...state.summary };
 
     // Calculate metrics for this cancellation
-    const votingPower = originalStockClass.votes_per_share * numShares;
-    const liquidation = numShares * Number(originalStockClass.price_per_share.amount) * Number(originalStockClass.liquidation_preference_multiple);
+    const votingPower = originalStockClass.votes_per_share * cancelledShares;
+    const liquidation =
+        cancelledShares * Number(originalStockClass.price_per_share.amount) * Number(originalStockClass.liquidation_preference_multiple);
 
     // Check if this is founder preferred stock
-    if (originalStockClass.class_type === StockClassTypes.PREFERRED && originalStockClass.issuance_type === StockIssuanceTypes.FOUNDERS_STOCK) {
+    if (originalStockClass.class_type === StockClassTypes.PREFERRED && stockIssuance.issuance_type === StockIssuanceTypes.FOUNDERS_STOCK) {
         if (newSummary.founderPreferred) {
-            newSummary.founderPreferred.outstandingShares -= numShares;
-            newSummary.founderPreferred.fullyDilutedShares -= numShares;
+            newSummary.founderPreferred.outstandingShares -= cancelledShares;
+            newSummary.founderPreferred.fullyDilutedShares -= cancelledShares;
             newSummary.founderPreferred.liquidation -= liquidation;
             newSummary.founderPreferred.votingPower -= votingPower;
         }
@@ -312,8 +313,8 @@ export const processCaptableStockCancellation = (state, transaction, originalSto
         const existingRow = section.rows[existingRowIndex];
         section.rows[existingRowIndex] = {
             ...existingRow,
-            outstandingShares: existingRow.outstandingShares - numShares,
-            fullyDilutedShares: existingRow.fullyDilutedShares - numShares,
+            outstandingShares: existingRow.outstandingShares - cancelledShares,
+            fullyDilutedShares: existingRow.fullyDilutedShares - cancelledShares,
             liquidation: existingRow.liquidation - liquidation,
             votingPower: existingRow.votingPower - votingPower,
         };
