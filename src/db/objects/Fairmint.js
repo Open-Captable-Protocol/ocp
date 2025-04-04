@@ -16,7 +16,9 @@ For example,
 const FairmintSchema = new mongoose.Schema(
     {
         _id: { type: String, default: () => uuid() },
+        tx_id: { type: String, default: null },
         series_id: { type: String, default: null },
+        object_type: { type: String, default: null },
         security_id: { type: String, default: null },
         stakeholder_id: { type: String, default: null },
         attributes: { type: mongoose.Schema.Types.Mixed, default: {} },

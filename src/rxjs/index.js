@@ -1,7 +1,12 @@
 // eslint-disable-next-line import/no-unresolved, import/named
 import { from, lastValueFrom } from "rxjs";
 import { scan, tap, last, map } from "rxjs/operators";
-import { dashboardInitialState, processDashboardConvertibleIssuance, processDashboardStockIssuance } from "./dashboard.js";
+import {
+    dashboardInitialState,
+    processDashboardConvertibleIssuance,
+    processDashboardStockIssuance,
+    processDashboardStockCancellation,
+} from "./dashboard.js";
 import {
     captableInitialState,
     processCaptableStockIssuance,
@@ -9,6 +14,7 @@ import {
     processCaptableEquityCompensationIssuance,
     processCaptableWarrantAndNonPlanAwardIssuance,
     processCaptableConvertibleIssuance,
+    processCaptableStockCancellation,
 } from "./captable.js";
 
 // Initial state structure
@@ -170,6 +176,8 @@ const processTransaction = (state, transaction, stakeholders, stockClasses, stoc
             if (transaction.exercise_triggers?.[0]?.conversion_right?.converts_to_stock_class_id)
                 return processWarrantAndNonPlanAwardIssuance(newState, transaction, stakeholder, originalStockClass);
             else return processConvertibleIssuance(newState, transaction, stakeholder);
+        case "TX_STOCK_CANCELLATION":
+            return processStockCancellation(newState, transaction, stakeholder, originalStockClass);
         default:
             return state;
     }
@@ -380,6 +388,44 @@ export const processEquityCompensationExercise = (state, transaction) => {
                 },
             },
         },
+    };
+};
+
+const processStockCancellation = (state, transaction, stakeholder, originalStockClass) => {
+    const { quantity } = transaction;
+    const numShares = parseInt(quantity);
+
+    // Validate using state data
+    if (state.stockClasses[transaction.stock_class_id].sharesIssued < numShares) {
+        return {
+            ...state,
+            errors: new Set([...state.errors, `Cannot cancel ${numShares} shares - exceeds stock class issued amount`]),
+        };
+    }
+
+    // Core state updates
+    const coreUpdates = {
+        issuer: {
+            ...state.issuer,
+            sharesIssued: state.issuer.sharesIssued - numShares,
+        },
+        stockClasses: {
+            ...state.stockClasses,
+            [transaction.stock_class_id]: {
+                ...state.stockClasses[transaction.stock_class_id],
+                sharesIssued: state.stockClasses[transaction.stock_class_id].sharesIssued - numShares,
+            },
+        },
+    };
+
+    const dashboardUpdates = processDashboardStockCancellation(state, transaction, stakeholder);
+    const captableUpdates = processCaptableStockCancellation(state, transaction, originalStockClass);
+
+    return {
+        ...state,
+        ...coreUpdates,
+        ...dashboardUpdates,
+        ...captableUpdates,
     };
 };
 
