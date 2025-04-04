@@ -348,7 +348,7 @@ contract StockFacet {
     /// @dev Only ADMIN_ROLE can cancel stock
     /// @param security_id The ID of the security to cancel
     /// @param quantity The quantity of shares to cancel
-    function cancelStock(bytes16 security_id, uint256 quantity) external {
+    function cancelStock(bytes16 id, bytes16 security_id, uint256 quantity) external {
         Storage storage ds = StorageLib.get();
 
         if (!AccessControl.hasAdminRole(msg.sender)) {
@@ -422,6 +422,7 @@ contract StockFacet {
 
         // Record cancellation transaction
         StockCancellationTx memory cancellationTx = StockCancellationTx({
+            id: id,
             security_id: security_id,
             balance_security_id: balance_security_id,
             quantity: quantity

@@ -148,6 +148,7 @@ struct StockTransferTx {
 }
 
 struct StockCancellationTx {
+    bytes16 id;
     bytes16 security_id;
     bytes16 balance_security_id;
     uint256 quantity;

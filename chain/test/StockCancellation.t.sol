@@ -85,7 +85,8 @@ contract DiamondStockCancellationTest is DiamondTestBase {
         emit TxHelper.TxCreated(TxType.STOCK_CANCELLATION, ""); // Only check event type
 
         // Perform full cancellation
-        IStockFacet(address(capTable)).cancelStock(securityId, 1000);
+        bytes16 cancellationId = 0xd3373e0a4dd940000000000000000020;
+        IStockFacet(address(capTable)).cancelStock(cancellationId, securityId, 1000);
 
         // Verify stakeholder has no shares
         bytes16[] memory securities =
@@ -104,7 +105,8 @@ contract DiamondStockCancellationTest is DiamondTestBase {
         emit TxHelper.TxCreated(TxType.STOCK_CANCELLATION, ""); // Cancellation
 
         // Perform partial cancellation
-        IStockFacet(address(capTable)).cancelStock(securityId, 500);
+        bytes16 cancellationId = 0xd3373e0a4dd940000000000000000021;
+        IStockFacet(address(capTable)).cancelStock(cancellationId, securityId, 500);
 
         // Verify stakeholder's remaining position
         bytes16[] memory securities =
@@ -119,29 +121,32 @@ contract DiamondStockCancellationTest is DiamondTestBase {
     function test_RevertInvalidSecurityId() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
         bytes16 invalidSecurityId = 0xd3373e0a4dd940000000000000000099;
+        bytes16 cancellationId = 0xd3373e0a4dd940000000000000000022;
 
         vm.expectRevert(abi.encodeWithSignature("ZeroQuantityPosition(bytes16)", invalidSecurityId));
-        IStockFacet(address(capTable)).cancelStock(invalidSecurityId, 100);
+        IStockFacet(address(capTable)).cancelStock(cancellationId, invalidSecurityId, 100);
     }
 
     function test_RevertInsufficientShares() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
         bytes16 securityId = issueStock(stockClassId, stakeholderId, 1000);
+        bytes16 cancellationId = 0xd3373e0a4dd940000000000000000023;
 
         vm.expectRevert(
             abi.encodeWithSignature(
                 "InsufficientSharesForCancellation(bytes16,uint256,uint256)", securityId, 1001, 1000
             )
         );
-        IStockFacet(address(capTable)).cancelStock(securityId, 1001);
+        IStockFacet(address(capTable)).cancelStock(cancellationId, securityId, 1001);
     }
 
     function test_RevertZeroQuantityCancellation() public {
         (bytes16 stockClassId, bytes16 stakeholderId) = createStockClassAndStakeholder(100_000);
         bytes16 securityId = issueStock(stockClassId, stakeholderId, 1000);
+        bytes16 cancellationId = 0xd3373e0a4dd940000000000000000024;
 
         vm.expectRevert(abi.encodeWithSignature("InvalidCancellationQuantity(bytes16,uint256)", securityId, 0));
-        IStockFacet(address(capTable)).cancelStock(securityId, 0);
+        IStockFacet(address(capTable)).cancelStock(cancellationId, securityId, 0);
     }
 
     function test_RevertUnauthorizedCaller() public {
@@ -149,6 +154,7 @@ contract DiamondStockCancellationTest is DiamondTestBase {
         bytes16 stakeholderId = createStakeholder();
         bytes16 stockClassId = createStockClass(bytes16(uint128(2)));
         bytes16 id1 = 0xd3373e0a4dd940000000000000000002;
+        bytes16 cancellationId = 0xd3373e0a4dd940000000000000000025;
 
         // Test issueStock with operator role
         vm.startPrank(operator);
@@ -173,7 +179,7 @@ contract DiamondStockCancellationTest is DiamondTestBase {
                 AccessControl.AccessControlUnauthorized.selector, unauthorized, AccessControl.DEFAULT_ADMIN_ROLE
             )
         );
-        IStockFacet(address(capTable)).cancelStock(id1, 50);
+        IStockFacet(address(capTable)).cancelStock(cancellationId, id1, 50);
         vm.stopPrank();
     }
 }

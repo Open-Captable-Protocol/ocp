@@ -46,7 +46,8 @@ interface IStockFacet {
 
     /// @notice Cancel stock from a stakeholder
     /// @dev Only OPERATOR_ROLE can cancel stock
-    /// @param security_id The ID of the security to cancel
+    /// @param id The issuer of the stock
+    /// @param security_id The ID of the cancellation
     /// @param quantity The quantity of shares to cancel
-    function cancelStock(bytes16 security_id, uint256 quantity) external;
+    function cancelStock(bytes16 id, bytes16 security_id, uint256 quantity) external;
 }
