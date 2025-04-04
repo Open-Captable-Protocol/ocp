@@ -37,8 +37,7 @@ async function processEntity(inputEntities, createEntityFunction, schema, issuer
     for (let inputEntity of inputEntities.items) {
         await validateInputAgainstOCF(inputEntity, schema);
         inputEntity = { ...inputEntity, issuer: issuerId };
-        const entity = await createEntityFunction(inputEntity);
-        console.log(`${createEntityFunction.name.replace("create", "")} added `, entity);
+        await createEntityFunction(inputEntity);
     }
 }
 
