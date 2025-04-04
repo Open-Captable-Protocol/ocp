@@ -41,7 +41,7 @@ import StockIssuance from "../../db/objects/transactions/issuance/StockIssuance.
 import EquityCompensationIssuance from "../../db/objects/transactions/issuance/EquityCompensationIssuance.js";
 import { ConvertibleIssuance, WarrantIssuance } from "../../db/objects/transactions/issuance";
 import { EquityCompensationExercise } from "../../db/objects/transactions/exercise";
-import { convertAndCreateCancellationStockOnchain } from "../../controllers/transactions/cancellationController.js";
+// import { convertAndCreateCancellationStockOnchain } from "../../controllers/transactions/cancellationController.js";
 import StockCancellation from "../../db/objects/transactions/cancellation/StockCancellation.js";
 import { checkInvestment } from "../../fairmint/checkInvestment.js";
 
@@ -408,7 +408,7 @@ fairmintTransactions.post("/issuance/warrant-fairmint-reflection", async (req, r
 });
 
 fairmintTransactions.post("/cancel/stock-fairmint-reflection", async (req, res) => {
-    const { contract } = req;
+    // const { contract } = req;
     const { issuerId, data } = req.body;
 
     try {
@@ -441,7 +441,8 @@ fairmintTransactions.post("/cancel/stock-fairmint-reflection", async (req, res) 
         const createdCancellation = await createStockCancellation({ ...incomingCancellation, issuer: issuerId });
 
         // Save onchain
-        const receipt = await convertAndCreateCancellationStockOnchain(contract, createdCancellation);
+        // const receipt = await convertAndCreateCancellationStockOnchain(contract, createdCancellation);
+        const receipt = { hash: null };
 
         // Update the cancellation with tx_hash
         await StockCancellation.findByIdAndUpdate(createdCancellation._id, { tx_hash: receipt.hash });
