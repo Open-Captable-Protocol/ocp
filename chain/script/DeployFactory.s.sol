@@ -153,6 +153,7 @@ library LibDeployment {
         if (selector == AccessControlFacet.grantRole.selector) return FacetType.AccessControl;
         if (selector == MockFacet.getValuePlusOne.selector) return FacetType.MockFacet;
         if (selector == MockFacetV2.getValuePlusTwo.selector) return FacetType.MockFacetV2;
+        if (selector == StockFacet.cancelStock.selector) return FacetType.Stock;
         revert("Unknown selector");
     }
 
