@@ -16,6 +16,9 @@ interface IIssuerFacet {
     /// @param initial_shares_authorized Initial number of authorized shares
     function initializeIssuer(bytes16 id, uint256 initial_shares_authorized) external;
 
+    /// @notice Getter for the Issuer struct
+    function issuer() external view returns (Issuer memory);
+
     /// @notice Adjust the total number of authorized shares for the issuer
     /// @dev Only DEFAULT_ADMIN_ROLE can adjust authorized shares
     /// @param id The unique identifier for the tx

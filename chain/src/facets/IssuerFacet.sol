@@ -7,12 +7,9 @@ import { Issuer } from "@libraries/Structs.sol";
 import { TxHelper, TxType } from "@libraries/TxHelper.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 import { console } from "forge-std/console.sol";
+import { IIssuerFacet } from "@interfaces/IIssuerFacet.sol";
 
-contract IssuerFacet {
-    error IssuerAlreadyInitialized();
-
-    event IssuerAuthorizedSharesAdjusted(uint256 newSharesAuthorized);
-
+contract IssuerFacet is IIssuerFacet {
     /// @notice Initialize the issuer with initial shares authorized
     /// @dev Can only be called once by an admin during setup
     function initializeIssuer(bytes16 id, uint256 initial_shares_authorized) external {
@@ -28,6 +25,10 @@ contract IssuerFacet {
         }
 
         ds.issuer = Issuer({ id: id, shares_issued: 0, shares_authorized: initial_shares_authorized });
+    }
+
+    function issuer() external view returns (Issuer memory) {
+        return StorageLib.get().issuer;
     }
 
     /// @notice Adjust the total number of authorized shares for the issuer

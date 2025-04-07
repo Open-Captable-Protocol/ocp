@@ -57,9 +57,10 @@ library LibDeployment {
             return FacetCutInfo({ name: "DiamondLoupeFacet", selectors: selectors });
         }
         if (facetType == FacetType.Issuer) {
-            bytes4[] memory selectors = new bytes4[](2);
+            bytes4[] memory selectors = new bytes4[](3);
             selectors[0] = IssuerFacet.initializeIssuer.selector;
             selectors[1] = IssuerFacet.adjustIssuerAuthorizedShares.selector;
+            selectors[2] = IssuerFacet.issuer.selector;
             return FacetCutInfo({ name: "IssuerFacet", selectors: selectors });
         }
         if (facetType == FacetType.Stakeholder) {
