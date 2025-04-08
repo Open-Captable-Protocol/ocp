@@ -8,7 +8,7 @@ const StockCancellationSchema = new mongoose.Schema({
     comments: [String],
     security_id: String,
     date: String,
-    balance_security_id: String,
+    balance_security_id: { type: String, default: null },
     reason_text: String,
     issuer: {
         type: String,
