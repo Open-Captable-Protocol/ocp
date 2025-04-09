@@ -203,16 +203,39 @@ contract SyncFacetsScript is Script {
 
     // Core facet operations
     function addFacet(address diamond, address newFacet, bytes4[] memory selectors) public {
+        // Verify the new facet has code
+        uint256 codeSize;
+        assembly {
+            codeSize := extcodesize(newFacet)
+        }
+        require(codeSize > 0, "New facet has no code");
+
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
         cut[0] = IDiamondCut.FacetCut({
             facetAddress: newFacet,
             action: IDiamondCut.FacetCutAction.Add,
             functionSelectors: selectors
         });
-        IDiamondCut(diamond).diamondCut(cut, address(0), "");
+
+        try IDiamondCut(diamond).diamondCut(cut, address(0), "") {
+            console.log("Facet added successfully");
+        } catch Error(string memory reason) {
+            console.log("Failed to add facet:", reason);
+            revert(reason);
+        } catch (bytes memory) {
+            console.log("Failed to add facet (no reason)");
+            revert("Unknown error during facet addition");
+        }
     }
 
     function replaceFacet(address diamond, address newFacet, bytes4[] memory selectors) public {
+        // Verify the new facet has code
+        uint256 codeSize;
+        assembly {
+            codeSize := extcodesize(newFacet)
+        }
+        require(codeSize > 0, "New facet has no code");
+
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](1);
         cut[0] = IDiamondCut.FacetCut({
             facetAddress: newFacet,
@@ -238,7 +261,16 @@ contract SyncFacetsScript is Script {
             action: IDiamondCut.FacetCutAction.Remove,
             functionSelectors: selectors
         });
-        IDiamondCut(diamond).diamondCut(cut, address(0), "");
+
+        try IDiamondCut(diamond).diamondCut(cut, address(0), "") {
+            console.log("Facet removed successfully");
+        } catch Error(string memory reason) {
+            console.log("Failed to remove facet:", reason);
+            revert(reason);
+        } catch (bytes memory) {
+            console.log("Failed to remove facet (no reason)");
+            revert("Unknown error during facet removal");
+        }
     }
 
     function processChanges(

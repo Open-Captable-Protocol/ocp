@@ -1,324 +1,216 @@
 #!/bin/bash
 
-# Sets default environment to "local" if no environment is specified
-ENVIRONMENT="local"
-CHECK_ONLY=false
+# Color definitions
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Add this line to store the root directory
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Log file setup
+LOG_DIR="logs"
+LOG_FILE="$LOG_DIR/sync_$(date +%Y%m%d_%H%M%S).log"
+mkdir -p "$LOG_DIR"
 
-# Function to cleanup processes on exit
+# Function to log messages
+log() {
+    local message="$1"
+    local color="$2"
+    echo -e "${color}${message}${NC}" | tee -a "$LOG_FILE"
+}
+
+# Function to check if anvil is running
+check_anvil() {
+    if ! nc -z localhost 8546 2>/dev/null; then
+        log "Starting anvil on port 8546..." "$BLUE"
+        anvil --port 8546 > /dev/null 2>&1 &
+        ANVIL_PID=$!
+        sleep 2
+    else
+        log "Anvil is already running on port 8546" "$GREEN"
+    fi
+}
+
+# Function to cleanup
 cleanup() {
-    # Kill anvil if we started it
     if [ ! -z "$ANVIL_PID" ]; then
-        echo "Stopping anvil..."
+        log "Stopping anvil..." "$BLUE"
         kill $ANVIL_PID
     fi
-    # Remove temp env file if it exists
-    if [ -f "$TEMP" ]; then
-        rm -f "$TEMP"
-    fi
 }
 
-# Set single trap for cleanup
+# Set trap for cleanup
 trap cleanup EXIT INT TERM
 
-# Processes command line arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --env=*) ENVIRONMENT="${1#*=}" ;;
-        --check) CHECK_ONLY=true ;;
-        *) echo "Unknown parameter: $1"; exit 1 ;;
-    esac
-    shift
-done
-
-# Constructs env file path based on environment
-# Example: .env.local, .env.dev, .env.prod
-USE_ENV_FILE=".env.$ENVIRONMENT"
-
-# Exits if the environment file doesn't exist
-[ ! -f "$USE_ENV_FILE" ] && echo "Error: $USE_ENV_FILE does not exist" && exit 1
-
-# Loads environment variables from the env file
-set -a
-source "$USE_ENV_FILE"
-set +a
-
-# Validate required environment variables
-if [ -z "$REFERENCE_DIAMOND" ]; then
-    echo "Error: REFERENCE_DIAMOND is not set in $USE_ENV_FILE"
-    exit 1
-fi
-
-if [ -z "$FACTORY_ADDRESS" ]; then
-    echo "Error: FACTORY_ADDRESS is not set in $USE_ENV_FILE"
-    exit 1
-fi
-
-# Check if anvil is running on port 8545 (remote)
-if ! nc -z localhost 8545 2>/dev/null; then
-    echo "Error: Anvil is not running on port 8545 (remote chain)"
-    echo "Please start anvil first with: anvil --port 8545"
-    exit 1
-fi
-
-# Check if the REFERENCE_DIAMOND contract exists on the remote chain
-REMOTE_RPC=${RPC_URL:-"http://localhost:8545"}
-CONTRACT_CHECK=$(curl -s -X POST -H "Content-Type: application/json" --data "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getCode\",\"params\":[\"$REFERENCE_DIAMOND\", \"latest\"],\"id\":1}" $REMOTE_RPC)
-
-if [[ $CONTRACT_CHECK == *"\"result\":\"0x\""* ]]; then
-    echo "⚠️  No implementation found at REFERENCE_DIAMOND address: $REFERENCE_DIAMOND"
-    echo "Would you like to deploy a new reference diamond with all facets?"
+# Function to validate environment
+validate_environment() {
+    local env="$1"
+    local env_file=".env.$env"
     
-    if [ "$ENVIRONMENT" != "local" ]; then
-        read -p "This is a non-local environment. Are you sure? (yes/no): " -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
-            echo "Operation cancelled"
-            exit 1
-        fi
-        
-        echo "⚠️  WARNING: You are about to deploy to $ENVIRONMENT environment"
-        echo "This will deploy new implementations of:"
-        echo "- Reference Diamond"
-        echo "- All Facets"
-        echo "RPC URL: $RPC_URL"
-        read -p "Type 'I understand' to proceed: " -r
-        echo
-        if [[ ! $REPLY == "I understand" ]]; then
-            echo "Operation cancelled"
-            exit 1
-        fi
-    else
-        read -p "Deploy new implementation? (y/N): " -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Operation cancelled"
-            exit 1
-        fi
-    fi
-    
-    # Deploy new implementation
-    echo "🚀 Deploying new reference diamond and facets..."
-    yarn deploy:local
-    
-    if [ $? -ne 0 ]; then
-        echo "❌ Deployment failed"
+    if [ ! -f "$env_file" ]; then
+        log "Error: Environment file $env_file not found" "$RED"
         exit 1
     fi
     
-    echo "✅ Deployment successful"
-    echo "Please run sync again to apply your changes"
-    exit 0
-fi
-
-echo "✅ Found existing reference diamond at: $REFERENCE_DIAMOND"
-
-# Check and start anvil if not running on port 8546 (local)
-if ! nc -z localhost 8546 2>/dev/null; then
-    echo "Starting anvil on port 8546 (local chain)..."
-    anvil --port 8546 > /dev/null 2>&1 & 
-    ANVIL_PID=$!
+    # Load environment variables
+    set -a
+    source "$env_file"
+    set +a
     
-    # Wait for anvil to start
-    echo "Waiting for anvil to start..."
-    until nc -z localhost 8546 2>/dev/null; do
-        sleep 1
-    done
-    echo "✅ Anvil started on port 8546"
-    
-    # Set LOCAL_RPC for the script
-    export LOCAL_RPC="http://localhost:8546"
-fi
-
-# Creates a temporary copy of env file in the chain directory
-TEMP=$PWD/chain/.env.temp
-cp "$USE_ENV_FILE" "$TEMP"
-
-cd chain
-
-echo "🔄 Starting sync process..."
-
-# Step 1: Run SyncFacets script to detect changes
-echo "🔄 Checking for facet changes..."
-echo "LOCAL_RPC: $LOCAL_RPC"
-echo "REMOTE_RPC: $REMOTE_RPC"
-SYNC_OUTPUT=$(LOCAL_RPC=${LOCAL_RPC:-"http://localhost:8546"} REMOTE_RPC=$RPC_URL forge script script/SyncFacets.s.sol:SyncFacetsScript \
-    --sig "detectChanges()" \
-    --rpc-url $RPC_URL \
-    --private-key $PRIVATE_KEY \
-    -vvvv 2>&1 || true)
-
-sleep 5 # wait for the script to finish and transaction to be mined
-
-# Check if changes were detected
-if echo "$SYNC_OUTPUT" | grep -q "CHANGES_DETECTED=true"; then
-    echo -e "\n📝 Changes detected in facets:"
-    
-    # Extract and display changes
-    CHANGE_COUNT=$(echo "$SYNC_OUTPUT" | grep "CHANGE_COUNT=" | cut -d'=' -f2 | tr -d ' ')
-    for i in $(seq 0 $((CHANGE_COUNT-1))); do
-        CHANGE=$(echo "$SYNC_OUTPUT" | grep "CHANGE_$i=" | cut -d'=' -f2)
-        echo "- $CHANGE"
+    # Validate required variables
+    local required_vars=("REFERENCE_DIAMOND" "FACTORY_ADDRESS" "RPC_URL" "PRIVATE_KEY")
+    for var in "${required_vars[@]}"; do
+        if [ -z "${!var}" ]; then
+            log "Error: $var is not set in $env_file" "$RED"
+            exit 1
+        fi
     done
     
-    # Prompt for confirmation
-    if [ "$ENVIRONMENT" != "local" ]; then
-        echo -e "\n⚠️  You are about to update facets in $ENVIRONMENT environment"
-        read -p "Would you like to apply these changes? (yes/no): " -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
-            echo "Sync cancelled"
-            exit 1
-        fi
-        
-        # Additional confirmation for non-local environments
-        echo "⚠️  WARNING: This will modify facets in $ENVIRONMENT environment"
-        read -p "Type 'I understand' to proceed: " -r
-        echo
-        if [[ ! $REPLY == "I understand" ]]; then
-            echo "Sync cancelled"
-            exit 1
-        fi
-    else
-        read -p "Would you like to apply these changes? (y/N): " -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Sync cancelled"
-            exit 1
-        fi
-    fi
-    
-    # Apply changes
-    echo "🔄 Applying facet changes..."
-    LOCAL_RPC=${LOCAL_RPC:-"http://localhost:8546"} REMOTE_RPC=$RPC_URL forge script script/SyncFacets.s.sol:SyncFacetsScript \
-        --broadcast \
-        --rpc-url $RPC_URL \
-        --private-key $PRIVATE_KEY \
-        -vvvv
-    
-    if [ $? -ne 0 ]; then
-        echo "❌ Failed to apply changes"
-        exit 1
-    fi
-    
-    echo "✅ Changes applied successfully!"
-else
-    echo "✅ No changes detected"
-fi
-
-# Function to get user confirmation for non-local environments
-confirm_non_local() {
-    local action=$1
-    if [ "$ENVIRONMENT" != "local" ]; then
-        read -p "Would you like to $action? (yes/no): " -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
-            echo "Operation cancelled"
-            return 1
-        fi
-        
-        echo "⚠️  WARNING: You are about to $action in $ENVIRONMENT environment"
-        read -p "Type 'I understand' to proceed: " -r
-        echo
-        if [[ ! $REPLY == "I understand" ]]; then
-            echo "Operation cancelled"
-            return 1
-        fi
-    else
-        read -p "Would you like to $action? (y/N): " -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Operation cancelled"
-            return 1
-        fi
-    fi
-    return 0
+    log "Environment $env validated successfully" "$GREEN"
 }
 
-# Function to check and sync cap tables
-check_cap_tables() {
-    local force_sync=$1
+# Function to check reference diamond
+check_reference_diamond() {
+    log "Checking reference diamond at $REFERENCE_DIAMOND..." "$BLUE"
     
-    echo "🔍 Checking for out-of-sync cap tables..."
-    # Ensure we're in the chain directory using absolute path
-    cd "${ROOT_DIR}/chain" || exit 1
+    local code=$(cast call "$REFERENCE_DIAMOND" "facetAddress(bytes4)" "0x1f931c1c" --rpc-url "$RPC_URL" || true)
     
-    # Run detection script with error handling
-    local CHECK_OUTPUT=$(LOCAL_RPC=${LOCAL_RPC:-"http://localhost:8546"} REMOTE_RPC=$RPC_URL forge script script/SyncDiamonds.s.sol:SyncDiamondsScript \
-        --sig "detectOutOfSyncCapTables()" \
-        --rpc-url $RPC_URL \
-        --private-key $PRIVATE_KEY \
-        -vvvv 2>&1 || true)
+    if [[ "$code" == "0x0000000000000000000000000000000000000000000000000000000000000000" ]]; then
+        log "Reference diamond not found at $REFERENCE_DIAMOND" "$YELLOW"
+        
+        exit 1
+    else
+        log "Reference diamond found at $REFERENCE_DIAMOND" "$GREEN"
+    fi
+}
+
+# Function to run dry run
+run_dry_run() {
+    log "Running dry run to detect changes..." "$BLUE"
     
-    # Check for errors in the output
-    if echo "$CHECK_OUTPUT" | grep -q "Error:"; then
-        echo "❌ Error detecting out-of-sync cap tables:"
-        echo "$CHECK_OUTPUT" | grep "Error:"
-        cd - > /dev/null  # Return to previous directory
+    cd chain
+    
+    # Capture forge script output
+    local output
+    if ! output=$(LOCAL_RPC="http://localhost:8546" REMOTE_RPC="$RPC_URL" forge script script/SyncFacets.s.sol:SyncFacetsScript \
+        --sig "detectChanges()" \
+        --rpc-url "$RPC_URL" \
+        --private-key "$PRIVATE_KEY" \
+        -vvvv 2>&1); then
+        log "Error running forge script: $output" "$RED"
         return 1
     fi
     
-    # Count how many cap tables need updates
-    local OUT_OF_SYNC_COUNT=$(echo "$CHECK_OUTPUT" | grep -c "Cap table out of sync:")
+    # Log the output
+    echo "$output" | tee -a "$LOG_FILE"
     
-    # Check if any cap tables need updates
-    if [ "$OUT_OF_SYNC_COUNT" -gt 0 ]; then
-        echo -e "\n📝 Found $OUT_OF_SYNC_COUNT cap tables that need updates:"
-        echo "$CHECK_OUTPUT" | grep -A 10 "Cap table out of sync:" | grep -v "Script ran successfully"
-        
-        echo -e "\n🔄 Ready to sync $OUT_OF_SYNC_COUNT cap tables"
-        echo "Environment: $ENVIRONMENT"
-        echo "Reference Diamond: $REFERENCE_DIAMOND"
-        echo "Factory Address: $FACTORY_ADDRESS"
-        echo -e "RPC URL: $RPC_URL\n"
-        
-        read -p "Would you like to sync these cap tables? (y/N): " -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Sync cancelled"
-            cd - > /dev/null  # Return to previous directory
-            return 1
-        fi
-        
-        echo "🔄 Syncing cap tables..."
-        LOCAL_RPC=${LOCAL_RPC:-"http://localhost:8546"} REMOTE_RPC=$RPC_URL forge script script/SyncDiamonds.s.sol:SyncDiamondsScript \
-            --broadcast \
-            --rpc-url $RPC_URL \
-            --private-key $PRIVATE_KEY \
-            -vvvv 2>&1
-        
-        if [ $? -ne 0 ]; then
-            echo "❌ Failed to sync cap tables"
-            cd - > /dev/null  # Return to previous directory
-            return 1
-        fi
-        echo "✅ Cap tables synced successfully!"
+    if echo "$output" | grep -q "CHANGES_DETECTED=true"; then
+        log "Changes detected:" "$YELLOW"
+        echo "$output" | grep "CHANGE_" | while read -r line; do
+            log "$line" "$YELLOW"
+        done
     else
-        echo "✅ All cap tables are in sync"
+        log "No changes detected" "$GREEN"
     fi
     
-    # Return to previous directory
-    cd - > /dev/null
+    cd ..
 }
 
-if [ "$CHECK_ONLY" = true ]; then
-    check_cap_tables false
-    exit $?
+# Function to run actual sync
+run_sync() {
+    log "Starting sync process..." "$BLUE"
+    
+    cd chain
+    
+    # Capture forge script output
+    local output
+    if ! output=$(LOCAL_RPC="http://localhost:8546" REMOTE_RPC="$RPC_URL" forge script script/SyncFacets.s.sol:SyncFacetsScript \
+        --sig "detectChanges()" \
+        --rpc-url "$RPC_URL" \
+        --private-key "$PRIVATE_KEY" \
+        -vvvv 2>&1); then
+        log "Error running forge script: $output" "$RED"
+        return 1
+    fi
+    
+    # Log the output
+    echo "$output" | tee -a "$LOG_FILE"
+    
+    if echo "$output" | grep -q "CHANGES_DETECTED=true"; then
+        log "Changes detected:" "$YELLOW"
+        echo "$output" | grep "CHANGE_" | while read -r line; do
+            log "$line" "$YELLOW"
+        done
+        
+        if [ "$ENVIRONMENT" != "local" ]; then
+            log "⚠️  WARNING: You are about to update facets in $ENVIRONMENT environment" "$YELLOW"
+            read -p "Type 'I understand' to proceed: " -r
+            if [[ ! $REPLY == "I understand" ]]; then
+                log "Operation cancelled" "$RED"
+                exit 1
+            fi
+        else
+            read -p "Would you like to apply these changes? (y/N): " -r
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                log "Operation cancelled" "$RED"
+                exit 1
+            fi
+        fi
+        
+        log "Applying changes..." "$BLUE"
+        if ! LOCAL_RPC="http://localhost:8546" REMOTE_RPC="$RPC_URL" forge script script/SyncFacets.s.sol:SyncFacetsScript \
+            --broadcast \
+            --rpc-url "$RPC_URL" \
+            --private-key "$PRIVATE_KEY" \
+            -vvvv 2>&1 | tee -a "$LOG_FILE"; then
+            log "Failed to apply changes" "$RED"
+            exit 1
+        fi
+        
+        log "Changes applied successfully" "$GREEN"
+    else
+        log "No changes detected" "$GREEN"
+    fi
+    
+    cd ..
+}
+
+# Main sync function
+sync() {
+    local env="$1"
+    local check_only="$2"
+    
+    ENVIRONMENT="$env"
+    log "Starting sync for $ENVIRONMENT environment" "$BLUE"
+    
+    # Validate environment
+    validate_environment "$env"
+    
+    # Check reference diamond
+    check_reference_diamond
+    
+    # Start anvil
+    check_anvil
+    
+    # Run sync process
+    if [ "$check_only" = true ]; then
+        FOUNDRY_PROFILE=production run_dry_run
+    else
+        FOUNDRY_PROFILE=production run_sync
+    fi
+}
+
+# Main execution
+if [ "$#" -lt 1 ]; then
+    log "Usage: $0 <environment> [--check]" "$RED"
+    exit 1
 fi
 
-# After facet changes are applied, check and sync cap tables
-if echo "$SYNC_OUTPUT" | grep -q "CHANGES_DETECTED=true"; then
-    # ... existing facet sync code ...
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ Facet changes applied successfully!"
-        echo -e "\n🔄 Checking if cap tables need to be updated..."
-        check_cap_tables true
-    fi
-else
-    echo "✅ No facet changes detected"
-    echo -e "\n🔄 Checking if cap tables need to be updated..."
-    check_cap_tables false
+ENV="$1"
+CHECK_ONLY=false
+
+if [ "$2" = "--check" ]; then
+    CHECK_ONLY=true
 fi
+
+sync "$ENV" "$CHECK_ONLY"

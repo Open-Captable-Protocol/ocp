@@ -12,47 +12,130 @@ import { SyncFacetsScript, FacetHelper } from "./SyncFacets.s.sol";
 import { LibDeployment } from "./DeployFactory.s.sol";
 
 contract SyncDiamondsScript is Script, SyncFacetsScript {
+    using LibDeployment for *;
+
+    function syncCapTable(address capTable) internal {
+        address referenceDiamond = vm.envAddress("REFERENCE_DIAMOND");
+        console.log("\nSyncing cap table:", capTable);
+
+        // Get facets from reference diamond
+        IDiamondLoupe.Facet[] memory referenceFacets = IDiamondLoupe(referenceDiamond).facets();
+
+        // Get facets from cap table
+        IDiamondLoupe.Facet[] memory capTableFacets = IDiamondLoupe(capTable).facets();
+
+        // For each facet in reference diamond
+        for (uint256 i = 0; i < referenceFacets.length; i++) {
+            // Skip diamond cut facet
+            if (referenceFacets[i].functionSelectors[0] == IDiamondCut.diamondCut.selector) {
+                console.log("Skipping DiamondCut facet");
+                continue;
+            }
+
+            // Find matching facet in cap table
+            bool found = false;
+            for (uint256 j = 0; j < capTableFacets.length; j++) {
+                if (referenceFacets[i].functionSelectors[0] == capTableFacets[j].functionSelectors[0]) {
+                    found = true;
+
+                    // Check if selectors match exactly
+                    bool selectorsMatch =
+                        referenceFacets[i].functionSelectors.length == capTableFacets[j].functionSelectors.length;
+                    if (selectorsMatch) {
+                        for (uint256 k = 0; k < referenceFacets[i].functionSelectors.length; k++) {
+                            if (referenceFacets[i].functionSelectors[k] != capTableFacets[j].functionSelectors[k]) {
+                                selectorsMatch = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!selectorsMatch) {
+                        LibDeployment.FacetType facetType =
+                            LibDeployment.getFacetTypeFromSelector(referenceFacets[i].functionSelectors[0]);
+                        string memory facetName = LibDeployment.getFacetCutInfo(facetType).name;
+                        console.log("\nChange detected in facet", facetName, "due to:", "selector mismatch");
+                        console.log("\nUpdating facet:", facetName);
+
+                        // Deploy new facet
+                        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+                        address newFacet = LibDeployment.deployFacet(facetType);
+                        vm.stopBroadcast();
+
+                        console.log("STOCK_FACET=", newFacet);
+
+                        // First, replace existing selectors
+                        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+                        IDiamondCut.FacetCut[] memory replaceCut = new IDiamondCut.FacetCut[](1);
+                        replaceCut[0] = IDiamondCut.FacetCut({
+                            facetAddress: newFacet,
+                            action: IDiamondCut.FacetCutAction.Replace,
+                            functionSelectors: capTableFacets[j].functionSelectors
+                        });
+                        IDiamondCut(capTable).diamondCut(replaceCut, address(0), "");
+                        vm.stopBroadcast();
+                        console.log("Existing selectors replaced successfully");
+
+                        // Then, add new selectors
+                        bytes4[] memory newSelectors = new bytes4[](referenceFacets[i].functionSelectors.length);
+                        uint256 newSelectorCount = 0;
+
+                        for (uint256 k = 0; k < referenceFacets[i].functionSelectors.length; k++) {
+                            bool exists = false;
+                            for (uint256 l = 0; l < capTableFacets[j].functionSelectors.length; l++) {
+                                if (referenceFacets[i].functionSelectors[k] == capTableFacets[j].functionSelectors[l]) {
+                                    exists = true;
+                                    break;
+                                }
+                            }
+                            if (!exists) {
+                                newSelectors[newSelectorCount] = referenceFacets[i].functionSelectors[k];
+                                newSelectorCount++;
+                            }
+                        }
+
+                        if (newSelectorCount > 0) {
+                            // Resize array to actual count
+                            bytes4[] memory finalNewSelectors = new bytes4[](newSelectorCount);
+                            for (uint256 k = 0; k < newSelectorCount; k++) {
+                                finalNewSelectors[k] = newSelectors[k];
+                            }
+
+                            vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+                            IDiamondCut.FacetCut[] memory addCut = new IDiamondCut.FacetCut[](1);
+                            addCut[0] = IDiamondCut.FacetCut({
+                                facetAddress: newFacet,
+                                action: IDiamondCut.FacetCutAction.Add,
+                                functionSelectors: finalNewSelectors
+                            });
+                            IDiamondCut(capTable).diamondCut(addCut, address(0), "");
+                            vm.stopBroadcast();
+                            console.log("New selectors added successfully");
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        console.log("Cap table updated successfully");
+    }
+
     function run() external override {
         console.log("SyncDiamondsScript started");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address referenceDiamond = vm.envAddress("REFERENCE_DIAMOND");
         address factory = vm.envAddress("FACTORY_ADDRESS");
 
-        // Get all deployed cap tables
-        CapTableFactory capTableFactory = CapTableFactory(factory);
-        uint256 count = capTableFactory.getCapTableCount();
-
-        // Get reference diamond facets and hashes
-        IDiamondLoupe.Facet[] memory referenceFacets = IDiamondLoupe(referenceDiamond).facets();
-        FacetHelper.BytecodeHash[] memory referenceHashes = FacetHelper.getHashes(referenceFacets);
-
         vm.startBroadcast(deployerPrivateKey);
+        uint256 capTableCount = CapTableFactory(factory).getCapTableCount();
+        vm.stopBroadcast();
 
-        // Sync each cap table using the same logic as SyncFacets
-        for (uint256 i = 0; i < count; i++) {
-            address capTable = capTableFactory.capTables(i);
-            if (capTable == address(0)) continue; // Skip zero addresses
-            console.log("\nSyncing cap table:", capTable);
-
-            // Get target facets and hashes
-            IDiamondLoupe.Facet[] memory targetFacets = IDiamondLoupe(capTable).facets();
-            FacetHelper.BytecodeHash[] memory targetHashes = FacetHelper.getHashes(targetFacets);
-
-            // Detect and apply changes
-            (FacetHelper.FacetChange[] memory changes, uint256 changeCount) =
-                FacetHelper.detectChanges(referenceFacets, targetFacets, referenceHashes, targetHashes);
-
-            if (changeCount > 0) {
-                for (uint256 j = 0; j < changeCount; j++) {
-                    processChanges(changes[j], capTable, targetFacets, referenceFacets);
-                }
-                console.log("Cap table updated successfully");
-            } else {
-                console.log("Cap table already in sync");
-            }
+        for (uint256 i = 0; i < capTableCount; i++) {
+            vm.startBroadcast(deployerPrivateKey);
+            address capTable = CapTableFactory(factory).capTables(i);
+            vm.stopBroadcast();
+            syncCapTable(capTable);
         }
 
-        vm.stopBroadcast();
         console.log("\nSyncDiamondsScript completed");
     }
 
