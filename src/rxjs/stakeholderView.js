@@ -838,9 +838,20 @@ export const stakeholderViewStats = (issuerData) => {
             case "TX_STOCK_CANCELLATION":
                 // For cancellations, we need to find the original issuance
                 {
-                    const stockIssuance = transactions.find((t) => t.id === transaction.stock_issuance_id);
-                    if (stockIssuance && stockClass) {
-                        state = processStakeholderViewStockCancellation(state, transaction, stockIssuance, stockClass);
+                    // Look up the original issuance by security_id instead of stock_issuance_id
+                    const stockIssuance = transactions.find(
+                        (t) =>
+                            (t.object_type === "TX_STOCK_ISSUANCE" || t.object_type === "TX_EQUITY_COMPENSATION_ISSUANCE") &&
+                            t.security_id === transaction.security_id
+                    );
+
+                    // Get the stock class for this cancellation
+                    const cancellationStockClass = stockIssuance?.stock_class_id
+                        ? stockClasses.find((sc) => sc.id === stockIssuance.stock_class_id)
+                        : null;
+
+                    if (stockIssuance && cancellationStockClass) {
+                        state = processStakeholderViewStockCancellation(state, transaction, stockIssuance, cancellationStockClass);
                     }
                 }
                 break;
