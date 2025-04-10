@@ -290,14 +290,122 @@ export const processStakeholderViewWarrantIssuance = (state, transaction, stakeh
 /**
  * Process convertible issuance for stakeholder view
  * @param {Object} state Current state
- * @param {Object} _transaction Convertible transaction
- * @param {Object} _stakeholder Stakeholder
+ * @param {Object} transaction Convertible transaction
+ * @param {Object} stakeholder Stakeholder
  * @returns {Object} Updated state
  */
-export const processStakeholderViewConvertibleIssuance = (state, _transaction, _stakeholder) => {
-    // Convertibles are handled separately in the cap table view
-    // They don't directly contribute to share counts but are shown in a separate section
-    return state;
+export const processStakeholderViewConvertibleIssuance = (state, transaction, stakeholder) => {
+    // Deep clone state to avoid mutations
+    const newState = JSON.parse(JSON.stringify(state));
+    const stakeholderId = stakeholder._id;
+
+    // Initialize holder if not exists
+    if (!newState.holders[stakeholderId]) {
+        newState.holders[stakeholderId] = {
+            id: stakeholderId,
+            name: stakeholder.name.legal_name,
+            relationship: stakeholder.current_relationship,
+            holdings: {
+                outstanding: 0,
+                asConverted: 0,
+                fullyDiluted: 0,
+                byClass: {},
+            },
+            votingRights: {
+                votes: 0,
+                percentage: 0,
+            },
+            convertibles: {
+                safes: [],
+                notes: [],
+                other: [],
+            },
+        };
+    }
+
+    const holder = newState.holders[stakeholderId];
+
+    // Ensure convertibles property exists
+    if (!holder.convertibles) {
+        holder.convertibles = {
+            safes: [],
+            notes: [],
+            other: [],
+        };
+    }
+
+    // Extract convertible details
+    const { id, convertible_type, investment_amount, date, conversion_triggers = [], custom_id } = transaction;
+
+    // Get monetary value
+    const amount = investment_amount?.amount || 0;
+    const currency = investment_amount?.currency || "USD";
+
+    // Extract conversion details from triggers (val cap, discount)
+    let valuationCap = null;
+    let discount = null;
+
+    // Find conversion details in triggers
+    conversion_triggers.forEach((trigger) => {
+        if (trigger.conversion_mechanism) {
+            // Extract valuation cap if present
+            if (trigger.conversion_mechanism.valuation_cap) {
+                valuationCap = trigger.conversion_mechanism.valuation_cap.amount;
+            }
+
+            // Extract discount if present
+            if (trigger.conversion_mechanism.type === "DISCOUNT_CONVERSION" && trigger.conversion_mechanism.discount) {
+                discount = trigger.conversion_mechanism.discount;
+            }
+        }
+
+        // Check for conversion right structure (this is the actual path in OCP data)
+        if (trigger.conversion_right && trigger.conversion_right.conversion_mechanism) {
+            const mechanism = trigger.conversion_right.conversion_mechanism;
+
+            // Extract valuation cap
+            if (mechanism.conversion_valuation_cap) {
+                valuationCap = mechanism.conversion_valuation_cap.amount;
+            }
+
+            // Extract discount
+            if (mechanism.type === "DISCOUNT_CONVERSION" && mechanism.discount) {
+                discount = mechanism.discount;
+            } else if (mechanism.type === "SAFE_CONVERSION" && mechanism.discount) {
+                discount = mechanism.discount;
+            }
+        }
+    });
+
+    // Build convertible object
+    const convertibleItem = {
+        id,
+        customId: custom_id || id.substring(0, 8),
+        amount,
+        currency,
+        date,
+        valuationCap,
+        discount,
+        conversionTriggers: conversion_triggers.map((trigger) => ({
+            type: trigger.trigger_type,
+            description: trigger.description || "",
+        })),
+    };
+
+    // Add to appropriate list based on type
+    switch (convertible_type) {
+        case "SAFE":
+            holder.convertibles.safes.push(convertibleItem);
+            break;
+        case "NOTE":
+            holder.convertibles.notes.push(convertibleItem);
+            break;
+        default:
+            holder.convertibles.other.push(convertibleItem);
+            break;
+    }
+
+    return newState;
 };
 
 /**
@@ -529,19 +637,103 @@ export const calculateStakeholderPercentages = (state) => {
  * @returns {Object} Formatted data ready for display
  */
 export const formatStakeholderViewForDisplay = (stakeholderViewState) => {
+    const formatNumber = (num) => Number(num.toFixed(2));
+
+    // Calculate totals across all holders
+    let totalOutstanding = 0;
+    let totalAsConverted = 0;
+    let totalFullyDiluted = 0;
+    let totalVotingRights = 0;
+    let totalSafes = 0;
+    let totalNotes = 0;
+    let totalConvertibles = 0;
+
+    // Count stock classes and gather their data
+    const stockClasses = {};
+
+    // Process all holders
+    Object.values(stakeholderViewState.holders).forEach((holder) => {
+        totalOutstanding += holder.holdings.outstanding;
+        totalAsConverted += holder.holdings.asConverted;
+        totalFullyDiluted += holder.holdings.fullyDiluted;
+        totalVotingRights += holder.votingRights.votes;
+
+        // Process convertibles if available
+        if (holder.convertibles) {
+            // Sum SAFE amounts
+            if (holder.convertibles.safes && holder.convertibles.safes.length > 0) {
+                holder.convertibles.safes.forEach((safe) => {
+                    totalSafes += Number(safe.amount);
+                });
+            }
+
+            // Sum Note amounts
+            if (holder.convertibles.notes && holder.convertibles.notes.length > 0) {
+                holder.convertibles.notes.forEach((note) => {
+                    totalNotes += Number(note.amount);
+                });
+            }
+
+            // Sum all convertibles for total
+            totalConvertibles = totalSafes + totalNotes;
+        }
+
+        // Add stock classes to the collection
+        Object.entries(holder.holdings.byClass).forEach(([className, classData]) => {
+            if (!stockClasses[className]) {
+                stockClasses[className] = {
+                    name: className,
+                    type: classData.type,
+                    outstanding: 0,
+                    asConverted: 0,
+                    fullyDiluted: 0,
+                    votingPower: 0,
+                };
+            }
+
+            stockClasses[className].outstanding += classData.outstanding;
+            stockClasses[className].asConverted += classData.asConverted;
+            stockClasses[className].fullyDiluted += classData.fullyDiluted;
+            stockClasses[className].votingPower += classData.votingPower;
+        });
+    });
+
+    // Build the formatted view
     const formattedView = {
         holders: {
             stakeholders: [],
             totals: {
-                outstanding: stakeholderViewState.totals?.outstandingShares || 0,
-                asConverted: stakeholderViewState.totals?.asConvertedShares || 0,
-                fullyDiluted: stakeholderViewState.totals?.fullyDilutedShares || 0,
-                votingRights: stakeholderViewState.totals?.votingRights || 0,
+                outstanding: totalOutstanding,
+                asConverted: totalAsConverted,
+                fullyDiluted: totalFullyDiluted,
+                votingRights: totalVotingRights,
+                convertibles: {
+                    safes: totalSafes,
+                    notes: totalNotes,
+                    total: totalConvertibles,
+                },
+                // Add options pool info to totals
+                optionsPool: stakeholderViewState.optionsPool
+                    ? {
+                          totalAuthorized: stakeholderViewState.optionsPool.totalAuthorized,
+                          totalIssued: stakeholderViewState.optionsPool.totalIssued,
+                          unallocated: stakeholderViewState.optionsPool.unallocated,
+                      }
+                    : null,
             },
+            stockClasses: Object.values(stockClasses).map((cls) => ({
+                name: cls.name,
+                type: cls.type,
+                outstanding: cls.outstanding,
+                asConverted: cls.asConverted,
+                fullyDiluted: cls.fullyDiluted,
+                votingPower: cls.votingPower,
+                votingPercentage: cls.votingPower > 0 ? formatNumber((cls.votingPower / totalVotingRights) * 100) : 0,
+            })),
         },
     };
 
-    // Format each holder for display
+    // Process each stakeholder
     Object.values(stakeholderViewState.holders).forEach((holder) => {
         const formattedHolder = {
             id: holder.id,
@@ -551,20 +743,30 @@ export const formatStakeholderViewForDisplay = (stakeholderViewState) => {
                 outstanding: holder.holdings.outstanding,
                 asConverted: holder.holdings.asConverted,
                 fullyDiluted: holder.holdings.fullyDiluted,
-                outstandingPercentage: (holder.holdings.outstandingPercentage * 100).toFixed(2),
-                asConvertedPercentage: (holder.holdings.asConvertedPercentage * 100).toFixed(2),
-                fullyDilutedPercentage: (holder.holdings.fullyDilutedPercentage * 100).toFixed(2),
+                percentage: formatNumber((holder.holdings.fullyDiluted / totalFullyDiluted) * 100),
                 classes: Object.values(holder.holdings.byClass).map((cls) => ({
                     name: cls.className,
                     type: cls.type,
+                    stockClassId: cls.stockClassId,
                     outstanding: cls.outstanding,
                     asConverted: cls.asConverted,
                     fullyDiluted: cls.fullyDiluted,
-                    votingPower: cls.votingPower,
-                    isFounderPreferred: cls.isFounderPreferred || false,
                     isOption: cls.isOption || false,
                     isPlanAward: cls.isPlanAward || false,
                 })),
+                convertibles: holder.convertibles
+                    ? {
+                          safes: holder.convertibles.safes.map((safe) => ({
+                              ...safe,
+                              formattedAmount: `$${Number(safe.amount).toLocaleString()}`,
+                          })),
+                          notes: holder.convertibles.notes.map((note) => ({
+                              ...note,
+                              formattedAmount: `$${Number(note.amount).toLocaleString()}`,
+                          })),
+                          other: holder.convertibles.other,
+                      }
+                    : { safes: [], notes: [], other: [] },
             },
             votingRights: {
                 votes: holder.votingRights.votes,
@@ -646,6 +848,38 @@ export const stakeholderViewStats = (issuerData) => {
                 // Other transaction types don't impact the stakeholder view directly
                 break;
         }
+    }
+
+    // Calculate unallocated options from stock plans
+    let totalAuthorizedOptions = 0;
+    let totalIssuedOptions = 0;
+
+    // For each plan, determine how many options are authorized
+    if (stockPlans && stockPlans.length > 0) {
+        stockPlans.forEach((plan) => {
+            if (plan.initial_shares_reserved) {
+                totalAuthorizedOptions += parseInt(plan.initial_shares_reserved);
+            }
+        });
+
+        // Count issued equity compensation from transactions
+        transactions.forEach((tx) => {
+            if (tx.object_type === "TX_EQUITY_COMPENSATION_ISSUANCE" && tx.quantity) {
+                totalIssuedOptions += parseInt(tx.quantity);
+            }
+        });
+    }
+
+    // Calculate unallocated options
+    const unallocatedOptions = Math.max(0, totalAuthorizedOptions - totalIssuedOptions);
+
+    // Store unallocated options in state
+    if (!state.optionsPool) {
+        state.optionsPool = {
+            totalAuthorized: totalAuthorizedOptions,
+            totalIssued: totalIssuedOptions,
+            unallocated: unallocatedOptions,
+        };
     }
 
     // Calculate percentages after all transactions are processed
