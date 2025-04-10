@@ -126,14 +126,14 @@ export const processStakeholderViewStockIssuance = (state, transaction, stakehol
 /**
  * Process equity compensation issuance for stakeholder view
  * @param {Object} state Current state
- * @param {Object} transaction Equity compensation issuance transaction
- * @param {Object} stakeholder Stakeholder receiving the equity compensation
+ * @param {Object} transaction Equity comp transaction
+ * @param {Object} stakeholder Stakeholder
  * @param {Object} stockClass Stock class if applicable
- * @param {Object} stockPlan Stock plan if applicable
+ * @param {Object} _stockPlan Stock plan if applicable
  * @returns {Object} Updated state with processed stakeholder holdings
  */
-export const processStakeholderViewEquityCompIssuance = (state, transaction, stakeholder, stockClass, stockPlan) => {
-    const { quantity, compensation_type, stock_plan_id, object_type } = transaction;
+export const processStakeholderViewEquityCompIssuance = (state, transaction, stakeholder, stockClass, _stockPlan) => {
+    const { quantity, compensation_type, stock_plan_id } = transaction;
     const numShares = parseInt(quantity);
     const stakeholderId = stakeholder._id;
 
@@ -290,11 +290,11 @@ export const processStakeholderViewWarrantIssuance = (state, transaction, stakeh
 /**
  * Process convertible issuance for stakeholder view
  * @param {Object} state Current state
- * @param {Object} transaction Convertible issuance transaction
- * @param {Object} stakeholder Stakeholder receiving the convertible
- * @returns {Object} Updated state with processed stakeholder holdings
+ * @param {Object} _transaction Convertible transaction
+ * @param {Object} _stakeholder Stakeholder
+ * @returns {Object} Updated state
  */
-export const processStakeholderViewConvertibleIssuance = (state, transaction, stakeholder) => {
+export const processStakeholderViewConvertibleIssuance = (state, _transaction, _stakeholder) => {
     // Convertibles are handled separately in the cap table view
     // They don't directly contribute to share counts but are shown in a separate section
     return state;
@@ -601,7 +601,7 @@ export const formatStakeholderViewForDisplay = (stakeholderViewState) => {
  * @returns {Object} Processed stakeholder view data
  */
 export const stakeholderViewStats = (issuerData) => {
-    const { issuer, stockClasses, stockPlans, stakeholders, transactions } = issuerData;
+    const { stockClasses, stockPlans, stakeholders, transactions } = issuerData;
 
     // Initialize state
     let state = stakeholderViewInitialState();
@@ -635,9 +635,11 @@ export const stakeholderViewStats = (issuerData) => {
                 break;
             case "TX_STOCK_CANCELLATION":
                 // For cancellations, we need to find the original issuance
-                const stockIssuance = transactions.find((t) => t.id === transaction.stock_issuance_id);
-                if (stockIssuance && stockClass) {
-                    state = processStakeholderViewStockCancellation(state, transaction, stockIssuance, stockClass);
+                {
+                    const stockIssuance = transactions.find((t) => t.id === transaction.stock_issuance_id);
+                    if (stockIssuance && stockClass) {
+                        state = processStakeholderViewStockCancellation(state, transaction, stockIssuance, stockClass);
+                    }
                 }
                 break;
             default:
