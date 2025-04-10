@@ -16,6 +16,7 @@ import {
     processCaptableConvertibleIssuance,
     processCaptableStockCancellation,
 } from "./captable.js";
+import stakeholderViewStats from "./stakeholderView.js";
 
 // Initial state structure
 const createInitialState = (issuer, stockClasses, stockPlans, stakeholders) => {
@@ -550,6 +551,7 @@ export const captableStats = async ({ issuer, stockClasses, stockPlans, stakehol
             tap((state) => {
                 const stateWithoutTransactions = { ...state };
                 delete stateWithoutTransactions.transactions;
+
                 // console.log("\nProcessed transaction. New state:", JSON.stringify(stateWithoutTransactions, null, 2));
             }),
             map((state) => {
@@ -699,6 +701,7 @@ export const captableStats = async ({ issuer, stockClasses, stockPlans, stakehol
                             outstandingAmount: convertiblesTotalOutstandingAmount,
                         },
                     },
+                    holders: stakeholderViewStats({ issuer, stockClasses, stockPlans, stakeholders, transactions }),
                 };
             })
         )

@@ -49,8 +49,6 @@ stats.get("/rxjs/captable", async (req, res) => {
             return res.status(500).send({ errors: Array.from(rxjsData.errors) });
         }
 
-        console.log("rxjsData", rxjsData);
-
         res.status(200).send(rxjsData);
     } catch (error) {
         captureException(error);
