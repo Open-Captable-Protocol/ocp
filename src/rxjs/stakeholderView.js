@@ -409,6 +409,65 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
 };
 
 /**
+ * Process equity compensation exercise for stakeholder view
+ * @param {Object} state Current state
+ * @param {Object} transaction Exercise transaction
+ * @param {Object} equityIssuance Original equity compensation issuance
+ * @returns {Object} Updated state with properly adjusted holdings after exercise
+ */
+export const processStakeholderViewEquityCompExercise = (state, transaction, equityIssuance) => {
+    const { quantity } = transaction;
+    const exercisedShares = parseInt(quantity);
+    const stakeholderId = equityIssuance.stakeholder_id;
+
+    // If no stakeholder found in state, nothing to do
+    if (!state.holders[stakeholderId]) {
+        return state;
+    }
+
+    // Deep clone state to avoid mutations
+    const newState = JSON.parse(JSON.stringify(state));
+    const holder = newState.holders[stakeholderId];
+
+    // Find the equity category (options/awards)
+    const categoryNames = Object.keys(holder.holdings.byClass).filter(
+        (className) => holder.holdings.byClass[className].isOption || holder.holdings.byClass[className].isPlanAward
+    );
+
+    for (const categoryName of categoryNames) {
+        const categoryHolding = holder.holdings.byClass[categoryName];
+
+        // Only adjust the category if it's from the original equity issuance
+        if (categoryHolding.stockClassId === equityIssuance.stock_class_id) {
+            // Reduce fully diluted shares by the exercised amount
+            // This prevents double counting when the resulting stock is issued
+            categoryHolding.fullyDiluted -= exercisedShares;
+            
+            // If all options are exercised, set fully diluted to zero explicitly
+            if (categoryHolding.fullyDiluted <= 0) {
+                categoryHolding.fullyDiluted = 0;
+            }
+
+            // Track which options have been exercised
+            if (!categoryHolding.exercised) {
+                categoryHolding.exercised = 0;
+            }
+            categoryHolding.exercised += exercisedShares;
+            
+            // Mark the options as exercised with a flag for UI filtering
+            categoryHolding.isExercised = categoryHolding.fullyDiluted === 0;
+            
+            // Adjust holder total
+            holder.holdings.fullyDiluted -= exercisedShares;
+
+            break;
+        }
+    }
+
+    return newState;
+};
+
+/**
  * Process stock cancellation for stakeholder view
  * @param {Object} state Current state
  * @param {Object} transaction Stock cancellation transaction
@@ -833,6 +892,18 @@ export const stakeholderViewStats = (issuerData) => {
             case "TX_CONVERTIBLE_ISSUANCE":
                 if (stakeholder) {
                     state = processStakeholderViewConvertibleIssuance(state, transaction, stakeholder);
+                }
+                break;
+            case "TX_EQUITY_COMPENSATION_EXERCISE":
+                // For exercises, find the original equity issuance
+                {
+                    const equityIssuance = transactions.find(
+                        (t) => t.object_type === "TX_EQUITY_COMPENSATION_ISSUANCE" && t.security_id === transaction.security_id
+                    );
+
+                    if (equityIssuance) {
+                        state = processStakeholderViewEquityCompExercise(state, transaction, equityIssuance);
+                    }
                 }
                 break;
             case "TX_STOCK_CANCELLATION":
