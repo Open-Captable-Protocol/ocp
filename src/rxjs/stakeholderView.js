@@ -442,7 +442,7 @@ export const processStakeholderViewEquityCompExercise = (state, transaction, equ
             // Reduce fully diluted shares by the exercised amount
             // This prevents double counting when the resulting stock is issued
             categoryHolding.fullyDiluted -= exercisedShares;
-            
+
             // If all options are exercised, set fully diluted to zero explicitly
             if (categoryHolding.fullyDiluted <= 0) {
                 categoryHolding.fullyDiluted = 0;
@@ -453,10 +453,10 @@ export const processStakeholderViewEquityCompExercise = (state, transaction, equ
                 categoryHolding.exercised = 0;
             }
             categoryHolding.exercised += exercisedShares;
-            
+
             // Mark the options as exercised with a flag for UI filtering
             categoryHolding.isExercised = categoryHolding.fullyDiluted === 0;
-            
+
             // Adjust holder total
             holder.holdings.fullyDiluted -= exercisedShares;
 
