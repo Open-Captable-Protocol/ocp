@@ -5,7 +5,7 @@ import {
     dashboardInitialState,
     processDashboardConvertibleIssuance,
     processDashboardStockIssuance,
-    processDashboardStockCancellation,
+    //     processDashboardStockCancellation,
 } from "./dashboard.js";
 import {
     captableInitialState,
@@ -14,7 +14,7 @@ import {
     processCaptableEquityCompensationIssuance,
     processCaptableWarrantAndNonPlanAwardIssuance,
     processCaptableConvertibleIssuance,
-    processCaptableStockCancellation,
+    // processCaptableStockCancellation,
 } from "./captable.js";
 
 // Initial state structure
@@ -394,12 +394,17 @@ export const processEquityCompensationExercise = (state, transaction) => {
     };
 };
 
-const processStockCancellation = (state, transaction, stockClasses, stakeholders) => {
+const processStockCancellation = (
+    state,
+    transaction,
+    stockClasses
+    // , stakeholders
+) => {
     const { quantity } = transaction;
     const cancelledShares = parseInt(quantity);
     const stockIssuance = state.transactions.find((tx) => tx.security_id === transaction.security_id && tx.object_type === "TX_STOCK_ISSUANCE");
     const originalStockClass = stockClasses.find((sc) => sc.id === stockIssuance.stock_class_id);
-    const stakeholder = stakeholders.find((s) => s.id === stockIssuance.stakeholder_id);
+    // const stakeholder = stakeholders.find((s) => s.id === stockIssuance.stakeholder_id);
 
     // Validate using state data
     if (state.stockClasses[originalStockClass.id].sharesIssued < cancelledShares) {
@@ -423,8 +428,8 @@ const processStockCancellation = (state, transaction, stockClasses, stakeholders
         },
     };
 
-    const dashboardUpdates = processDashboardStockCancellation(state, transaction, stakeholder);
-    const captableUpdates = processCaptableStockCancellation(state, transaction, stockIssuance, originalStockClass);
+    const dashboardUpdates = {}; //processDashboardStockCancellation(state, transaction, stakeholder);
+    const captableUpdates = {}; //processCaptableStockCancellation(state, transaction, stockIssuance, originalStockClass);
 
     return {
         ...state,
