@@ -202,7 +202,9 @@ export const processCaptableConvertibleIssuance = (state, transaction, stakehold
     }
 
     // Get amount based on type
-    const amount = Number((isWarrant ? transaction.purchase_price : transaction.investment_amount)?.amount || 0);
+    // only add to raised if stakeholder is an investor
+    const shouldCountTowardsRaised = stakeholder && stakeholder.current_relationship === "INVESTOR";
+    const amount = shouldCountTowardsRaised ? Number((isWarrant ? transaction.purchase_price : transaction.investment_amount)?.amount || 0) : 0;
 
     // Create or update convertible entry
     const existingConvertiblesSummary = state.convertibles?.convertiblesSummary || {};

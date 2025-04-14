@@ -114,10 +114,13 @@ const startServer = async () => {
             // Group contracts by chain ID
             const contractsToWatch = issuers
                 .filter((issuer) => issuer?.deployed_to && issuer?.chain_id)
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .map((issuer) => ({
+                    id: issuer.id,
                     address: issuer.deployed_to,
                     chain_id: issuer.chain_id,
                     name: issuer.legal_name,
+                    createdAt: issuer.createdAt,
                 }));
 
             console.log("Watching contracts by chain:");
@@ -126,7 +129,7 @@ const startServer = async () => {
                 return acc;
             }, {});
             Object.entries(contractsToWatch).forEach(([_ /*id*/, data]) => {
-                console.log(`${data.name.padEnd(32)} -> ${data.address}`);
+                console.log(`${data.createdAt.toISOString().padEnd(32)} - ${data.name.padEnd(32)} -> ${data.id}`);
             });
 
             Object.entries(contractsByChain).forEach(([chainId, count]) => {

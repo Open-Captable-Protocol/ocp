@@ -182,7 +182,6 @@ const processTransaction = (state, transaction, stakeholders, stockClasses, stoc
                 return processWarrantAndNonPlanAwardIssuance(newState, transaction, stakeholder, originalStockClass);
             else return processConvertibleIssuance(newState, transaction, stakeholder);
         case "TX_STOCK_CANCELLATION":
-            console.log("here");
             return processStockCancellation(newState, transaction, stockClasses, stakeholders);
         default:
             return state;
@@ -403,7 +402,6 @@ const processStockCancellation = (state, transaction, stockClasses, stakeholders
     const stockIssuance = state.transactions.find((tx) => tx.security_id === transaction.security_id && tx.object_type === "TX_STOCK_ISSUANCE");
     const originalStockClass = stockClasses.find((sc) => sc.id === stockIssuance.stock_class_id);
     const stakeholder = stakeholders.find((s) => s.id === stockIssuance.stakeholder_id);
-    console.log("processStockCancellation => stockIssuance", stockIssuance);
 
     // Validate using state data
     if (state.stockClasses[originalStockClass.id].sharesIssued < cancelledShares) {
