@@ -16,8 +16,13 @@ export const processDashboardConvertibleIssuance = (state, transaction, stakehol
     // Get investment amount based on transaction type
     const investmentAmount = transaction.object_type === "TX_WARRANT_ISSUANCE" ? transaction.purchase_price : transaction.investment_amount;
 
-    const shouldCountTowardsRaised = stakeholder && !["FOUNDER", "BOARD_MEMBER"].includes(stakeholder.current_relationship);
-    const amountToAdd = shouldCountTowardsRaised ? Number(investmentAmount?.amount || 0) : 0;
+    // Safely extract the amount, defaulting to 0 if any part of the path is undefined
+    const amount = investmentAmount?.amount ? Number(investmentAmount.amount) : 0;
+
+    // only add to raised if stakeholder is an investor
+    const shouldCountTowardsRaised = stakeholder && stakeholder.current_relationship === "INVESTOR";
+
+    const amountToAdd = shouldCountTowardsRaised ? amount : 0;
 
     const conversionTriggers = transaction.conversion_triggers || [];
     let conversionValuationCap = null;
@@ -60,9 +65,11 @@ export const processDashboardStockIssuance = (state, transaction, stakeholder) =
     const { share_price, quantity } = transaction;
     const numShares = parseInt(quantity);
 
-    // Check if stakeholder is founder/board member
-    const shouldCountTowardsRaised = stakeholder && !["FOUNDER", "BOARD_MEMBER"].includes(stakeholder.current_relationship);
+    // only add to raised if stakeholder is an investor
+    const shouldCountTowardsRaised = stakeholder && stakeholder.current_relationship === "INVESTOR";
+
     const amountToAdd = shouldCountTowardsRaised ? numShares * Number(share_price.amount) : 0;
+    console.log("current relationship", stakeholder.current_relationship, amountToAdd);
 
     const newValuation = {
         type: "STOCK",
@@ -88,8 +95,9 @@ export const processDashboardStockCancellation = (state, transaction, stakeholde
     const { quantity } = transaction;
     const numShares = parseInt(quantity);
 
-    // Check if stakeholder is founder/board member
-    const shouldCountTowardsRaised = stakeholder && !["FOUNDER", "BOARD_MEMBER"].includes(stakeholder.current_relationship);
+    // only subtract from raised if stakeholder is an investor
+    const shouldCountTowardsRaised = stakeholder && stakeholder.current_relationship === "INVESTOR";
+
     const amountToSubtract = shouldCountTowardsRaised ? numShares * Number(state.latestSharePrice) : 0;
 
     return {

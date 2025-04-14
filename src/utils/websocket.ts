@@ -42,7 +42,6 @@ export const addAddressesToWatch = async (chainId: string, addresses: string | s
 
 // Function to setup a single chain listener
 const setupChainListener = async (chainId: string, addresses: string[]) => {
-    console.log("Setting up chain listener for chain", chainId, "with addresses", addresses);
     const provider = getChainProvider(chainId);
 
     if (addresses.length > 0) {
