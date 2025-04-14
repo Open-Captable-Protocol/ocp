@@ -16,8 +16,12 @@ export const processDashboardConvertibleIssuance = (state, transaction, stakehol
     // Get investment amount based on transaction type
     const investmentAmount = transaction.object_type === "TX_WARRANT_ISSUANCE" ? transaction.purchase_price : transaction.investment_amount;
 
+    // Safely extract the amount, defaulting to 0 if any part of the path is undefined
+    const amount = investmentAmount?.amount ? Number(investmentAmount.amount) : 0;
+
     const shouldCountTowardsRaised = stakeholder && !["FOUNDER", "BOARD_MEMBER"].includes(stakeholder.current_relationship);
-    const amountToAdd = shouldCountTowardsRaised ? Number(investmentAmount?.amount || 0) : 0;
+
+    const amountToAdd = shouldCountTowardsRaised ? amount : 0;
 
     const conversionTriggers = transaction.conversion_triggers || [];
     let conversionValuationCap = null;
@@ -62,6 +66,7 @@ export const processDashboardStockIssuance = (state, transaction, stakeholder) =
 
     // Check if stakeholder is founder/board member
     const shouldCountTowardsRaised = stakeholder && !["FOUNDER", "BOARD_MEMBER"].includes(stakeholder.current_relationship);
+
     const amountToAdd = shouldCountTowardsRaised ? numShares * Number(share_price.amount) : 0;
 
     const newValuation = {
@@ -89,15 +94,15 @@ export const processDashboardStockCancellation = (state, transaction, stakeholde
     const numShares = parseInt(quantity);
 
     // Check if stakeholder is founder/board member
-    const shouldCountTowardsRaised = stakeholder && !["FOUNDER", "BOARD_MEMBER"].includes(stakeholder.current_relationship);
-    const amountToSubtract = shouldCountTowardsRaised ? numShares * Number(state.latestSharePrice) : 0;
+    // const shouldCountTowardsRaised = stakeholder && !["FOUNDER", "BOARD_MEMBER"].includes(stakeholder.current_relationship);
+    // const amountToSubtract = shouldCountTowardsRaised ? numShares * Number(state.latestSharePrice) : 0;
 
     return {
         sharesIssuedByCurrentRelationship: {
             ...state.sharesIssuedByCurrentRelationship,
             [stakeholder.current_relationship]: (state.sharesIssuedByCurrentRelationship[stakeholder.current_relationship] || 0) - numShares,
         },
-        totalRaised: state.totalRaised - amountToSubtract,
+        // totalRaised: state.totalRaised - amountToSubtract,
         valuations: {
             ...state.valuations,
             stock: {
