@@ -334,8 +334,21 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
         };
     }
 
-    // Extract convertible details
-    const { id, convertible_type, investment_amount, date, conversion_triggers = [], custom_id } = transaction;
+    // Extract convertible details - enhanced with additional fields
+    const {
+        id,
+        convertible_type,
+        investment_amount,
+        date,
+        conversion_triggers = [],
+        custom_id,
+        board_approval_date,
+        security_law_exemptions = [],
+        pro_rata,
+        consideration_text,
+        seniority,
+        comments = [],
+    } = transaction;
 
     // Get monetary value
     const amount = investment_amount?.amount || 0;
@@ -344,6 +357,8 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
     // Extract conversion details from triggers (val cap, discount)
     let valuationCap = null;
     let discount = null;
+    let conversionTiming = null;
+    let conversionMfn = false;
 
     // Find conversion details in triggers
     conversion_triggers.forEach((trigger) => {
@@ -356,6 +371,16 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
             // Extract discount if present
             if (trigger.conversion_mechanism.type === "DISCOUNT_CONVERSION" && trigger.conversion_mechanism.discount) {
                 discount = trigger.conversion_mechanism.discount;
+            }
+
+            // Extract conversion timing
+            if (trigger.conversion_mechanism.conversion_timing) {
+                conversionTiming = trigger.conversion_mechanism.conversion_timing;
+            }
+
+            // Extract MFN status
+            if (trigger.conversion_mechanism.conversion_mfn !== undefined) {
+                conversionMfn = trigger.conversion_mechanism.conversion_mfn;
             }
         }
 
@@ -374,22 +399,69 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
             } else if (mechanism.type === "SAFE_CONVERSION" && mechanism.discount) {
                 discount = mechanism.discount;
             }
+
+            // Extract conversion timing
+            if (mechanism.conversion_timing) {
+                conversionTiming = mechanism.conversion_timing;
+            }
+
+            // Extract MFN status
+            if (mechanism.conversion_mfn !== undefined) {
+                conversionMfn = mechanism.conversion_mfn;
+            }
         }
     });
 
-    // Build convertible object
+    // Format security law exemptions
+    const formattedExemptions = security_law_exemptions.map((exemption) => ({
+        description: exemption.description || "",
+        jurisdiction: exemption.jurisdiction || "",
+    }));
+
+    // Determine if there are side letters based on comments
+    const hasSideLetters = comments.some((comment) => comment.toLowerCase().includes("side letter") || comment.toLowerCase().includes("sideletter"));
+
+    // Process conversion triggers with more detail
+    const formattedTriggers = conversion_triggers.map((trigger) => ({
+        id: trigger.trigger_id || "",
+        nickname: trigger.nickname || "",
+        type: trigger.type || "",
+        description: trigger.trigger_description || "",
+        condition: trigger.trigger_condition || "",
+        date: trigger.trigger_date || null,
+        // Add conversion mechanism details
+        mechanism: trigger.conversion_right?.conversion_mechanism?.type || "",
+        timing: conversionTiming,
+        mfn: conversionMfn,
+        converts_to_future: trigger.conversion_right?.converts_to_future_round || false,
+    }));
+
+    // Build convertible object - enhanced with all additional fields
     const convertibleItem = {
         id,
         customId: custom_id || id.substring(0, 8),
         amount,
         currency,
         date,
+        boardApprovalDate: board_approval_date || null,
         valuationCap,
         discount,
-        conversionTriggers: conversion_triggers.map((trigger) => ({
-            type: trigger.trigger_type,
-            description: trigger.description || "",
-        })),
+        valuationMethod: conversionTiming || "POST_MONEY", // Default to POST_MONEY if not specified
+        considerationText: consideration_text || "",
+        proRata: pro_rata || null,
+        seniority: seniority || null,
+        exemptions: formattedExemptions,
+        hasSideLetters,
+        comments: comments || [],
+        conversionTriggers: formattedTriggers,
+        convertibleType: convertible_type,
+        // Track whether this is still outstanding (will be true for all in this function)
+        isOutstanding: true,
+        // Default for unconverted SAFEs
+        conversionDate: null,
+        sharesIssued: null,
+        conversionPrice: null,
+        convertedClass: null,
     };
 
     // Add to appropriate list based on type
@@ -818,6 +890,17 @@ export const formatStakeholderViewForDisplay = (stakeholderViewState) => {
                           safes: holder.convertibles.safes.map((safe) => ({
                               ...safe,
                               formattedAmount: `$${Number(safe.amount).toLocaleString()}`,
+                              // Adding additional formatted fields for easier consumption
+                              formattedValuationCap: safe.valuationCap ? `$${Number(safe.valuationCap).toLocaleString()}` : "",
+                              formattedDiscount: safe.discount ? `${Number(safe.discount * 100).toFixed(2)}%` : "",
+                              formattedDate: safe.date ? new Date(safe.date).toISOString().split("T")[0] : "",
+                              formattedBoardApprovalDate: safe.boardApprovalDate ? new Date(safe.boardApprovalDate).toISOString().split("T")[0] : "",
+                              formattedExemptions: safe.exemptions?.map((e) => `${e.description} (${e.jurisdiction})`).join("; ") || "",
+                              basisOfIssuance: `Simple Agreement for Future Equity, dated ${
+                                  safe.date ? new Date(safe.date).toISOString().split("T")[0] : "N/A"
+                              }`,
+                              sideLetter: safe.hasSideLetters ? "Y" : "N",
+                              outstanding: safe.isOutstanding ? "Y" : "N",
                           })),
                           notes: holder.convertibles.notes.map((note) => ({
                               ...note,
