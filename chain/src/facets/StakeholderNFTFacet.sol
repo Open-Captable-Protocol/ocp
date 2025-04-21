@@ -23,7 +23,8 @@ contract StakeholderNFTFacet is ERC721, IStakeholderNFTFacet {
     function _exists(uint256 tokenId) internal view override returns (bool) {
         Storage storage ds = StorageLib.get();
         bytes16 stakeholderId = bytes16(uint128(tokenId));
-        return ds.stakeholderIndex[stakeholderId] != 0;
+        // Check both that the stakeholder exists and that the token has been minted
+        return ds.stakeholderIndex[stakeholderId] != 0 && super._exists(tokenId);
     }
 
     /// @notice Mint an NFT representing a stakeholder's position
@@ -45,7 +46,7 @@ contract StakeholderNFTFacet is ERC721, IStakeholderNFTFacet {
 
         // Use stakeholderId as tokenId
         uint256 tokenId = uint256(bytes32(stakeholderId));
-        if (_exists(tokenId)) {
+        if (super._exists(tokenId)) {
             revert AlreadyMinted();
         }
 
@@ -54,14 +55,9 @@ contract StakeholderNFTFacet is ERC721, IStakeholderNFTFacet {
 
     /// @notice Get the URI for a token, containing metadata about stakeholder positions
     /// @dev Only OPERATOR_ROLE or the token owner can view the token URI
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        virtual
-        override(ERC721, IStakeholderNFTFacet)
-        returns (string memory)
-    {
-        if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
+    function tokenURI(uint256 tokenId) public view override(ERC721, IStakeholderNFTFacet) returns (string memory) {
+        // First check if the token exists using the parent's _exists
+        if (!super._exists(tokenId)) revert URIQueryForNonexistentToken();
 
         // Allow operators and admins to view any token URI
         if (!AccessControl.hasOperatorRole(msg.sender) && !AccessControl.hasAdminRole(msg.sender)) {

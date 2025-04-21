@@ -21,6 +21,7 @@ import { StakeholderNFTFacet } from "@facets/StakeholderNFTFacet.sol";
 import { AccessControl } from "@libraries/AccessControl.sol";
 import { AccessControlFacet } from "@facets/AccessControlFacet.sol";
 import { Strings } from "openzeppelin-contracts/contracts/utils/Strings.sol";
+import { IERC721 } from "openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 
 library LibDeployment {
     uint256 constant FACET_COUNT = 11; // Number of enum values FacetType
@@ -113,9 +114,10 @@ library LibDeployment {
             return FacetCutInfo({ name: "WarrantFacet", selectors: selectors });
         }
         if (facetType == FacetType.StakeholderNFT) {
-            bytes4[] memory selectors = new bytes4[](2);
+            bytes4[] memory selectors = new bytes4[](3);
             selectors[0] = StakeholderNFTFacet.mint.selector;
             selectors[1] = StakeholderNFTFacet.tokenURI.selector;
+            selectors[2] = IERC721.ownerOf.selector;
             return FacetCutInfo({ name: "StakeholderNFTFacet", selectors: selectors });
         }
         if (facetType == FacetType.AccessControl) {
