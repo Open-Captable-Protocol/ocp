@@ -9,3 +9,4 @@ openzeppelin/=lib/openzeppelin-contracts-upgradeable/contracts/
 @libraries/=src/libraries/
 @core/=src/core/
 @interfaces/=src/interfaces/
+@test/=test
