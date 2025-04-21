@@ -1,0 +1,71 @@
+{
+    "rules": {
+        "var-name-mixedcase": "off",
+        "func-param-name-mixedcase": "off",
+        "compiler-version": [
+            "error",
+            "^0.8.0"
+        ],
+        "quotes": [
+            "off",
+            "double"
+        ],
+        "func-visibility": [
+            "warn",
+            {
+                "ignoreConstructors": true
+            }
+        ],
+        "state-visibility": [
+            "warn"
+        ],
+        "avoid-throw": "warn",
+        "avoid-suicide": "error",
+        "avoid-sha3": "warn",
+        "max-line-length": [
+            "off",
+            120
+        ],
+        "no-console": "off",
+        "no-empty-blocks": "off",
+        "no-unused-vars": "error",
+        "explicit-types": [
+            "warn",
+            "explicit"
+        ],
+        "one-contract-per-file": "warn",
+        "code-complexity": [
+            "warn",
+            7
+        ],
+        "max-states-count": [
+            "warn",
+            15
+        ],
+        "no-global-import": "warn",
+        "payable-fallback": "warn",
+        "contract-name-capwords": "warn",
+        "func-name-mixedcase": "warn",
+        "imports-on-top": "warn",
+        "constructor-syntax": "warn",
+        "gas-custom-errors": "warn",
+        "avoid-call-value": "error",
+        "avoid-low-level-calls": "warn",
+        "avoid-tx-origin": "error",
+        "check-send-result": "error",
+        "no-complex-fallback": "warn",
+        "no-inline-assembly": "warn",
+        "not-rely-on-block-hash": "warn",
+        "reentrancy": "error",
+        "reason-string": [
+            "warn",
+            {
+                "maxLength": 32
+            }
+        ],
+        "gas-indexed-events": "warn",
+        "gas-named-return-values": "warn",
+        "gas-strict-inequalities": "warn",
+        "gas-struct-packing": "warn"
+    }
+}

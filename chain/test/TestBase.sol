@@ -53,7 +53,6 @@ contract DiamondTestBase is Test {
 
         // Create a new cap table for testing
         capTable = CapTable(payable(factory.createCapTable(issuerId, issuerInitialSharesAuthorized)));
-        console.log("capTable: ", address(capTable));
         IAccessControlFacet(address(capTable)).acceptAdmin();
     }
 
