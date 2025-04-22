@@ -29,10 +29,10 @@ export const stocksProcessorInitialState = () => {
  * @param {Object} transaction Stock issuance transaction
  * @param {Object} stakeholder Stakeholder receiving the stock
  * @param {Object} stockClass Stock class being issued
- * @param {Object} stockPlan Stock plan if applicable
+ * @param {Object} _stockPlan Stock plan if applicable
  * @returns {Object} Updated state with processed stock issuance
  */
-export const processStockIssuance = (state, transaction, stakeholder, stockClass, stockPlan) => {
+export const processStockIssuance = (state, transaction, stakeholder, stockClass, _stockPlan) => {
     // Create deep clone of state to avoid mutations
     const newState = JSON.parse(JSON.stringify(state));
 
@@ -47,7 +47,7 @@ export const processStockIssuance = (state, transaction, stakeholder, stockClass
         comments,
         stock_legend_ids,
         vesting_terms_id,
-        issuance_type,
+        issuance_type: issuanceType,
         stock_class_id,
         stock_plan_id,
     } = transaction;
@@ -238,14 +238,13 @@ export const processStockTransfer = (state, transaction, fromStakeholder, toStak
     // Create deep clone of state to avoid mutations
     const newState = JSON.parse(JSON.stringify(state));
 
-    const { id: transactionId, date, security_id, quantity, balance, comments, consideration } = transaction;
+    const { id: transactionId, date, security_id, quantity, comments, consideration } = transaction;
 
     // Get the stock class from the original issuance
     const stock_class_id = stockIssuance.stock_class_id;
 
     // Calculate
     const numShares = parseInt(quantity) || 0;
-    const remainingBalance = parseInt(balance) || 0;
 
     // Get stock class information
     const className = stockClass ? stockClass.name : "Unknown";
@@ -302,10 +301,10 @@ export const processStockTransfer = (state, transaction, fromStakeholder, toStak
  * @param {Object} transaction Equity compensation issuance transaction
  * @param {Object} stakeholder Stakeholder receiving the equity comp
  * @param {Object} stockClass Stock class (if applicable)
- * @param {Object} stockPlan Stock plan (if applicable)
+ * @param {Object} _stockPlan Stock plan (if applicable)
  * @returns {Object} Updated state with processed equity compensation
  */
-export const processEquityCompensationIssuance = (state, transaction, stakeholder, stockClass, stockPlan) => {
+export const processEquityCompensationIssuance = (state, transaction, stakeholder, stockClass, _stockPlan) => {
     // Create deep clone of state to avoid mutations
     const newState = JSON.parse(JSON.stringify(state));
 
