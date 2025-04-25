@@ -111,7 +111,7 @@ const startServer = async () => {
 
         const issuers = (await readAllIssuers()) || null;
         if (issuers) {
-            // Group contracts by chain ID
+            // Group contracts by chain_id
             const contractsToWatch = issuers
                 .filter((issuer) => issuer?.deployed_to && issuer?.chain_id)
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -121,19 +121,29 @@ const startServer = async () => {
                     chain_id: issuer.chain_id,
                     name: issuer.legal_name,
                     createdAt: issuer.createdAt,
-                }));
+                }))
+                .filter(Boolean);
 
-            console.log("Watching contracts by chain:");
+            // Group contracts by chain_id
             const contractsByChain = contractsToWatch.reduce((acc, contract) => {
-                acc[contract.chain_id] = (acc[contract.chain_id] || 0) + 1;
+                if (!acc[contract.chain_id]) {
+                    acc[contract.chain_id] = [];
+                }
+                acc[contract.chain_id].push(contract);
                 return acc;
             }, {});
-            Object.entries(contractsToWatch).forEach(([_ /*id*/, data]) => {
-                console.log(`${data.createdAt.toISOString().padEnd(32)} - ${data.name.padEnd(32)} -> ${data.id}`);
-            });
 
-            Object.entries(contractsByChain).forEach(([chainId, count]) => {
-                console.log(`Chain ${chainId}: ${count} contracts`);
+            console.log(contractsByChain);
+
+            // Display contracts grouped by chain
+            console.log("\nContracts by Chain:");
+            console.log("==================");
+            Object.entries(contractsByChain).forEach(([chainId, contracts]) => {
+                console.log(`\nChain ID: ${chainId}`);
+                console.log("------------------");
+                contracts.forEach((contract) => {
+                    console.log(`${contract.createdAt.toISOString().padEnd(32)} - ${contract.name.padEnd(32)} -> ${contract.id}`);
+                });
             });
 
             await startListener(contractsToWatch);
