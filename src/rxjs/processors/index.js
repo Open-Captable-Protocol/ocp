@@ -8,21 +8,16 @@
 
 import convertiblesProcessor from "./convertiblesProcessor";
 import warrantsProcessor from "./warrantsProcessor";
-import * as stocksProcessor from "./stocksProcessor";
+// import equityCompensationProcessor from "./equityCompensationProcessor";
 
-export { convertiblesProcessor, warrantsProcessor, stocksProcessor };
+export { convertiblesProcessor, warrantsProcessor };
 
 // Re-export individual functions for direct imports
 export const { processStakeholderViewConvertibleIssuance, formatConvertiblesForDisplay } = convertiblesProcessor;
 
 export const { processStakeholderViewWarrantIssuance, formatWarrantsForDisplay } = warrantsProcessor;
 
-export const {
-    processStocksData,
-    processStockIssuance,
-    processStockCancellation,
-    processStockTransfer,
-    processEquityCompensationIssuance,
-    processEquityCompensationExercise,
-    formatStocksForDisplay,
-} = stocksProcessor;
+// export const {
+//     processEquityCompensationData,
+//     formatEquityCompensationForDisplay
+// } = equityCompensationProcessor;

@@ -17,6 +17,11 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
     const newState = JSON.parse(JSON.stringify(state));
     const stakeholderId = stakeholder._id;
 
+    // Log entry point for this transaction
+    console.log(
+        `[processStakeholderViewConvertibleIssuance] START processing convertible ${transaction.id} for stakeholder ${stakeholderId}, object type ${transaction.object_type}`
+    );
+
     // Initialize holder if not exists
     if (!newState.holders[stakeholderId]) {
         newState.holders[stakeholderId] = {
@@ -36,12 +41,16 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
             convertibles: {
                 safes: [],
                 notes: [],
-                other: [],
+                other: [], // Initialize 'other' array
             },
         };
     }
 
+    // Initialize convertibles categories if they don't exist
     const holder = newState.holders[stakeholderId];
+    if (!holder.convertibles.safes) holder.convertibles.safes = [];
+    if (!holder.convertibles.notes) holder.convertibles.notes = [];
+    if (!holder.convertibles.other) holder.convertibles.other = [];
 
     // Ensure convertibles property exists
     if (!holder.convertibles) {
@@ -56,7 +65,6 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
     const {
         id,
         convertible_type,
-        investment_amount,
         date,
         conversion_triggers = [],
         custom_id,
@@ -68,9 +76,10 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
         comments = [],
     } = transaction;
 
-    // Get monetary value
-    const amount = investment_amount?.amount || 0;
-    const currency = investment_amount?.currency || "USD";
+    // Get monetary value - Check investment_amount first, then purchase_price
+    const valueSource = transaction.investment_amount || transaction.purchase_price;
+    const amount = valueSource?.amount || 0;
+    const currency = valueSource?.currency || "USD";
 
     // Extract conversion details from triggers (val cap, discount)
     let valuationCap = null;
@@ -154,7 +163,21 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
             break;
         default:
             holder.convertibles.other.push(convertibleItem);
+            if (transaction.id === "warr_1_000010") {
+                // Log specifically when the target warrant is added to 'other'
+                console.log(
+                    `[processStakeholderViewConvertibleIssuance] Added warrant ${transaction.id} to convertibles.other for stakeholder ${stakeholderId}`
+                );
+            }
             break;
+    }
+
+    // Log state of convertibles for this holder after processing the target warrant
+    if (transaction.id === "warr_1_000010") {
+        console.log(
+            `[processStakeholderViewConvertibleIssuance] END State of holder ${stakeholderId}.convertibles:`,
+            JSON.stringify(holder.convertibles, null, 2)
+        );
     }
 
     return newState;
@@ -293,70 +316,81 @@ const processConversionTriggers = (conversion_triggers) => {
 /**
  * Format convertible securities for display
  *
- * @param {Object} convertibles - Raw convertibles data
+ * @param {Object} convertibles - Raw convertibles data from a single holder (e.g., holder.convertibles)
  * @returns {Object} Formatted convertibles data ready for display
  */
 export const formatConvertiblesForDisplay = (convertibles) => {
+    // Log the input to this function
+    console.log("[formatConvertiblesForDisplay] Input convertibles:", JSON.stringify(convertibles, null, 2));
+
     if (!convertibles) {
-        return { safes: [], notes: [], other: [] };
+        const emptyResult = { safes: [], notes: [], other: [] };
+        console.log("[formatConvertiblesForDisplay] No input, returning empty:", JSON.stringify(emptyResult, null, 2));
+        return emptyResult;
     }
 
+    // Ensure all arrays exist on the input object
+    const safes = convertibles.safes || [];
+    const notes = convertibles.notes || [];
+    const other = convertibles.other || [];
+
     // Format SAFEs
-    const formattedSafes = convertibles.safes
-        ? convertibles.safes.map((safe) => ({
-              ...safe,
-              formattedAmount: `$${Number(safe.amount).toLocaleString()}`,
-              formattedValuationCap: safe.valuationCap ? `$${Number(safe.valuationCap).toLocaleString()}` : "",
-              formattedDiscount: safe.discount ? `${Number(safe.discount * 100).toFixed(2)}%` : "",
-              formattedDate: safe.date ? new Date(safe.date).toISOString().split("T")[0] : "",
-              formattedBoardApprovalDate: safe.boardApprovalDate ? new Date(safe.boardApprovalDate).toISOString().split("T")[0] : "",
-              formattedExemptions: safe.exemptions?.map((e) => `${e.description} (${e.jurisdiction})`).join("; ") || "",
-              basisOfIssuance: `Simple Agreement for Future Equity, dated ${safe.date ? new Date(safe.date).toISOString().split("T")[0] : "N/A"}`,
-              sideLetter: safe.hasSideLetters ? "Y" : "N",
-              outstanding: safe.isOutstanding ? "Y" : "N",
-          }))
-        : [];
+    const formattedSafes = safes.map((safe) => ({
+        ...safe,
+        formattedAmount: `$${Number(safe.amount).toLocaleString()}`,
+        formattedValuationCap: safe.valuationCap ? `$${Number(safe.valuationCap).toLocaleString()}` : "",
+        formattedDiscount: safe.discount ? `${Number(safe.discount * 100).toFixed(2)}%` : "",
+        formattedDate: safe.date ? new Date(safe.date).toISOString().split("T")[0] : "",
+        formattedBoardApprovalDate: safe.boardApprovalDate ? new Date(safe.boardApprovalDate).toISOString().split("T")[0] : "",
+        formattedExemptions: safe.exemptions?.map((e) => `${e.description} (${e.jurisdiction})`).join("; ") || "",
+        basisOfIssuance: `Simple Agreement for Future Equity, dated ${safe.date ? new Date(safe.date).toISOString().split("T")[0] : "N/A"}`,
+        sideLetter: safe.hasSideLetters ? "Y" : "N",
+        outstanding: safe.isOutstanding ? "Y" : "N",
+    }));
 
     // Format Notes
-    const formattedNotes = convertibles.notes
-        ? convertibles.notes.map((note) => {
-              // Calculate principal and interest if we have all required data
-              let principalAndInterest = null;
-              if (note.amount && note.interestRates && note.interestRates.length > 0 && note.date) {
-                  // Get primary interest rate
-                  const primaryRate = note.interestRates[0].rate;
-                  const amount = Number(note.amount);
-                  const issueDate = new Date(note.date);
-                  const maturityDate = note.maturityDate ? new Date(note.maturityDate) : new Date();
-                  const years = (maturityDate - issueDate) / (365 * 24 * 60 * 60 * 1000);
+    const formattedNotes = notes.map((note) => {
+        // Calculate principal and interest if we have all required data
+        let principalAndInterest = null;
+        if (note.amount && note.interestRates && note.interestRates.length > 0 && note.date) {
+            // Get primary interest rate
+            const primaryRate = note.interestRates[0].rate;
+            const amount = Number(note.amount);
+            const issueDate = new Date(note.date);
+            const maturityDate = note.maturityDate ? new Date(note.maturityDate) : new Date();
+            const years = (maturityDate - issueDate) / (365 * 24 * 60 * 60 * 1000);
 
-                  // Simple calculation (not accounting for compounding)
-                  principalAndInterest = amount * (1 + Number(primaryRate) * years);
-              }
+            // Simple calculation (not accounting for compounding)
+            principalAndInterest = amount * (1 + Number(primaryRate) * years);
+        }
 
-              return {
-                  ...note,
-                  formattedAmount: `$${Number(note.amount).toLocaleString()}`,
-                  formattedValuationCap: note.valuationCap ? `$${Number(note.valuationCap).toLocaleString()}` : "",
-                  formattedDiscount: note.discount ? `${Number(note.discount * 100).toFixed(2)}%` : "",
-                  formattedDate: note.date ? new Date(note.date).toISOString().split("T")[0] : "",
-                  formattedBoardApprovalDate: note.boardApprovalDate ? new Date(note.boardApprovalDate).toISOString().split("T")[0] : "",
-                  formattedMaturityDate: note.maturityDate ? new Date(note.maturityDate).toISOString().split("T")[0] : "",
-                  formattedExemptions: note.exemptions?.map((e) => `${e.description} (${e.jurisdiction})`).join("; ") || "",
-                  formattedInterestRate: note.interestRates && note.interestRates.length > 0 ? note.interestRates[0].rate : null,
-                  principalAndInterest,
-                  basisOfIssuance: `Convertible Promissory Note, dated ${note.date ? new Date(note.date).toISOString().split("T")[0] : "N/A"}`,
-                  sideLetter: note.hasSideLetters ? "Y" : "N",
-                  outstanding: note.isOutstanding ? "Y" : "N",
-              };
-          })
-        : [];
+        return {
+            ...note,
+            formattedAmount: `$${Number(note.amount).toLocaleString()}`,
+            formattedValuationCap: note.valuationCap ? `$${Number(note.valuationCap).toLocaleString()}` : "",
+            formattedDiscount: note.discount ? `${Number(note.discount * 100).toFixed(2)}%` : "",
+            formattedDate: note.date ? new Date(note.date).toISOString().split("T")[0] : "",
+            formattedBoardApprovalDate: note.boardApprovalDate ? new Date(note.boardApprovalDate).toISOString().split("T")[0] : "",
+            formattedMaturityDate: note.maturityDate ? new Date(note.maturityDate).toISOString().split("T")[0] : "",
+            formattedExemptions: note.exemptions?.map((e) => `${e.description} (${e.jurisdiction})`).join("; ") || "",
+            formattedInterestRate: note.interestRates && note.interestRates.length > 0 ? note.interestRates[0].rate : null,
+            principalAndInterest,
+            basisOfIssuance: `Convertible Promissory Note, dated ${note.date ? new Date(note.date).toISOString().split("T")[0] : "N/A"}`,
+            sideLetter: note.hasSideLetters ? "Y" : "N",
+            outstanding: note.isOutstanding ? "Y" : "N",
+        };
+    });
 
-    return {
+    const formattedResult = {
         safes: formattedSafes,
         notes: formattedNotes,
-        other: convertibles.other || [],
+        other: other, // Pass through the 'other' array directly
     };
+
+    // Log the output of this function
+    console.log("[formatConvertiblesForDisplay] Output formatted:", JSON.stringify(formattedResult, null, 2));
+
+    return formattedResult;
 };
 
 // Export the module

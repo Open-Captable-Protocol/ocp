@@ -108,34 +108,27 @@ const startServer = async () => {
 
     app.listen(PORT, async () => {
         console.log(`🚀  Server successfully launched at:${PORT}`);
-
         const issuers = (await readAllIssuers()) || null;
         if (issuers) {
             // Group contracts by chain ID
             const contractsToWatch = issuers
                 .filter((issuer) => issuer?.deployed_to && issuer?.chain_id)
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .map((issuer) => ({
-                    id: issuer.id,
                     address: issuer.deployed_to,
                     chain_id: issuer.chain_id,
                     name: issuer.legal_name,
-                    createdAt: issuer.createdAt,
                 }));
-
             console.log("Watching contracts by chain:");
             const contractsByChain = contractsToWatch.reduce((acc, contract) => {
                 acc[contract.chain_id] = (acc[contract.chain_id] || 0) + 1;
                 return acc;
             }, {});
             Object.entries(contractsToWatch).forEach(([_ /*id*/, data]) => {
-                console.log(`${data.createdAt.toISOString().padEnd(32)} - ${data.name.padEnd(32)} -> ${data.id}`);
+                console.log(`${data.name.padEnd(32)} -> ${data.address}`);
             });
-
             Object.entries(contractsByChain).forEach(([chainId, count]) => {
                 console.log(`Chain ${chainId}: ${count} contracts`);
             });
-
             await startListener(contractsToWatch);
         }
     });

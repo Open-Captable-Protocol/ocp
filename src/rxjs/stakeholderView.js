@@ -60,6 +60,7 @@ export const processStakeholderViewStockIssuance = (state, transaction, stakehol
                 asConverted: 0,
                 fullyDiluted: 0,
                 byClass: {},
+                plans: { stockPlan: [], nonPlan: [] }, // Initialize plans
             },
             votingRights: {
                 votes: 0,
@@ -73,8 +74,31 @@ export const processStakeholderViewStockIssuance = (state, transaction, stakehol
     const classType = originalStockClass.class_type;
     const votesPerShare = parseInt(originalStockClass.votes_per_share);
 
+    const boardApprovalDate = transaction.board_approval_date ? new Date(transaction.board_approval_date) : null;
+    const securityNumber = transaction.custom_id || null;
+
     // Calculate voting power for this issuance
     const votingPower = votesPerShare * numShares;
+    const formattedDate = transaction.date
+        ? new Date(transaction.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+        : "Unknown Date";
+    const basisOfIssuance = `${className} Stock Purchase Agreement, dated ${formattedDate}`;
+    const pricePerShare = transaction.share_price ? parseFloat(transaction.share_price.amount) : 0;
+    const considerationAmount = pricePerShare * numShares;
+    const federalExemption = transaction.security_law_exemptions?.filter((e) => e).join("; ") || ""; // Filter out empty strings before joining
+    const residenceAtIssuance = stakeholder.address?.country_subdivision || "";
+
+    // Get Comments Text
+    let commentsText = "";
+    if (transaction.comments && transaction.comments.length > 0 && transaction.issuer_data && transaction.issuer_data.comments) {
+        commentsText = transaction.comments
+            .map((commentId) => {
+                const commentObj = transaction.issuer_data.comments.find((c) => c.id === commentId);
+                return commentObj ? commentObj.comment : null;
+            })
+            .filter((comment) => comment !== null)
+            .join("\n"); // Join multiple comments with newline
+    }
 
     // Initialize class in holdings if not exists
     if (!holder.holdings.byClass[className]) {
@@ -84,13 +108,21 @@ export const processStakeholderViewStockIssuance = (state, transaction, stakehol
             stockClassId: stock_class_id,
             outstanding: 0,
             asConverted: 0,
+
             fullyDiluted: 0,
             votingPower: 0,
             isFounderPreferred: classType === StockClassTypes.PREFERRED && issuance_type === StockIssuanceTypes.FOUNDERS_STOCK,
             // Add new fields for historical tracking
-            boardApprovalDate: transaction.board_approval_date || null,
+            boardApprovalDate: boardApprovalDate,
+            securityNumber: securityNumber,
+            basisOfIssuance: basisOfIssuance,
+            pricePerShare: pricePerShare,
+            consideration: considerationAmount, // Added
+            federalExemption: federalExemption, // Added
+            residenceAtIssuance: residenceAtIssuance, // Added
+            comments: commentsText, // Added
+            securityOutstanding: true,
             issuedDate: transaction.date || null,
-            pricePerShare: transaction.share_price ? parseFloat(transaction.share_price.amount) : null,
             issuanceAmount: parseInt(quantity),
             status: "ISSUED", // Default status for new issuances
         };
@@ -111,6 +143,7 @@ export const processStakeholderViewStockIssuance = (state, transaction, stakehol
         const conversionRight = originalStockClass.conversion_rights[0];
         if (conversionRight.conversion_mechanism && conversionRight.conversion_mechanism.type === "RATIO_CONVERSION") {
             const ratio = conversionRight.conversion_mechanism.ratio;
+            classHolding.conversionRatio = ratio ? ratio.numerator / ratio.denominator : null;
             if (ratio) {
                 const numerator = parseInt(ratio.numerator);
                 const denominator = parseInt(ratio.denominator);
@@ -142,7 +175,9 @@ export const processStakeholderViewStockIssuance = (state, transaction, stakehol
  * @returns {Object} Updated state with processed stakeholder holdings
  */
 export const processStakeholderViewEquityCompIssuance = (state, transaction, stakeholder, stockClass, _stockPlan) => {
-    const { quantity, compensation_type, stock_plan_id } = transaction;
+    const { quantity, compensation_type, stock_plan_id, security_id, option_grant_type, date, security_law_exemptions } = transaction;
+
+    console.log("Found Equity Comp Transaction! ", quantity);
     const numShares = parseInt(quantity);
     const stakeholderId = stakeholder._id;
 
@@ -160,6 +195,7 @@ export const processStakeholderViewEquityCompIssuance = (state, transaction, sta
                 asConverted: 0,
                 fullyDiluted: 0,
                 byClass: {},
+                plans: { stockPlan: [], nonPlan: [] }, // Initialize plans
             },
             votingRights: {
                 votes: 0,
@@ -208,6 +244,51 @@ export const processStakeholderViewEquityCompIssuance = (state, transaction, sta
     // Update holder totals - equity comp only impacts fully diluted
     holder.holdings.fullyDiluted += numShares;
 
+    // Declaring variables that might not exist in the transaction
+    const board_approval_date = transaction.board_approval_date || null;
+    const security_number = transaction.custom_id || null;
+    const series_of_stock = stockClass ? stockClass.name : null;
+    const basis_of_issuance = `Stock option agreement, dated ${date}`;
+    const type = compensation_type;
+    const exercise_price = transaction.exercise_price ? parseFloat(transaction.exercise_price.amount) : 0;
+    const number_of_shares_granted = parseInt(numShares);
+    const total_purchase_price = exercise_price * number_of_shares_granted;
+
+    const firstVesting = transaction.vestings ? transaction.vestings[0] : null;
+    const first_vesting_date = firstVesting ? firstVesting.date : null;
+    const first_vesting_amount = firstVesting ? firstVesting.amount : null;
+    const vesting_length = transaction.vestings ? transaction.vestings.length : null;
+    const expiration_date = transaction.expiration_date || null;
+
+    // Populate plans array
+    const planItem = {
+        compensation_type: compensation_type, // Use the raw type here
+        option_grant_type: option_grant_type,
+        security_law_exemptions: security_law_exemptions,
+        grant_date: date,
+        board_approval_date,
+        security_number,
+        series_of_stock,
+        basis_of_issuance,
+        type,
+        exercise_price,
+        security_id,
+        number_of_shares_granted,
+        total_purchase_price,
+        first_vesting_date,
+        first_vesting_amount,
+        vesting_length,
+        expiration_date,
+        // Add other relevant details from the transaction if needed
+        // e.g., date: transaction.date, security_id: transaction.security_id
+    };
+
+    if (stock_plan_id) {
+        holder.holdings.plans.stockPlan.push(planItem);
+    } else {
+        holder.holdings.plans.nonPlan.push(planItem);
+    }
+
     return newState;
 };
 
@@ -216,56 +297,110 @@ export const processStakeholderViewEquityCompIssuance = (state, transaction, sta
  * @param {Object} state Current state
  * @param {Object} transaction Exercise transaction
  * @param {Object} equityIssuance Original equity compensation issuance
+ * @param {Object} stockClass The actual stock class object (passed directly as workaround)
  * @returns {Object} Updated state with properly adjusted holdings after exercise
  */
 export const processStakeholderViewEquityCompExercise = (state, transaction, equityIssuance) => {
     const { quantity } = transaction;
     const exercisedShares = parseInt(quantity);
-    const stakeholderId = equityIssuance.stakeholder_id;
+    // Use the security_id from the original issuance to find the grant
+    const { stakeholder_id, security_id } = equityIssuance;
+
+    console.log("Processing Equity Comp Exercise for security_id:", security_id, "Quantity:", exercisedShares);
+    // console.log("Original Equity Issuance: ", equityIssuance);
+    // console.log("Current State: ", JSON.stringify(state.holders[stakeholder_id]?.holdings || {}, null, 2));
 
     // If no stakeholder found in state, nothing to do
-    if (!state.holders[stakeholderId]) {
+    if (!state.holders[stakeholder_id]) {
+        console.warn(`Stakeholder ${stakeholder_id} not found in state during exercise processing.`);
         return state;
     }
 
+    // // Check if a valid stockClass was passed in
+    // if (!stockClass) {
+    //     console.error(
+    //         `ERROR: No stockClass object provided to processStakeholderViewEquityCompExercise for security_id ${security_id}. Cannot proceed.`
+    //     );
+    //     return state; // Return unmodified state
+    // }
+
     // Deep clone state to avoid mutations
     const newState = JSON.parse(JSON.stringify(state));
-    const holder = newState.holders[stakeholderId];
+    const holder = newState.holders[stakeholder_id];
 
-    // Find the equity category (options/awards)
-    const categoryNames = Object.keys(holder.holdings.byClass).filter(
-        (className) => holder.holdings.byClass[className].isOption || holder.holdings.byClass[className].isPlanAward
-    );
-
-    for (const categoryName of categoryNames) {
-        const categoryHolding = holder.holdings.byClass[categoryName];
-
-        // Only adjust the category if it's from the original equity issuance
-        if (categoryHolding.stockClassId === equityIssuance.stock_class_id) {
-            // Reduce fully diluted shares by the exercised amount
-            // This prevents double counting when the resulting stock is issued
-            categoryHolding.fullyDiluted -= exercisedShares;
-
-            // If all options are exercised, set fully diluted to zero explicitly
-            if (categoryHolding.fullyDiluted <= 0) {
-                categoryHolding.fullyDiluted = 0;
-            }
-
-            // Track which options have been exercised
-            if (!categoryHolding.exercised) {
-                categoryHolding.exercised = 0;
-            }
-            categoryHolding.exercised += exercisedShares;
-
-            // Mark the options as exercised with a flag for UI filtering
-            categoryHolding.isExercised = categoryHolding.fullyDiluted === 0;
-
-            // Adjust holder total
-            holder.holdings.fullyDiluted -= exercisedShares;
-
-            break;
-        }
+    // Find the grant in stockPlan or nonPlan arrays
+    let planItem = holder.holdings.plans.stockPlan.find((item) => item.security_id === security_id);
+    let planType = "stockPlan";
+    if (!planItem) {
+        planItem = holder.holdings.plans.nonPlan.find((item) => item.security_id === security_id);
+        planType = "nonPlan";
     }
+
+    console.log("plan item", planItem);
+
+    if (!planItem) {
+        console.error(`Could not find plan item with security_id ${security_id} for stakeholder ${stakeholder_id} during exercise.`);
+        // Potentially add error to state.errors here
+        return newState; // Return unmodified state if the grant isn't found
+    }
+
+    // Update the specific plan item
+    if (!planItem.exercised_quantity) {
+        planItem.exercised_quantity = 0;
+    }
+    planItem.exercised_quantity += exercisedShares;
+    planItem.is_fully_exercised = planItem.exercised_quantity >= planItem.number_of_shares_granted; // Check if fully exercised
+
+    console.log(`Updated ${planType} item ${security_id}:`, planItem);
+
+    // // Determine category name - MUST MATCH logic in processStakeholderViewEquityCompIssuance
+    // let categoryName;
+    // // Use compensation_type from the equityIssuance object
+    // if (compensation_type.toUpperCase().includes("OPTION")) {
+    //     categoryName = `${stockClass.name} Options`; // Group all option types
+    // } else {
+    //     // Use stock_plan_id from the original equityIssuance object
+    //     if (equityIssuance.stock_plan_id) {
+    //         categoryName = `${stockClass.name} Plan Awards`; // Group plan awards
+    //     } else {
+    //         categoryName = `${stockClass.name} Awards (Non-Plan)`; // Group non-plan awards
+    //     }
+    // }
+
+    // console.log(`DEBUG: Available byClass categories for holder ${stakeholder_id}:`, Object.keys(holder.holdings.byClass));
+    // console.log(`DEBUG: Calculated categoryName for exercise lookup: '${categoryName}'`);
+
+    // const categoryHolding = holder.holdings.byClass[categoryName];
+
+    // if (categoryHolding) {
+    //     // Reduce fully diluted shares in the summary category
+    //     categoryHolding.fullyDiluted -= exercisedShares;
+    //     if (categoryHolding.fullyDiluted < 0) categoryHolding.fullyDiluted = 0; // Prevent negative counts
+
+    //     // Track exercised shares in the summary category
+    //     if (!categoryHolding.exercised) {
+    //         categoryHolding.exercised = 0;
+    //     }
+    //     categoryHolding.exercised += exercisedShares;
+
+    //     // Mark the summary category as exercised if all shares within it are gone
+    //     categoryHolding.isExercised = categoryHolding.fullyDiluted === 0;
+
+    //     console.log(`Updated byClass category '${categoryName}':`, categoryHolding);
+    // } else {
+    //     console.warn(
+    //         `Summary category '${categoryName}' not found in holder.holdings.byClass for security_id ${security_id}. State might be inconsistent.`
+    //     );
+    //     // This suggests the category wasn't created correctly during issuance or naming is inconsistent.
+    // }
+    // // --- End of byClass update ---
+
+    // Adjust overall holder total fully diluted count
+    // This prevents double counting when the resulting stock issuance is processed
+    // holder.holdings.fullyDiluted -= exercisedShares;
+    // if (holder.holdings.fullyDiluted < 0) holder.holdings.fullyDiluted = 0;
+
+    // console.log(`Adjusted holder ${stakeholder_id} total fullyDiluted: ${holder.holdings.fullyDiluted}`);
 
     return newState;
 };
@@ -274,46 +409,39 @@ export const processStakeholderViewEquityCompExercise = (state, transaction, equ
  * Process stock cancellation for stakeholder view
  * @param {Object} state Current state
  * @param {Object} transaction Stock cancellation transaction
- * @param {Object} stockIssuance Original stock issuance being cancelled
+ * @param {Object} stakeholder Stakeholder
  * @param {Object} originalStockClass Stock class being cancelled
  * @returns {Object} Updated state with processed stakeholder cancellation
  */
-export const processStakeholderViewStockCancellation = (state, transaction, stockIssuance, originalStockClass) => {
-    if (!stockIssuance || !stockIssuance.stakeholder_id) {
-        return state;
-    }
-
-    const { quantity } = transaction;
-    const cancelledShares = parseInt(quantity);
-    const stakeholderId = stockIssuance.stakeholder_id;
+export const processStakeholderViewStockCancellation = (state, transaction, stakeholder, originalStockClass) => {
+    const { quantity, date, reason_text } = transaction;
+    let cancelledShares = parseInt(quantity);
+    const stakeholderId = stakeholder._id;
 
     // Deep clone state to avoid mutations
     const newState = JSON.parse(JSON.stringify(state));
 
-    // If holder doesn't exist, cancellation has no effect
-    if (!newState.holders[stakeholderId]) {
-        return state;
+    // Ensure holder and class exist
+    if (!newState.holders[stakeholderId] || !newState.holders[stakeholderId].holdings.byClass[originalStockClass.name]) {
+        console.warn(`⚠️ Stock cancellation processing skipped: Stakeholder ${stakeholderId} or class ${originalStockClass.name} not found.`);
+        return newState; // Return unmodified state if holder or class doesn't exist
     }
 
     const holder = newState.holders[stakeholderId];
-    const className = originalStockClass.name;
+    const classHolding = holder.holdings.byClass[originalStockClass.name];
     const classType = originalStockClass.class_type;
     const votesPerShare = parseInt(originalStockClass.votes_per_share);
 
-    // Calculate voting power for this cancellation
-    const votingPower = votesPerShare * cancelledShares;
-
-    // Check if this class exists in holder's portfolio
-    if (!holder.holdings.byClass[className]) {
-        return state; // Can't cancel what wasn't issued
+    // Ensure we don't cancel more shares than outstanding
+    if (cancelledShares > classHolding.outstanding) {
+        console.warn(
+            `⚠️ Stock cancellation processing warning: Attempting to cancel ${cancelledShares} shares of ${originalStockClass.name} for stakeholder ${stakeholderId}, but only ${classHolding.outstanding} are outstanding. Adjusting to cancel ${classHolding.outstanding}.`
+        );
+        cancelledShares = classHolding.outstanding; // Adjust to cancel only what's outstanding
     }
 
-    const classHolding = holder.holdings.byClass[className];
-
-    // Calculate as-converted shares to cancel
-    let asConvertedShares = cancelledShares;
-
-    // If this is preferred stock, check for conversion rights
+    // Calculate as-converted shares to subtract
+    let asConvertedSharesToSubtract = cancelledShares;
     if (classType === StockClassTypes.PREFERRED && originalStockClass.conversion_rights && originalStockClass.conversion_rights.length > 0) {
         const conversionRight = originalStockClass.conversion_rights[0];
         if (conversionRight.conversion_mechanism && conversionRight.conversion_mechanism.type === "RATIO_CONVERSION") {
@@ -322,28 +450,37 @@ export const processStakeholderViewStockCancellation = (state, transaction, stoc
                 const numerator = parseInt(ratio.numerator);
                 const denominator = parseInt(ratio.denominator);
                 if (numerator && denominator) {
-                    asConvertedShares = cancelledShares * (numerator / denominator);
+                    asConvertedSharesToSubtract = cancelledShares * (numerator / denominator);
                 }
             }
         }
     }
 
-    // Update share counts
-    classHolding.outstanding -= cancelledShares;
-    classHolding.asConverted -= asConvertedShares;
-    classHolding.fullyDiluted -= cancelledShares;
-    classHolding.votingPower -= votingPower;
+    const votingPowerToSubtract = votesPerShare * cancelledShares;
 
-    // Add cancellation status and reason
-    classHolding.status = "CANCELLED";
-    classHolding.cancellationReason = transaction.reason_text || "Cancelled";
-    classHolding.cancellationDate = transaction.date;
+    // Update share counts for the class
+    classHolding.outstanding -= cancelledShares;
+    classHolding.asConverted -= asConvertedSharesToSubtract;
+    classHolding.fullyDiluted -= cancelledShares; // Cancellation reduces fully diluted count
+    classHolding.votingPower -= votingPowerToSubtract;
+
+    // Add cancellation details (overwrites previous cancellation for this class)
+    classHolding.lastCancellationDate = date || null;
+    classHolding.lastCancellationReason = reason_text || null;
+
+    // Update security outstanding status if count reaches zero
+    if (classHolding.outstanding <= 0) {
+        classHolding.securityOutstanding = false;
+        // Optionally reset other fields if completely cancelled?
+        // classHolding.votingPower = 0; // Ensure voting power is zero
+        // classHolding.asConverted = 0; // Ensure asConverted is zero
+    }
 
     // Update holder totals
     holder.holdings.outstanding -= cancelledShares;
-    holder.holdings.asConverted -= asConvertedShares;
+    holder.holdings.asConverted -= asConvertedSharesToSubtract;
     holder.holdings.fullyDiluted -= cancelledShares;
-    holder.votingRights.votes -= votingPower;
+    holder.votingRights.votes -= votingPowerToSubtract;
 
     return newState;
 };
@@ -480,13 +617,13 @@ export const calculateStakeholderPercentages = (state) => {
         }
 
         // 4. Series-specific columns (Series Seed, Series A, etc.)
-        Object.entries(byClassVotingPower).forEach(([className, power]) => {
-            if (votingTotals.byClass[className] > 0 && power > 0) {
+        Object.entries(byClassVotingPower).forEach(([className, percentage]) => {
+            if (votingTotals.byClass[className] > 0 && percentage > 0) {
                 if (!holder.votingRights.columns.byClass) {
                     holder.votingRights.columns.byClass = {};
                 }
 
-                holder.votingRights.columns.byClass[className] = (power / votingTotals.byClass[className]) * 100;
+                holder.votingRights.columns.byClass[className] = (percentage / votingTotals.byClass[className]) * 100;
             }
         });
     });
@@ -602,6 +739,24 @@ export const formatStakeholderViewForDisplay = (stakeholderViewState) => {
 
     // Process each stakeholder
     Object.values(stakeholderViewState.holders).forEach((holder) => {
+        // Log the holder's convertibles before formatting (specifically for the holder of warr_1_000010 if possible)
+        // We need the stakeholder ID associated with warr_1_000010. Let's assume it's 'stk_1' for logging, adjust if needed.
+        // You might need to find the actual stakeholder ID from your input data.
+        // Example check (replace 'stk_1' with actual ID if known):
+        // if (holder.id === 'stk_1') { // Replace 'stk_1' with the actual stakeholder ID for warr_1_000010
+        //     console.log(`[formatStakeholderViewForDisplay] Holder ${holder.id} convertibles BEFORE formatting:`, JSON.stringify(holder.convertibles, null, 2));
+        // }
+        // Generic log for any holder having convertibles:
+        if (
+            holder.convertibles &&
+            (holder.convertibles.safes?.length > 0 || holder.convertibles.notes?.length > 0 || holder.convertibles.other?.length > 0)
+        ) {
+            console.log(
+                `[formatStakeholderViewForDisplay] Holder ${holder.id} convertibles BEFORE calling formatConvertiblesForDisplay:`,
+                JSON.stringify(holder.convertibles, null, 2)
+            );
+        }
+
         const formattedHolder = {
             id: holder.id,
             name: holder.name,
@@ -626,10 +781,17 @@ export const formatStakeholderViewForDisplay = (stakeholderViewState) => {
                     pricePerShare: cls.pricePerShare || null,
                     issuanceAmount: cls.issuanceAmount || null,
                     status: cls.status || "ISSUED",
-                    cancellationReason: cls.cancellationReason || null,
-                    cancellationDate: cls.cancellationDate || null,
+                    lastCancellationDate: cls.lastCancellationDate || null,
+                    lastCancellationReason: cls.lastCancellationReason || null,
+                    securityOutstanding: cls.securityOutstanding === undefined ? true : cls.securityOutstanding,
+
+                    consideration: cls.consideration || null,
+                    federalExemption: cls.federalExemption || null,
+                    residenceAtIssuance: cls.residenceAtIssuance || null,
+                    comments: cls.comments || null,
                 })),
                 convertibles: formatConvertiblesForDisplay(holder.convertibles),
+                plans: holder.holdings.plans || { stockPlan: [], nonPlan: [] }, // Copy plans object
             },
             votingRights: {
                 votes: holder.votingRights.votes,
@@ -677,6 +839,19 @@ export const stakeholderViewStats = (issuerData) => {
         const stockClass = transaction.stock_class_id ? stockClasses.find((sc) => sc.id === transaction.stock_class_id) : null;
         const stockPlan = transaction.stock_plan_id ? stockPlans.find((sp) => sp._id === transaction.stock_plan_id) : null;
 
+        // Pre-determine if a warrant converts to a specific stock class
+        let warrantConvertsToStockClassId = null;
+        if (transaction.object_type === "TX_WARRANT_ISSUANCE") {
+            if (transaction.exercise_triggers && transaction.exercise_triggers.length > 0) {
+                const trigger = transaction.exercise_triggers[0];
+                if (trigger.conversion_right && trigger.conversion_right.converts_to_stock_class_id) {
+                    warrantConvertsToStockClassId = trigger.conversion_right.converts_to_stock_class_id;
+                }
+            }
+        }
+
+        console.log("Found warrant object type", transaction.object_type, stakeholder);
+
         switch (transaction.object_type) {
             case "TX_STOCK_ISSUANCE":
                 if (stakeholder && stockClass) {
@@ -690,7 +865,15 @@ export const stakeholderViewStats = (issuerData) => {
                 break;
             case "TX_WARRANT_ISSUANCE":
                 if (stakeholder) {
-                    state = processStakeholderViewWarrantIssuance(state, transaction, stakeholder, stockClass);
+                    // Use the pre-calculated warrantConvertsToStockClassId
+                    if (warrantConvertsToStockClassId) {
+                        // If it converts to a specific stock class, process as a warrant
+                        state = processStakeholderViewWarrantIssuance(state, transaction, stakeholder, stockClass);
+                    } else {
+                        // If it does NOT convert to a specific stock class, process as a convertible
+                        console.log(`Processing Warrant ${transaction.id} as Convertible for stakeholder ${stakeholder._id}`);
+                        state = processStakeholderViewConvertibleIssuance(state, transaction, stakeholder);
+                    }
                 }
                 break;
             case "TX_CONVERTIBLE_ISSUANCE":
@@ -706,7 +889,7 @@ export const stakeholderViewStats = (issuerData) => {
                     );
 
                     if (equityIssuance) {
-                        state = processStakeholderViewEquityCompExercise(state, transaction, equityIssuance);
+                        state = processStakeholderViewEquityCompExercise(state, transaction, equityIssuance, stockClass);
                     }
                 }
                 break;
@@ -726,7 +909,7 @@ export const stakeholderViewStats = (issuerData) => {
                         : null;
 
                     if (stockIssuance && cancellationStockClass) {
-                        state = processStakeholderViewStockCancellation(state, transaction, stockIssuance, cancellationStockClass);
+                        state = processStakeholderViewStockCancellation(state, transaction, stakeholder, cancellationStockClass);
                     }
                 }
                 break;

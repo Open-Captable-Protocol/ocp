@@ -3,6 +3,7 @@ import { readIssuerById } from "../../db/operations/read.js";
 import { dashboardStats, captableStats } from "../../rxjs/index.js";
 import { captureException, setTag } from "@sentry/node";
 import { getAllStateMachineObjectsById } from "../../db/operations/read.js";
+
 const stats = Router();
 
 stats.get("/rxjs/dashboard", async (req, res) => {
@@ -41,6 +42,7 @@ stats.get("/rxjs/captable", async (req, res) => {
         }
 
         const issuerData = await getAllStateMachineObjectsById(issuerId);
+
         const rxjsData = await captableStats(issuerData);
         if (rxjsData?.errors?.size > 0) {
             captureException(new Error(Array.from(rxjsData.errors).join("\n")));
