@@ -751,10 +751,7 @@ export const verifyCapTable = async (captable) => {
 
 // Format the output of our state machine
 const formatOutput = (state) => {
-    const { dashboard, summary: captableSummary, convertibles: captableConvertibles, isCapTableEmpty, transactions } = state;
-
-    // Update dashboard data
-    const { conversionPrices, fullyDilutedSum, fullyDilutedPerc } = stakeholderViewStats.calculateConversionPrices(state);
+    const { dashboard, summary: captableSummary, convertibles: captableConvertibles, isCapTableEmpty } = state;
 
     // // Process equity compensation data for the stakeholder view
     // // This consolidates all equity compensation transactions (issuance, exercise, cancellation)
@@ -779,7 +776,8 @@ const formatOutput = (state) => {
         summary: captableSummary,
         convertibles: captableConvertibles,
         holders: state.holders || {},
-        equityCompensation: equityCompensationData || {}, // Add equity compensation data to the output
+        // eslint-disable-next-line no-undef
+        equityCompensation: equityCompensationData || {},
     };
 };
 

@@ -300,11 +300,11 @@ export const processStakeholderViewEquityCompIssuance = (state, transaction, sta
  * @param {Object} stockClass The actual stock class object (passed directly as workaround)
  * @returns {Object} Updated state with properly adjusted holdings after exercise
  */
-export const processStakeholderViewEquityCompExercise = (state, transaction, equityIssuance, stockClass) => {
+export const processStakeholderViewEquityCompExercise = (state, transaction, equityIssuance) => {
     const { quantity } = transaction;
     const exercisedShares = parseInt(quantity);
     // Use the security_id from the original issuance to find the grant
-    const { stakeholder_id, security_id, compensation_type } = equityIssuance;
+    const { stakeholder_id, security_id } = equityIssuance;
 
     console.log("Processing Equity Comp Exercise for security_id:", security_id, "Quantity:", exercisedShares);
     // console.log("Original Equity Issuance: ", equityIssuance);
