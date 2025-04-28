@@ -18,14 +18,18 @@ import {
     // processCaptableStockCancellation,
 } from "./captable.js";
 import stakeholderViewStats from "./stakeholderView.js";
+// import { processEquityCompensationData } from "./processors/equityCompensationProcessor";
 
 // Initial state structure
 const createInitialState = (issuer, stockClasses, stockPlans, stakeholders) => {
+    console.log("createInitialState");
     // First create the dashboard state
     const dashboardState = dashboardInitialState(stakeholders);
+    console.log("dashboard state");
 
     // Create captable state
     const captableState = captableInitialState(issuer, stockClasses, stockPlans, stakeholders);
+    console.log("captable state");
     const errors = new Set();
     if (!issuer.initial_shares_authorized) {
         errors.add(`Issuer ${issuer.legal_name} has no initial_shares_authorized`);
@@ -515,9 +519,11 @@ export const dashboardStats = async ({ issuer, stockClasses, stockPlans, stakeho
 };
 
 export const captableStats = async ({ issuer, stockClasses, stockPlans, stakeholders, transactions }) => {
+    console.log("entering captable stats");
     // If there are no transactions, map the initial state to the required format
     if (transactions.length === 0) {
         const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
+        console.log("created initial state");
         if (initialState.errors.size > 0) {
             return { valid: false, errors: Array.from(initialState.errors) };
         }
@@ -737,6 +743,77 @@ export const verifyCapTable = async (captable) => {
                 }
                 return { valid: true };
             })
+        )
+    );
+
+    return finalState;
+};
+
+// Format the output of our state machine
+const formatOutput = (state) => {
+    const { dashboard, summary: captableSummary, convertibles: captableConvertibles, isCapTableEmpty, transactions } = state;
+
+    // Update dashboard data
+    const { conversionPrices, fullyDilutedSum, fullyDilutedPerc } = stakeholderViewStats.calculateConversionPrices(state);
+
+    // // Process equity compensation data for the stakeholder view
+    // // This consolidates all equity compensation transactions (issuance, exercise, cancellation)
+    // // and builds a complete dataset for both plan and non-plan awards
+    // const equityCompensationData = processEquityCompensationData({
+    //     transactions,
+    //     stakeholders: state.stakeholderData || [],
+    //     stock_classes: state.stockClassesData || [],
+    //     stock_plans: state.stockPlansData || [],
+    // });
+
+    // Calculate totals for the summary section
+    captableSummary.totals = stakeholderViewStats.calculateSummaryTotals(captableSummary);
+
+    // Calculate totals for convertibles section
+    captableConvertibles.totals = stakeholderViewStats.calculateConvertibleTotals(captableConvertibles.convertiblesSummary);
+
+    // Format final output with all sections
+    return {
+        isCapTableEmpty,
+        ...dashboard,
+        summary: captableSummary,
+        convertibles: captableConvertibles,
+        holders: state.holders || {},
+        equityCompensation: equityCompensationData || {}, // Add equity compensation data to the output
+    };
+};
+
+export const processCapTable = async (captable) => {
+    // Format manifest and get items for each object / transaction
+    const { issuer, stockClasses, stockPlans, stakeholders, transactions } = captable;
+
+    // If there are no transactions, map the initial state to the required format
+    if (transactions.length === 0) {
+        const initialState = createInitialState(issuer, stockClasses, stockPlans, stakeholders);
+
+        // Store the raw data for use by processors
+        initialState.stakeholderData = stakeholders;
+        initialState.stockClassesData = stockClasses;
+        initialState.stockPlansData = stockPlans;
+
+        return formatOutput(initialState);
+    }
+
+    const finalState = await lastValueFrom(
+        from(transactions).pipe(
+            scan(
+                (state, transaction) => processTransaction(state, transaction, stakeholders, stockClasses, stockPlans),
+                createInitialState(issuer, stockClasses, stockPlans, stakeholders)
+            ),
+            last(),
+            tap((state) => {
+                // Store the raw data for use by processors
+                state.stakeholderData = stakeholders;
+                state.stockClassesData = stockClasses;
+                state.stockPlansData = stockPlans;
+                state.transactionsData = transactions;
+            }),
+            map((state) => formatOutput(state))
         )
     );
 
