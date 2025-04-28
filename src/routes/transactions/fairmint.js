@@ -35,7 +35,6 @@ import validateInputAgainstOCF from "../../utils/validateInputAgainstSchema.js";
 import { getJoiErrorMessage } from "../../chain-operations/utils.js";
 import get from "lodash/get";
 import { checkStakeholderExistsOnFairmint } from "../../fairmint/checkStakeholder.js";
-import { upsertFairmintDataBySecurityId } from "../../db/operations/update";
 import { convertAndCreateEquityCompensationExerciseOnchain } from "../../controllers/transactions/exerciseController";
 import StockIssuance from "../../db/objects/transactions/issuance/StockIssuance.js";
 import EquityCompensationIssuance from "../../db/objects/transactions/issuance/EquityCompensationIssuance.js";
@@ -94,8 +93,10 @@ fairmintTransactions.post("/issuance/stock-fairmint-reflection", async (req, res
 
         await checkStakeholderExistsOnFairmint({ stakeholder_id: stakeholder._id, portal_id: issuerId });
 
-        // TODO use createFairmintData instead
-        await upsertFairmintDataBySecurityId(incomingStockIssuance.security_id, {
+        // Create Fairmint data with tx_id
+        await createFairmintData({
+            tx_id: incomingStockIssuance.id,
+            object_type: incomingStockIssuance.object_type,
             issuer: issuerId,
             security_id: incomingStockIssuance.security_id,
             series_id: payload.series_id,
@@ -306,7 +307,9 @@ fairmintTransactions.post("/issuance/convertible-fairmint-reflection", async (re
         });
 
         // TODO use createFairmintData instead
-        await upsertFairmintDataBySecurityId(incomingConvertibleIssuance.security_id, {
+        await createFairmintData({
+            tx_id: incomingConvertibleIssuance.id,
+            object_type: incomingConvertibleIssuance.object_type,
             issuer: issuerId,
             security_id: incomingConvertibleIssuance.security_id,
             series_id: payload.series_id,
@@ -381,7 +384,9 @@ fairmintTransactions.post("/issuance/warrant-fairmint-reflection", async (req, r
         }
 
         // Save Fairmint data: TODO use createFairmintData instead
-        await upsertFairmintDataBySecurityId(incomingWarrantIssuance.security_id, {
+        await createFairmintData({
+            tx_id: incomingWarrantIssuance.id,
+            object_type: incomingWarrantIssuance.object_type,
             issuer: issuerId,
             security_id: incomingWarrantIssuance.security_id,
             series_id: payload.series_id,

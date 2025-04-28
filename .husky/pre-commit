@@ -1,2 +1,3 @@
 yarn flightcheck
+yarn test:chain
 cd chain && forge fmt

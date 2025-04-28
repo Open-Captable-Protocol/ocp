@@ -99,7 +99,7 @@ export const readAllIssuers = async () => {
     return await find(Issuer);
 };
 
-export const readfactories = async () => {
+export const readFactories = async () => {
     return await find(Factory);
 };
 
@@ -108,11 +108,11 @@ export const readFairmintDataById = async (id) => {
 };
 
 export const readFairmintDataBySecurityId = async (securityId) => {
-    return await Fairmint.findOne({ security_id: securityId });
+    return await findOne(Fairmint, { security_id: securityId });
 };
 
 export const readFairmintDataByStakeholderId = async (stakeholderId) => {
-    return await Fairmint.findOne({ stakeholder_id: stakeholderId });
+    return await findOne(Fairmint, { stakeholder_id: stakeholderId });
 };
 
 export const getAllStateMachineObjectsById = async (issuerId) => {
@@ -162,7 +162,14 @@ export const getAllStateMachineObjectsById = async (issuerId) => {
         return typeCompare !== 0 ? typeCompare : new Date(a.createdAt) - new Date(b.createdAt);
     });
 
-    console.log("All Transactions:", allTransactions.length);
+    // Count frequency by object_type
+    const transactionCounts = allTransactions.reduce((acc, tx) => {
+        acc[tx.object_type] = (acc[tx.object_type] || 0) + 1;
+        return acc;
+    }, {});
+
+    console.log("Transaction counts by type:", transactionCounts);
+    console.log("Total transactions:", allTransactions.length);
 
     return {
         issuer,
