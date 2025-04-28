@@ -65,7 +65,6 @@ export const processStakeholderViewConvertibleIssuance = (state, transaction, st
     const {
         id,
         convertible_type,
-        investment_amount,
         date,
         conversion_triggers = [],
         custom_id,
