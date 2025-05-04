@@ -9,11 +9,6 @@ const DATABASE_OVERRIDE = process.env.DATABASE_OVERRIDE;
 export const connectDB = async () => {
     const connectOptions = {
         ...(DATABASE_OVERRIDE ? { dbName: DATABASE_OVERRIDE } : {}),
-        authMechanism: "SCRAM-SHA-1" as const,
-        authSource: "admin",
-        tls: true,
-        tlsAllowInvalidHostnames: true,
-        tlsCAFile: "./global-bundle.pem",
     };
 
     try {

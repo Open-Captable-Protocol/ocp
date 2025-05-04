@@ -102,9 +102,7 @@ app.use("/transactions/", contractMiddleware, transactionRoutes);
 
 const startServer = async () => {
     // Connect to MongoDB
-    console.log("Connecting to MongoDB...");
     await connectDB();
-    console.log("Connected to MongoDB");
 
     app.listen(PORT, async () => {
         console.log(`🚀  Server successfully launched at:${PORT}`);
@@ -129,8 +127,6 @@ const startServer = async () => {
                 acc[contract.chain_id].push(contract);
                 return acc;
             }, {});
-
-            console.log(contractsByChain);
 
             // Display contracts grouped by chain
             console.log("\nContracts by Chain:");
