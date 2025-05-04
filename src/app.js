@@ -108,15 +108,12 @@ const startServer = async () => {
 
     app.listen(PORT, async () => {
         console.log(`🚀  Server successfully launched at:${PORT}`);
-
         const issuers = (await readAllIssuers()) || null;
         if (issuers) {
             // Group contracts by chain_id
             const contractsToWatch = issuers
                 .filter((issuer) => issuer?.deployed_to && issuer?.chain_id)
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .map((issuer) => ({
-                    id: issuer.id,
                     address: issuer.deployed_to,
                     chain_id: issuer.chain_id,
                     name: issuer.legal_name,
@@ -145,7 +142,6 @@ const startServer = async () => {
                     console.log(`${contract.createdAt.toISOString().padEnd(32)} - ${contract.name.padEnd(32)} -> ${contract.id}`);
                 });
             });
-
             await startListener(contractsToWatch);
         }
     });
