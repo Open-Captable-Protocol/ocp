@@ -43,3 +43,4 @@ solana/*
 *.ignore.js
 
 captables
+migration*
