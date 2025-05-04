@@ -79,8 +79,11 @@ handle_container_switch() {
     docker rm "$container_name"
     
     echo 'Performing final cleanup...'
-    docker image ls "ocp-${environment}:*" --format '{{.ID}}' | tail -n +3 | xargs -r docker image rm
+    # Force remove old images
+    docker image ls "ocp-${environment}:*" --format '{{.ID}}' | tail -n +3 | xargs -r docker image rm -f
+    # Clean up dangling images and volumes
     docker system prune -af --volumes
+    # Tag the current image as latest
     docker tag "ocp-${environment}:${deploy_time}" ocp-${environment}:latest
     
     echo 'Deployment successful!'

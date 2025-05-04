@@ -112,6 +112,7 @@ const startServer = async () => {
             const contractsToWatch = issuers
                 .filter((issuer) => issuer?.deployed_to && issuer?.chain_id)
                 .map((issuer) => ({
+                    id: issuer._id,
                     address: issuer.deployed_to,
                     chain_id: issuer.chain_id,
                     name: issuer.legal_name,
