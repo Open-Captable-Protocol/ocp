@@ -13,7 +13,7 @@ export const connectDB = async () => {
         authSource: "admin",
         tls: true,
         tlsAllowInvalidHostnames: true,
-        // tlsCAFile: "./global-bundle.pem",
+        tlsCAFile: "./global-bundle.pem",
     };
 
     try {
