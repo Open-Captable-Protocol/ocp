@@ -4,7 +4,6 @@ import { API_URL } from "./config";
 
 export const reflectStakeholder = async ({ issuerId, stakeholder }) => {
     console.log("Reflecting Stakeholder into fairmint...");
-    console.log({ issuerId, stakeholder });
 
     let webHookUrl = `${API_URL}/ocp/reflectStakeholder?portalId=${issuerId}`;
     try {
@@ -24,11 +23,9 @@ export const reflectStakeholder = async ({ issuerId, stakeholder }) => {
             country_code: get(address, "country"),
             tax_id: get(stakeholder, "tax_ids.0.tax_id"),
         };
-        console.log({ body });
 
         const resp = await axios.post(webHookUrl, body);
         console.log(`Successfully reflected Stakeholder ${stakeholder._id} into Fairmint webhook`);
-        console.log("Fairmint response:", resp.data);
 
         return resp.data;
     } catch (error) {

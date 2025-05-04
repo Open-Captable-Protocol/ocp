@@ -25,9 +25,13 @@ import readline from "readline";
 import { addAddressesToWatch, reamoveAllListeners } from "../utils/websocket.ts";
 import { validateIssuerForMigration } from "./validate.js";
 import { facetsABI } from "../utils/errorDecoder.js";
+import { convertAndCreateCancellationStockOnchain } from "../controllers/transactions/cancellationController.js";
 
 // Load environment variables
 dotenv.config();
+
+const ISSUERS_TO_SKIP = [];
+const ISSUERS_TO_MIGRATE = ["5df2208b-3b1b-477a-8654-f2b0b06e5807"];
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -94,14 +98,16 @@ const waitBetweenTransactions = async () => {
 };
 
 async function migrateIssuer(issuerId, gasTracker = { gasUsed: BigInt(0), transactionCount: 0 }) {
-    await connectDB();
     let migrationLog;
     let issuer;
     try {
+        // Check if issuer should be skipped
+        if (ISSUERS_TO_SKIP.includes(issuerId)) {
+            console.log(chalk.yellow(`Skipping issuer ${issuerId} as it's in the skip list`));
+            return { success: true, gasTracker };
+        }
+
         // Load or create migration log
-
-        // 1. Check if issuer exists in the database
-
         issuer = await readIssuerById(issuerId);
         if (!issuer) {
             throw new Error(`Issuer with ID ${issuerId} not found in database`);
@@ -123,10 +129,19 @@ async function migrateIssuer(issuerId, gasTracker = { gasUsed: BigInt(0), transa
             console.log(`Address before deployment: ${issuer.deployed_to}`);
             console.log(`TX Hash before deployment: ${issuer.tx_hash}`);
 
-            const { address, deployHash, receipt } = await deployCapTable(issuerIdBytes16, issuer.initial_shares_authorized, issuer.chain_id);
+            const { address, deployHash, receipt, factory } = await deployCapTable(
+                issuerIdBytes16,
+                issuer.initial_shares_authorized,
+                issuer.chain_id
+            );
             trackGasUsage(receipt, gasTracker);
 
-            await updateIssuerById(issuerId, { deployed_to: address, tx_hash: deployHash });
+            // Update issuer with deployed address, tx hash, and factory
+            await updateIssuerById(issuerId, {
+                deployed_to: address,
+                tx_hash: deployHash,
+                factory: factory._id,
+            });
 
             console.log(`\nCap table deployed successfully:`);
             console.log(`Contract Address: ${address}`);
@@ -261,6 +276,13 @@ async function migrateIssuer(issuerId, gasTracker = { gasUsed: BigInt(0), transa
                         }
                         receipt = await convertAndCreateIssuanceWarrantOnchain(contract, tx);
                         break;
+                    case "TX_STOCK_CANCELLATION":
+                        if (tx.quantity == 0) {
+                            errors.push(`Transaction ${tx.id} has 0 quantity`);
+                            break;
+                        }
+                        receipt = await convertAndCreateCancellationStockOnchain(contract, tx);
+                        break;
 
                     default:
                         throw new Error(`Unhandled transaction type: ${tx.object_type}`);
@@ -372,8 +394,6 @@ async function migrateIssuer(issuerId, gasTracker = { gasUsed: BigInt(0), transa
         }
         console.error("Migration failed:", error);
         return { success: false, gasTracker, error };
-    } finally {
-        await mongoose.disconnect();
     }
 }
 
@@ -385,9 +405,8 @@ async function main() {
     try {
         await connectDB();
 
-        const skipIssuers = [];
         const issuers = (await readAllIssuers())
-            .filter((i) => !skipIssuers.includes(i.legal_name))
+            .filter((i) => ISSUERS_TO_MIGRATE.includes(i._id))
             .filter((i) => {
                 // Check both database and log file status
                 const logFile = path.join(process.cwd(), "migrations", `${i.legal_name}.log.json`);

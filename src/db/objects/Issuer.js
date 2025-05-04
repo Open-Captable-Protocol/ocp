@@ -22,6 +22,7 @@ const IssuerSchema = new mongoose.Schema(
         is_manifest_created: { type: Boolean, default: false },
         chain_id: { type: Number, required: true },
         tx_hash: { type: String, default: null },
+        factory: { ref: "Factory", type: String },
     },
     { timestamps: true }
 );

@@ -7,7 +7,15 @@ const DATABASE_URL = process.env.DATABASE_URL;
 const DATABASE_OVERRIDE = process.env.DATABASE_OVERRIDE;
 
 export const connectDB = async () => {
-    const connectOptions = DATABASE_OVERRIDE ? { dbName: DATABASE_OVERRIDE } : {};
+    const connectOptions = {
+        ...(DATABASE_OVERRIDE ? { dbName: DATABASE_OVERRIDE } : {}),
+        authMechanism: "SCRAM-SHA-1" as const,
+        authSource: "admin",
+        tls: true,
+        tlsAllowInvalidHostnames: true,
+        tlsCAFile: "./global-bundle.pem",
+    };
+
     try {
         const sanitizedDatabaseURL = (DATABASE_URL as string).replace(/\/\/(.*):(.*)@/, "//$1:***@");
         console.log(" Mongo connecting...", sanitizedDatabaseURL);

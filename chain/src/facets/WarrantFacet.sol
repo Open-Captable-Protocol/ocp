@@ -16,7 +16,6 @@ contract WarrantFacet {
         }
 
         ValidationLib.validateStakeholder(params.stakeholder_id);
-        ValidationLib.validateQuantity(params.quantity);
 
         // Create and store position
         ds.warrantActivePositions.securities[params.security_id] =

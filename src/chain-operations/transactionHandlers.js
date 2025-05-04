@@ -424,13 +424,15 @@ export const handleConvertibleIssuance = async (convertible, issuerId, timestamp
     });
 
     if (fairmintData && fairmintData._id) {
-        const seriesCreatedResp = await reflectSeries({
+        console.log("Fairmint data found:", fairmintData);
+        const data = {
             issuerId,
-            series_id: fairmintData.series_id,
+            series_id: get(fairmintData, "series_id"),
             series_name: get(fairmintData, "attributes.series_name"),
             series_type: SERIES_TYPE.FUNDRAISING,
             date: dateToUse,
-        });
+        };
+        const seriesCreatedResp = await reflectSeries(data);
 
         console.log("Series created response:", seriesCreatedResp);
 

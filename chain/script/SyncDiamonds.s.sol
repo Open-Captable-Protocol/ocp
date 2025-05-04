@@ -38,6 +38,9 @@ contract SyncDiamondsScript is Script, SyncFacetsScript {
                 if (referenceFacets[i].functionSelectors[0] == capTableFacets[j].functionSelectors[0]) {
                     found = true;
 
+                    // Check if facet address or selectors are different
+                    bool needsUpdate = referenceFacets[i].facetAddress != capTableFacets[j].facetAddress;
+
                     // Check if selectors match exactly
                     bool selectorsMatch =
                         referenceFacets[i].functionSelectors.length == capTableFacets[j].functionSelectors.length;
@@ -50,11 +53,16 @@ contract SyncDiamondsScript is Script, SyncFacetsScript {
                         }
                     }
 
-                    if (!selectorsMatch) {
+                    if (!selectorsMatch || needsUpdate) {
                         LibDeployment.FacetType facetType =
                             LibDeployment.getFacetTypeFromSelector(referenceFacets[i].functionSelectors[0]);
                         string memory facetName = LibDeployment.getFacetCutInfo(facetType).name;
-                        console.log("\nChange detected in facet", facetName, "due to:", "selector mismatch");
+                        console.log(
+                            "\nChange detected in facet",
+                            facetName,
+                            "due to:",
+                            !selectorsMatch ? "selector mismatch" : "address mismatch"
+                        );
                         console.log("\nUpdating facet:", facetName);
 
                         // Deploy new facet
@@ -62,21 +70,9 @@ contract SyncDiamondsScript is Script, SyncFacetsScript {
                         address newFacet = LibDeployment.deployFacet(facetType);
                         vm.stopBroadcast();
 
-                        console.log("STOCK_FACET=", newFacet);
+                        console.log("New facet deployed at:", newFacet);
 
-                        // First, replace existing selectors
-                        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
-                        IDiamondCut.FacetCut[] memory replaceCut = new IDiamondCut.FacetCut[](1);
-                        replaceCut[0] = IDiamondCut.FacetCut({
-                            facetAddress: newFacet,
-                            action: IDiamondCut.FacetCutAction.Replace,
-                            functionSelectors: capTableFacets[j].functionSelectors
-                        });
-                        IDiamondCut(capTable).diamondCut(replaceCut, address(0), "");
-                        vm.stopBroadcast();
-                        console.log("Existing selectors replaced successfully");
-
-                        // Then, add new selectors
+                        // Find new selectors that don't exist in current selectors
                         bytes4[] memory newSelectors = new bytes4[](referenceFacets[i].functionSelectors.length);
                         uint256 newSelectorCount = 0;
 
@@ -94,6 +90,7 @@ contract SyncDiamondsScript is Script, SyncFacetsScript {
                             }
                         }
 
+                        // Add new selectors if any
                         if (newSelectorCount > 0) {
                             // Resize array to actual count
                             bytes4[] memory finalNewSelectors = new bytes4[](newSelectorCount);
@@ -112,6 +109,18 @@ contract SyncDiamondsScript is Script, SyncFacetsScript {
                             vm.stopBroadcast();
                             console.log("New selectors added successfully");
                         }
+
+                        // Replace existing selectors
+                        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+                        IDiamondCut.FacetCut[] memory replaceCut = new IDiamondCut.FacetCut[](1);
+                        replaceCut[0] = IDiamondCut.FacetCut({
+                            facetAddress: newFacet,
+                            action: IDiamondCut.FacetCutAction.Replace,
+                            functionSelectors: capTableFacets[j].functionSelectors
+                        });
+                        IDiamondCut(capTable).diamondCut(replaceCut, address(0), "");
+                        vm.stopBroadcast();
+                        console.log("Existing selectors replaced successfully");
                     }
                     break;
                 }

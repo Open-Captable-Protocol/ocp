@@ -55,7 +55,7 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
         IWarrantFacet(address(capTable)).issueWarrant(params);
     }
 
-    function test_RevertZeroQuantity() public {
+    function test_IssueZeroQuantity() public {
         bytes16 stakeholderId = createStakeholder();
         bytes16 securityId = 0xd3373e0a4dd940000000000000000001;
         bytes16 id = 0xd3373e0a4dd940000000000000000002;
@@ -70,7 +70,8 @@ contract DiamondWarrantIssuanceTest is DiamondTestBase {
             security_law_exemptions_mapping: "REG_D",
             exercise_triggers_mapping: "TIME_BASED"
         });
-        vm.expectRevert(abi.encodeWithSignature("InvalidQuantity()"));
+        vm.expectEmit(true, true, false, true, address(capTable));
+        emit TxHelper.TxCreated(TxType.WARRANT_ISSUANCE, abi.encode(params));
         IWarrantFacet(address(capTable)).issueWarrant(params);
     }
 }

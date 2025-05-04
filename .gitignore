@@ -43,6 +43,7 @@ solana/*
 *.ignore.js
 
 captables
+migration*
 
 
 outpu2t.txt
