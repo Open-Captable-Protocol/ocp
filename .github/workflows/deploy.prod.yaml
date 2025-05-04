@@ -120,7 +120,7 @@ jobs:
                       -e PORT=8080 \
                       -e PRIVATE_KEY='${PRIVATE_KEY}' \
                       -e ETHERSCAN_L2_API_KEY='${ETHERSCAN_L2_API_KEY}' \
-                      -v '/home/ubuntu/global-bundle.pem:/app/global-bundle.pem' \
+                      -v '/home/ubuntu/global-bundle.pem:/global-bundle.pem' \
                       ocp-prod:${DEPLOY_TIME} && \
 
                       # Wait for container to be healthy
