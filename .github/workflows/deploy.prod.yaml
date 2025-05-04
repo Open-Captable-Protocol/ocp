@@ -54,7 +54,7 @@ jobs:
                   ETHERSCAN_L2_API_KEY: ${{ secrets.ETHERSCAN_L2_API_KEY }}
                   SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
                   DATABASE_URL: ${{ secrets.DATABASE_URL }}
-                  BASE_RPC_URL: ${{ secrets.BASE_RPC_URL }}
+                  RPC_URL: ${{ secrets.RPC_URL }}
 
               run: |
                   # Generate timestamp for deployment
@@ -116,11 +116,11 @@ jobs:
                       -e NODE_ENV='production' \
                       -e SENTRY_DSN='${SENTRY_DSN}' \
                       -e DATABASE_URL='${DATABASE_URL}' \
-                      -e BASE_RPC_URL='${BASE_RPC_URL}' \
+                      -e RPC_URL='${RPC_URL}' \
                       -e PORT=8080 \
                       -e PRIVATE_KEY='${PRIVATE_KEY}' \
                       -e ETHERSCAN_L2_API_KEY='${ETHERSCAN_L2_API_KEY}' \
-                      -v '/home/ubuntu/global-bundle.pem:/global-bundle.pem' \
+                      -v '/home/ubuntu/global-bundle.pem:/app/global-bundle.pem' \
                       ocp-prod:${DEPLOY_TIME} && \
 
                       # Wait for container to be healthy
