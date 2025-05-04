@@ -416,15 +416,16 @@ export const processStakeholderViewEquityCompExercise = (state, transaction, equ
 export const processStakeholderViewStockCancellation = (state, transaction, stakeholder, originalStockClass) => {
     const { quantity, date, reason_text } = transaction;
     let cancelledShares = parseInt(quantity);
-    const stakeholderId = stakeholder._id;
+    const stakeholderId = stakeholder?._id;
 
     // Deep clone state to avoid mutations
     const newState = JSON.parse(JSON.stringify(state));
 
     // Ensure holder and class exist
     if (!newState.holders[stakeholderId] || !newState.holders[stakeholderId].holdings.byClass[originalStockClass.name]) {
-        console.warn(`⚠️ Stock cancellation processing skipped: Stakeholder ${stakeholderId} or class ${originalStockClass.name} not found.`);
-        return newState; // Return unmodified state if holder or class doesn't exist
+        console.warn(`⚠️ [StockCancellation] Skipped: Stakeholder ${stakeholderId} or class ${originalStockClass.name} not found`);
+        console.log("Current state holders:", Object.keys(newState.holders));
+        return newState;
     }
 
     const holder = newState.holders[stakeholderId];
@@ -819,6 +820,17 @@ export const formatStakeholderViewForDisplay = (stakeholderViewState) => {
     // Sort holders by fully diluted shares (descending)
     formattedView.holders.stakeholders.sort((a, b) => b.holdings.fullyDiluted - a.holdings.fullyDiluted);
 
+    // Filter out cancelled stakeholders (those with no outstanding shares)
+    const beforeFilter = formattedView.holders.stakeholders.length;
+    formattedView.holders.stakeholders = formattedView.holders.stakeholders.filter((holder) => {
+        const isCancelled = holder.holdings.outstanding <= 0;
+        if (isCancelled) {
+            console.log(`🔍 [FormatDisplay] Filtering out cancelled stakeholder: ${holder.id} - ${holder.name}`);
+        }
+        return !isCancelled;
+    });
+    console.log(`🔍 [FormatDisplay] Filtered out ${beforeFilter - formattedView.holders.stakeholders.length} cancelled stakeholders`);
+
     return formattedView;
 };
 
@@ -902,14 +914,15 @@ export const stakeholderViewStats = (issuerData) => {
                             (t.object_type === "TX_STOCK_ISSUANCE" || t.object_type === "TX_EQUITY_COMPENSATION_ISSUANCE") &&
                             t.security_id === transaction.security_id
                     );
+                    const _stakeholder = stakeholders.find((s) => s._id === stockIssuance?.stakeholder_id);
 
                     // Get the stock class for this cancellation
                     const cancellationStockClass = stockIssuance?.stock_class_id
                         ? stockClasses.find((sc) => sc.id === stockIssuance.stock_class_id)
                         : null;
 
-                    if (stockIssuance && cancellationStockClass) {
-                        state = processStakeholderViewStockCancellation(state, transaction, stakeholder, cancellationStockClass);
+                    if (stockIssuance && cancellationStockClass && _stakeholder) {
+                        state = processStakeholderViewStockCancellation(state, transaction, _stakeholder, cancellationStockClass);
                     }
                 }
                 break;
