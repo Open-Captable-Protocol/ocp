@@ -19,7 +19,7 @@ Arguments:
   issuer-id    The ID of the issuer whose data should be deleted
 
 Example:
-  node deleteIssuerData.script.js 96887358-568d-44f8-b6d0-73c4f38558f6
+  node deleteIssuerData.script.js <issuer-id>
 `);
 };
 
@@ -47,17 +47,17 @@ const main = async () => {
         await connectDB();
         console.log(chalk.green("Connected to DB"));
 
-        const issuer = await Issuer.findOne({ _id: issuerId });
-        if (!issuer) {
-            console.error(chalk.red("Error: Issuer not found"));
-            process.exit(1);
-        }
+        // const issuer = await Issuer.findOne({ _id: issuerId });
+        // if (!issuer) {
+        //     console.error(chalk.red("Error: Issuer not found"));
+        //     process.exit(1);
+        // }
 
-        const confirmed = await confirmDeletion(issuer.legal_name);
-        if (!confirmed) {
-            console.log(chalk.green("Operation cancelled"));
-            process.exit(0);
-        }
+        // const confirmed = await confirmDeletion(issuer.legal_name);
+        // if (!confirmed) {
+        //     console.log(chalk.green("Operation cancelled"));
+        //     process.exit(0);
+        // }
 
         await deleteIssuerData(issuerId);
         console.log(chalk.green("Successfully deleted issuer data"));

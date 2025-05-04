@@ -32,6 +32,8 @@ jobs:
               uses: foundry-rs/foundry-toolchain@v1
               with:
                   version: stable
+                  cache: true
+                  cache-key: ${{ github.job }}-${{ github.sha }}
 
             - name: Run Forge Install Script
               run: |

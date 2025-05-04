@@ -30,7 +30,7 @@ import { convertAndCreateCancellationStockOnchain } from "../controllers/transac
 // Load environment variables
 dotenv.config();
 
-const ISSUERS_TO_SKIP = ["96887358-568d-44f8-b6d0-73c4f38558f6", "d5cffdf6-790c-477b-bce9-67831e5d834e", "15f5ac1e-2311-4716-abe8-3b943bca8d49"];
+const ISSUERS_TO_SKIP = [];
 const ISSUERS_TO_MIGRATE = ["5df2208b-3b1b-477a-8654-f2b0b06e5807"];
 
 const rl = readline.createInterface({
@@ -406,7 +406,6 @@ async function main() {
         await connectDB();
 
         const issuers = (await readAllIssuers())
-            .filter((i) => !ISSUERS_TO_SKIP.includes(i._id))
             .filter((i) => ISSUERS_TO_MIGRATE.includes(i._id))
             .filter((i) => {
                 // Check both database and log file status
