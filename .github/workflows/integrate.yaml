@@ -2,11 +2,9 @@ name: Integration Tests
 
 on:
     pull_request:
+        types: [opened, synchronize, reopened]
         branches:
             - "*"
-            - "!main"
-            - "dev"
-        types: [opened, synchronize, reopened]
 
 jobs:
     test:
