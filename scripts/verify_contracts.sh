@@ -50,6 +50,7 @@ fi
 
 # Changes to chain directory and runs the forge deploy script
 cd chain
+CHAIN_ID=$(cast chain-id --rpc-url "$RPC_URL")
 echo $RPC_URL
 echo $CHAIN_ID
 
@@ -68,23 +69,24 @@ echo $CHAIN_ID
 # STAKEHOLDER_NFT_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STAKEHOLDER_NFT_FACET=" | cut -d'=' -f2 | tr -d ' ')
 # ACCESS_CONTROL_FACET=$(echo "$DEPLOY_OUTPUT" | grep "ACCESS_CONTROL_FACET=" | cut -d'=' -f2 | tr -d ' ')
 
-FACTORY_ADDRESS=0x8BD1b1b01F10aa23715951E556a10e16D8fbeBF6
-REFERENCE_DIAMOND=0xe213A65245deFeDC063adF3bbC1a93F7DCf3389b
-DIAMOND_LOUPE_FACET=0x97bEC0687B73DA89c9584da4b977CcC30919FB3D
-ISSUER_FACET=0x6C802F7Ca87F2B0008EEe7281D53a9f562112397
-STAKEHOLDER_FACET=0xDACffcA48c705e34e6742195BA09407df03274C3
-STOCK_CLASS_FACET=0x6b2a592FA5416Ce9Dc47A704627327A4FA70b6d3
-STOCK_FACET=0x67312EeB97625BEb5c3f95E749D18E8DCD2575Ab
-CONVERTIBLES_FACET=0x80263F0c2a7Eaf6bF9CeF082Ec30FA3AbE5Dc7fC
-EQUITY_COMPENSATION_FACET=0x1A8707897021d64B3d7F03301B22c15995E14Bd8
-STOCK_PLAN_FACET=0x22D42425Db6ce12c99080d0012fff86d19AAb765
-WARRANT_FACET=0x157e62Bd607f8bF95623007b67Eea4540c7F0adF
-STAKEHOLDER_NFT_FACET=0x4Da7475D2ef43B6a5AE60Dade686487bEdA91104
-ACCESS_CONTROL_FACET=0xbBA2F4592f1647193f52f743eE28b8cE286783Cb
+#FACTORY_ADDRESS=0x8BD1b1b01F10aa23715951E556a10e16D8fbeBF6
+#REFERENCE_DIAMOND=0xe213A65245deFeDC063adF3bbC1a93F7DCf3389b
+#DIAMOND_LOUPE_FACET=0x97bEC0687B73DA89c9584da4b977CcC30919FB3D
+#ISSUER_FACET=0x6C802F7Ca87F2B0008EEe7281D53a9f562112397
+#STAKEHOLDER_FACET=0xDACffcA48c705e34e6742195BA09407df03274C3
+#STOCK_CLASS_FACET=0x6b2a592FA5416Ce9Dc47A704627327A4FA70b6d3
+#STOCK_FACET=0x67312EeB97625BEb5c3f95E749D18E8DCD2575Ab
+#CONVERTIBLES_FACET=0x80263F0c2a7Eaf6bF9CeF082Ec30FA3AbE5Dc7fC
+#EQUITY_COMPENSATION_FACET=0x1A8707897021d64B3d7F03301B22c15995E14Bd8
+#STOCK_PLAN_FACET=0x22D42425Db6ce12c99080d0012fff86d19AAb765
+#WARRANT_FACET=0x157e62Bd607f8bF95623007b67Eea4540c7F0adF
+#STAKEHOLDER_NFT_FACET=0x4Da7475D2ef43B6a5AE60Dade686487bEdA91104
+#ACCESS_CONTROL_FACET=0xbBA2F4592f1647193f52f743eE28b8cE286783Cb
 
 
 echo "FACTORY_ADDRESS: $FACTORY_ADDRESS"
 echo "REFERENCE_DIAMOND: $REFERENCE_DIAMOND"
+echo "DIAMOND_CUT_FACET: $DIAMOND_CUT_FACET"
 echo "DIAMOND_LOUPE_FACET: $DIAMOND_LOUPE_FACET"
 echo "ISSUER_FACET: $ISSUER_FACET"
 echo "STAKEHOLDER_FACET: $STAKEHOLDER_FACET"
@@ -100,23 +102,30 @@ echo "ACCESS_CONTROL_FACET: $ACCESS_CONTROL_FACET"
 # Only attempt verification for non-local environments
 if [ "$ENVIRONMENT" != "local" ]; then
     echo "Waiting for deployment to be confirmed..."
-    sleep 30
 
     echo "Verifying contracts..."
     # Verify Factory
     forge verify-contract $FACTORY_ADDRESS src/core/CapTableFactory.sol:CapTableFactory \
         --chain-id $CHAIN_ID \
         --etherscan-api-key $ETHERSCAN_API_KEY \
-        --constructor-args $(cast abi-encode "constructor(address)" $REFERENCE_DIAMOND)
+        --constructor-args $(cast abi-encode "constructor(address)" $REFERENCE_DIAMOND) \
+        --watch
+
+    # Verify Diamond Cut
+    forge verify-contract $DIAMOND_CUT_FACET lib/diamond-3-hardhat/contracts/facets/DiamondCutFacet.sol:DiamondCutFacet: \
+        --chain-id $CHAIN_ID \
+        --etherscan-api-key $ETHERSCAN_API_KEY \
+        --watch
     
     # Verify Diamond
     forge verify-contract $REFERENCE_DIAMOND src/core/CapTable.sol:CapTable \
         --chain-id $CHAIN_ID \
         --etherscan-api-key $ETHERSCAN_API_KEY \
-        --constructor-args $(cast abi-encode "constructor(address)" $FACTORY_ADDRESS)
+        --constructor-args $(cast abi-encode "constructor(address,address)" $FACTORY_ADDRESS $DIAMOND_CUT_FACET) \
+        --watch
 
     # Verify Diamond Loupe Facet
-    forge verify-contract $DIAMOND_LOUPE_FACET src/facets/DiamondLoupeFacet.sol:DiamondLoupeFacet \
+    forge verify-contract $DIAMOND_LOUPE_FACET lib/diamond-3-hardhat/contracts/facets/DiamondLoupeFacet.sol:DiamondLoupeFacet \
         --chain-id $CHAIN_ID \
         --etherscan-api-key $ETHERSCAN_API_KEY
 

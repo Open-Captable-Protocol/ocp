@@ -116,17 +116,32 @@ fi
 
 # Changes to chain directory and runs the forge deploy script
 cd chain
+CHAIN_ID=$(cast chain-id --rpc-url "$RPC_URL")
 echo "RPC URL: $RPC_URL"
 echo "Chain ID: $CHAIN_ID"
 
+DEPLOY_DIR="deployments/${CHAIN_ID}"
+DEPLOY_LOG="${DEPLOY_DIR}/deploy-$(date +%s).log"
+DEPLOY_LATEST="${DEPLOY_DIR}/latest.log"
+mkdir -p $DEPLOY_DIR
+echo "Writing deployment logs to ${DEPLOY_LOG} (and ${DEPLOY_LATEST})"
+
 # Deploy contracts
 echo "Deploying with REFERENCE_DIAMOND=${REFERENCE_DIAMOND:-empty}"
-DEPLOY_OUTPUT=$(REFERENCE_DIAMOND=$REFERENCE_DIAMOND forge script script/DeployFactory.s.sol --broadcast --rpc-url $RPC_URL --private-key $PRIVATE_KEY --chain-id $CHAIN_ID)
+REFERENCE_DIAMOND=$REFERENCE_DIAMOND forge script script/DeployFactory.s.sol \
+  --broadcast \
+  --rpc-url $RPC_URL \
+  --private-key $PRIVATE_KEY \
+  --chain-id $CHAIN_ID > $DEPLOY_LOG
+cp $DEPLOY_LOG $DEPLOY_LATEST
+
+DEPLOY_OUTPUT=$(cat $DEPLOY_LATEST)
 echo "$DEPLOY_OUTPUT"
 
 # Extract all addresses
 FACTORY_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep "FACTORY_ADDRESS=" | cut -d'=' -f2 | tr -d ' ')
 REFERENCE_DIAMOND=$(echo "$DEPLOY_OUTPUT" | grep "REFERENCE_DIAMOND=" | cut -d'=' -f2 | tr -d ' ')
+DIAMOND_CUT_FACET=$(echo "$DEPLOY_OUTPUT" | grep "DIAMOND_CUT_FACET=" | cut -d'=' -f2 | tr -d ' ')
 DIAMOND_LOUPE_FACET=$(echo "$DEPLOY_OUTPUT" | grep "DIAMOND_LOUPE_FACET=" | cut -d'=' -f2 | tr -d ' ')
 ISSUER_FACET=$(echo "$DEPLOY_OUTPUT" | grep "ISSUER_FACET=" | cut -d'=' -f2 | tr -d ' ')
 STAKEHOLDER_FACET=$(echo "$DEPLOY_OUTPUT" | grep "STAKEHOLDER_FACET=" | cut -d'=' -f2 | tr -d ' ')
@@ -143,6 +158,7 @@ ACCESS_CONTROL_FACET=$(echo "$DEPLOY_OUTPUT" | grep "ACCESS_CONTROL_FACET=" | cu
 echo "New contract addresses:"
 echo "FACTORY_ADDRESS: $FACTORY_ADDRESS"
 echo "REFERENCE_DIAMOND: $REFERENCE_DIAMOND"
+echo "DIAMOND_CUT_FACET: $DIAMOND_CUT_FACET"
 echo "DIAMOND_LOUPE_FACET: $DIAMOND_LOUPE_FACET"
 echo "ISSUER_FACET: $ISSUER_FACET"
 echo "STAKEHOLDER_FACET: $STAKEHOLDER_FACET"
@@ -157,8 +173,8 @@ echo "ACCESS_CONTROL_FACET: $ACCESS_CONTROL_FACET"
 
 # Check if addresses have changed
 ADDRESSES_CHANGED=false
-if [ "$FACTORY_ADDRESS" != "$(grep '^FACTORY_ADDRESS=' "$USE_ENV_FILE" | cut -d'=' -f2)" ] || \
-   [ "$REFERENCE_DIAMOND" != "$(grep '^REFERENCE_DIAMOND=' "$USE_ENV_FILE" | cut -d'=' -f2)" ]; then
+if [ "$FACTORY_ADDRESS" != "$(grep '^FACTORY_ADDRESS=' "../$USE_ENV_FILE" | cut -d'=' -f2)" ] || \
+   [ "$REFERENCE_DIAMOND" != "$(grep '^REFERENCE_DIAMOND=' "../$USE_ENV_FILE" | cut -d'=' -f2)" ]; then
    ADDRESSES_CHANGED=true
 fi
 
@@ -257,17 +273,24 @@ if [ "$ENVIRONMENT" != "local" ]; then
     forge verify-contract $FACTORY_ADDRESS src/core/CapTableFactory.sol:CapTableFactory \
         --chain-id $CHAIN_ID \
         --etherscan-api-key $ETHERSCAN_API_KEY \
-        --verifier-url https://api-sepolia.basescan.org/api \
-        --constructor-args $(cast abi-encode "constructor(address)" $REFERENCE_DIAMOND)
+        --constructor-args $(cast abi-encode "constructor(address)" $REFERENCE_DIAMOND) \
+        --watch
+
+    # Verify Diamond Cut
+    forge verify-contract $DIAMOND_CUT_FACET lib/diamond-3-hardhat/contracts/facets/DiamondCutFacet.sol:DiamondCutFacet: \
+        --chain-id $CHAIN_ID \
+        --etherscan-api-key $ETHERSCAN_API_KEY \
+        --watch
     
     # Verify Diamond
     forge verify-contract $REFERENCE_DIAMOND src/core/CapTable.sol:CapTable \
         --chain-id $CHAIN_ID \
         --etherscan-api-key $ETHERSCAN_API_KEY \
-        --constructor-args $(cast abi-encode "constructor(address)" $FACTORY_ADDRESS)
+        --constructor-args $(cast abi-encode "constructor(address,address)" $FACTORY_ADDRESS $DIAMOND_CUT_FACET) \
+        --watch
 
     # Verify Diamond Loupe Facet
-    forge verify-contract $DIAMOND_LOUPE_FACET src/facets/DiamondLoupeFacet.sol:DiamondLoupeFacet \
+    forge verify-contract $DIAMOND_LOUPE_FACET lib/diamond-3-hardhat/contracts/facets/DiamondLoupeFacet.sol:DiamondLoupeFacet \
         --chain-id $CHAIN_ID \
         --etherscan-api-key $ETHERSCAN_API_KEY
 

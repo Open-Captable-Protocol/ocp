@@ -295,8 +295,12 @@ library LibDeployment {
             functionSelectors: LibDeployment.getFacetCutInfo(FacetType.AccessControl).selectors
         });
 
+        // ------------------- Diamond Cut Facet -------------------
+        address diamondCutFacet = address(new DiamondCutFacet());
+        _deployedHandler("DIAMOND_CUT_FACET", diamondCutFacet);
+
         // Create reference diamond
-        CapTable referenceDiamond = new CapTable(owner, address(new DiamondCutFacet()));
+        CapTable referenceDiamond = new CapTable(owner, diamondCutFacet);
 
         // Perform the cuts
         DiamondCutFacet(address(referenceDiamond)).diamondCut(cuts, address(0), "");
