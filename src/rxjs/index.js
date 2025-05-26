@@ -104,6 +104,7 @@ const processTransaction = (state, transaction, stakeholders, stockClasses, stoc
             "TX_STOCK_CLASS_AUTHORIZED_SHARES_ADJUSTMENT",
             "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT",
             "TX_STOCK_CANCELLATION",
+            "TX_VESTING_START",
         ].includes(transaction.object_type)
     ) {
         return {
@@ -138,6 +139,7 @@ const processTransaction = (state, transaction, stakeholders, stockClasses, stoc
             "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT",
             "TX_STOCK_PLAN_POOL_ADJUSTMENT",
             "TX_STOCK_CANCELLATION",
+            "TX_VESTING_START",
         ].includes(transaction.object_type)
     ) {
         return {
@@ -156,6 +158,7 @@ const processTransaction = (state, transaction, stakeholders, stockClasses, stoc
             "TX_ISSUER_AUTHORIZED_SHARES_ADJUSTMENT",
             "TX_STOCK_PLAN_POOL_ADJUSTMENT",
             "TX_STOCK_CANCELLATION",
+            "TX_VESTING_START",
         ].includes(transaction.object_type)
     ) {
         return {
