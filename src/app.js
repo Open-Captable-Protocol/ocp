@@ -3,6 +3,7 @@ import { setupEnv } from "./utils/env.js";
 import { connectDB } from "./db/config/mongoose.ts";
 import { startListener } from "./utils/websocket.ts";
 import { setTag } from "@sentry/node";
+import cors from "cors";
 import * as Sentry from "@sentry/node";
 
 // Routes
@@ -79,6 +80,7 @@ const contractMiddleware = async (req, res, next) => {
     next();
 };
 
+app.use(cors());
 app.use(urlencoded({ limit: "50mb", extended: true }));
 app.use(json({ limit: "50mb" }));
 app.enable("trust proxy");
