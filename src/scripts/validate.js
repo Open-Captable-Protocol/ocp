@@ -161,6 +161,10 @@ function validateTransactionByType(tx, referenceSets) {
                 return errors;
             },
         },
+        TX_VESTING_START: {
+            required: [],
+            references: {},
+        },
     };
 
     const validation = transactionValidations[tx.object_type];

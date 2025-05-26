@@ -18,7 +18,7 @@ import vestingTermsRoutes from "./routes/vestingTerms.js";
 import statsRoutes from "./routes/stats/index.js";
 import exportRoutes from "./routes/export.js";
 import ocfRoutes from "./routes/ocf.js";
-
+import workspaceRoutes from "./routes/workspace.js";
 import { readAllIssuers, readIssuerById } from "./db/operations/read.js";
 import { contractCache } from "./utils/simple_caches.js";
 import { getContractInstance } from "./chain-operations/getContractInstances.js";
@@ -96,7 +96,7 @@ app.use("/vesting-terms", vestingTermsRoutes);
 app.use("/stats", statsRoutes);
 app.use("/export", exportRoutes);
 app.use("/ocf", ocfRoutes);
-
+app.use("/workspace", workspaceRoutes);
 // transactions
 app.use("/transactions/", contractMiddleware, transactionRoutes);
 
