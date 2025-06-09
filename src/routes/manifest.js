@@ -133,4 +133,39 @@ router.post("/verify", async (req, res) => {
     }
 });
 
+router.post("/cross-id-check", async (req, res) => {
+    try {
+        // Validate request body
+        if (!req.body || Object.keys(req.body).length === 0) {
+            return res.status(400).send({
+                error: "Request body is empty or invalid JSON.",
+                valid: false,
+            });
+        }
+
+        // Get data from workspace JSON
+        const data = await getAllStateMachineObjectsFromWorkspaceJSON(req.body);
+
+        // Validate cap table data
+        const validationErrors = await validateCapTableData(data);
+        if (validationErrors.length > 0) {
+            return res.status(400).send({
+                errors: validationErrors,
+                valid: false,
+            });
+        }
+
+        return res.status(200).send({
+            valid: true,
+            errors: [],
+        });
+    } catch (error) {
+        console.error("Cap table verification error:", error);
+        return res.status(500).send({
+            error: String(error),
+            valid: false,
+        });
+    }
+});
+
 export default router;
