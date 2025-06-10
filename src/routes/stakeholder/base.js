@@ -113,17 +113,17 @@ router.post("/create", async (req, res) => {
         const stakeholder = await createStakeholder(incomingStakeholderForDB);
 
         // Save onchain
-        let receipt;
+        let tx_hash;
         if (!isCantonChainId(issuer.chain_id)) {
-            receipt = await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id);
-            await Stakeholder.findByIdAndUpdate(stakeholder._id, { tx_hash: receipt.hash });
+            ({ hash: tx_hash } = await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id));
+            await Stakeholder.findByIdAndUpdate(stakeholder._id, { tx_hash });
         } else {
             // TODO: implement canton
         }
 
         console.log("✅ | Stakeholder created offchain:", stakeholder);
 
-        res.status(200).send({ stakeholder: { ...stakeholder.toObject(), tx_hash: receipt?.hash } });
+        res.status(200).send({ stakeholder: { ...stakeholder.toObject(), tx_hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
