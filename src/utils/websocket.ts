@@ -7,6 +7,7 @@ import { handleStockPlan, txMapper, txTypes } from "../chain-operations/transact
 import { handleStakeholder, handleStockClass } from "../chain-operations/transactionHandlers";
 import Issuer from "../db/objects/Issuer";
 import { TxCreated, StakeholderCreated, StockClassCreated, StockPlanCreated } from "../chain-operations/topics";
+import { CANTON_CHAIN_ID } from "../chain-operations/canton/constants";
 
 const TOPICS = { TxCreated, StakeholderCreated, StockClassCreated, StockPlanCreated };
 
@@ -42,6 +43,10 @@ export const addAddressesToWatch = async (chainId: string, addresses: string | s
 
 // Function to setup a single chain listener
 const setupChainListener = async (chainId: string, addresses: string[]) => {
+    if (chainId === CANTON_CHAIN_ID.toString()) {
+        // TODO: not yet supported
+        return;
+    }
     const provider = getChainProvider(chainId);
 
     if (addresses.length > 0) {
