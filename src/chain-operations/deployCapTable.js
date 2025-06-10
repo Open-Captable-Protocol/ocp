@@ -7,6 +7,8 @@ import getProvider from "./getProvider.js";
 import Factory, { FACTORY_VERSION } from "../db/objects/Factory.js";
 import assert from "node:assert";
 import { decodeError } from "../utils/errorDecoder";
+import { CANTON_CHAIN_ID } from "./canton/constants.js";
+import { deployCapTableCanton } from "./canton/deployCapTableCanton.js";
 
 setupEnv();
 
@@ -21,6 +23,10 @@ export const getWallet = async (chainId) => {
 };
 
 async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
+    if (chainId === CANTON_CHAIN_ID) {
+        return deployCapTableCanton(issuerId, initial_shares_authorized, chainId);
+    }
+
     // Get provider for specified chain
     const wallet = await getWallet(chainId);
     console.log("🗽 | Wallet address: ", wallet.address);

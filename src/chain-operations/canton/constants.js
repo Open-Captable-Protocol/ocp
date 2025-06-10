@@ -1,0 +1,1 @@
+export const CANTON_CHAIN_ID = 6797110116111110;
