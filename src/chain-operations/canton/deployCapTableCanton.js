@@ -10,7 +10,6 @@ export async function deployCapTableCanton(issuerId, initial_shares_authorized, 
 
     // Pre-req: Create FairmintAdminService [One time]
     const { contractId, updateId } = await client.createFairmintAdminService();
-    console.log(`Created FairmintAdminService with contract ID: ${contractId}`);
 
     return {
         address: contractId,
