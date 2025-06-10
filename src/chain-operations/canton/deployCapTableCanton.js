@@ -1,5 +1,5 @@
-import { TransferAgentConfig } from "../../../../canton/scripts/src/helpers/config";
-import { FairmintClient } from "../../../../canton/scripts/src/helpers/fairmintClient";
+import { TransferAgentConfig } from "./lib/fairmint-canton/scripts/src/helpers/config";
+import { FairmintClient } from "./lib/fairmint-canton/scripts/src/helpers/fairmintClient";
 
 // eslint-disable-next-line no-unused-vars
 export async function deployCapTableCanton(issuerId, initial_shares_authorized, chainId) {
