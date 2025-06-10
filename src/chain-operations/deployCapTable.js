@@ -22,9 +22,9 @@ export const getWallet = async (chainId) => {
     return new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
 };
 
-async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
+async function deployCapTable(issuerId, initial_shares_authorized, chainId, issuer) {
     if (isCantonChainId(chainId)) {
-        return deployCapTableCanton(issuerId, initial_shares_authorized, chainId);
+        return deployCapTableCanton(issuerId, initial_shares_authorized, chainId, issuer);
     }
 
     // Get provider for specified chain
