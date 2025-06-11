@@ -142,10 +142,28 @@ transactions.post("/transfer/stock", async (req, res) => {
     const { issuerId, data } = req.body;
 
     try {
-        await readIssuerById(issuerId);
+        const issuer = await readIssuerById(issuerId);
+        const transferor = await readStakeholderById(data.transferorId);
+        const transferee = await readStakeholderById(data.transfereeId);
 
         // @dev: Transfer Validation is not possible through schema because it validates that the transfer has occurred,at this stage it has not yet.
-        await convertAndCreateTransferStockOnchain(contract, data);
+        const { transferorUpdatedStockPositionContractId, transfereeStockPositionContractId } = await convertAndCreateTransferStockOnchain(contract, {
+            ...data,
+            chain_id: issuer.chain_id,
+            transferorPartyId: transferor.party_id,
+            transferorStockPositionContractId: transferor.stock_position_contract_id,
+            transfereePartyId: transferee.party_id,
+        });
+
+        if (transferorUpdatedStockPositionContractId) {
+            await Stakeholder.findByIdAndUpdate(transferor._id, { stock_position_contract_id: transferorUpdatedStockPositionContractId });
+            console.log("✅ | Transferor updated offchain with new Stock Position Contract ID", transferorUpdatedStockPositionContractId);
+        }
+
+        if (transfereeStockPositionContractId) {
+            await Stakeholder.findByIdAndUpdate(transferee._id, { stock_position_contract_id: transfereeStockPositionContractId });
+            console.log("✅ | Transferee updated offchain with new Stock Position Contract ID", transfereeStockPositionContractId);
+        }
 
         res.status(200).send("success");
     } catch (error) {
