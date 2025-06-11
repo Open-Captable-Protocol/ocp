@@ -25,6 +25,7 @@ const StockClassSchema = new mongoose.Schema(
         },
         is_onchain_synced: { type: Boolean, default: false },
         tx_hash: { type: String, default: null },
+        contract_id: { type: String, default: null },
     },
     { timestamps: true }
 );
