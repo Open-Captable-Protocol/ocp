@@ -26,7 +26,7 @@ export async function deployCapTableCanton(issuerId, initial_shares_authorized, 
     );
 
     return {
-        address: issuerPartyId,
+        partyId: issuerPartyId,
         // deployId: updateId, // TODO
         issuerContractId,
     };
