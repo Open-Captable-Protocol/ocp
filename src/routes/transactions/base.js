@@ -44,6 +44,7 @@ import {
     readStockPlanById,
     readIssuerById,
     readStockClassById,
+    readStakeholderById,
     readConvertibleIssuanceBySecurityId,
     readStockIssuanceBySecurityId,
     readEquityCompensationIssuanceBySecurityId,
@@ -56,6 +57,7 @@ import get from "lodash/get";
 import { convertAndCreateEquityCompensationExerciseOnchain } from "../../controllers/transactions/exerciseController";
 import { adjustStockPlanPoolOnchain } from "../../controllers/stockPlanController";
 import StockIssuance from "../../db/objects/transactions/issuance/StockIssuance.js";
+import StockClass from "../../db/objects/StockClass.js";
 import ConvertibleIssuance from "../../db/objects/transactions/issuance/ConvertibleIssuance.js";
 import EquityCompensationIssuance from "../../db/objects/transactions/issuance/EquityCompensationIssuance.js";
 import WarrantIssuance from "../../db/objects/transactions/issuance/WarrantIssuance.js";
@@ -63,6 +65,7 @@ import StockClassAuthorizedSharesAdjustment from "../../db/objects/transactions/
 import StockPlanPoolAdjustment from "../../db/objects/transactions/adjustment/StockPlanPoolAdjustment.js";
 import { EquityCompensationExercise } from "../../db/objects/transactions/exercise";
 import { StockCancellation } from "../../db/objects/transactions/cancellation";
+import Stakeholder from "../../db/objects/Stakeholder";
 
 const transactions = Router();
 
@@ -71,7 +74,7 @@ transactions.post("/issuance/stock", async (req, res) => {
     const { issuerId, data } = req.body;
 
     try {
-        await readIssuerById(issuerId);
+        const issuer = await readIssuerById(issuerId);
         const incomingStockIssuance = {
             id: uuid(), // for OCF Validation
             security_id: uuid(), // for OCF Validation
@@ -90,8 +93,14 @@ transactions.post("/issuance/stock", async (req, res) => {
         }
 
         const stockIssuance = await createStockIssuance({ ...incomingStockIssuance, issuer: issuerId });
+        const stockClass = await readStockClassById(incomingStockIssuance.stock_class_id);
+        const stakeholder = await readStakeholderById(incomingStockIssuance.stakeholder_id);
 
-        const receipt = await convertAndCreateIssuanceStockOnchain(contract, {
+        const {
+            hash: tx_hash,
+            stakeholderStockPositionContractId,
+            updatedStockClassContractId,
+        } = await convertAndCreateIssuanceStockOnchain(contract, {
             security_id: incomingStockIssuance.security_id,
             stock_class_id: incomingStockIssuance.stock_class_id,
             stakeholder_id: incomingStockIssuance.stakeholder_id,
@@ -100,12 +109,28 @@ transactions.post("/issuance/stock", async (req, res) => {
             stock_legend_ids_mapping: incomingStockIssuance.stock_legend_ids_mapping,
             custom_id: incomingStockIssuance.custom_id || "",
             id: incomingStockIssuance.id,
+
+            chain_id: issuer.chain_id,
+            stockClassContractId: stockClass.contract_id,
+            issuerPartyId: issuer.party_id,
+            stakeholderPartyId: stakeholder.party_id,
         });
 
         // Update the stock issuance with tx_hash
-        await StockIssuance.findByIdAndUpdate(stockIssuance._id, { tx_hash: receipt.hash });
+        await StockIssuance.findByIdAndUpdate(stockIssuance._id, { tx_hash });
 
-        res.status(200).send({ stockIssuance: { ...stockIssuance.toObject(), tx_hash: receipt.hash } });
+        // TODO save stakeholderStockPositionContractId
+        if (stakeholderStockPositionContractId) {
+            await Stakeholder.findByIdAndUpdate(stakeholder._id, { stock_position_contract_id: stakeholderStockPositionContractId });
+            console.log("✅ | Stakeholder updated offchain with new Stock Position Contract ID", stakeholderStockPositionContractId);
+        }
+
+        if (updatedStockClassContractId) {
+            await StockClass.findByIdAndUpdate(stockClass._id, { contract_id: updatedStockClassContractId });
+            console.log("✅ | Stock Class updated offchain with new Contract ID", updatedStockClassContractId);
+        }
+
+        res.status(200).send({ stockIssuance: { ...stockIssuance.toObject(), tx_hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
