@@ -13,6 +13,7 @@ import { readIssuerById, readStakeholderById, getAllStakeholdersByIssuerId } fro
 import validateInputAgainstOCF from "../../utils/validateInputAgainstSchema.js";
 import Stakeholder from "../../db/objects/Stakeholder.js";
 import { isCantonChainId } from "../../chain-operations/canton/constants.js";
+import { convertAndReflectStakeholderOnchainCanton } from "../../chain-operations/canton/stakeholderControllerCanton.js";
 
 const router = Router();
 
@@ -118,7 +119,7 @@ router.post("/create", async (req, res) => {
             ({ hash: tx_hash } = await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id));
             await Stakeholder.findByIdAndUpdate(stakeholder._id, { tx_hash });
         } else {
-            // TODO: implement canton
+            tx_hash = await convertAndReflectStakeholderOnchainCanton(contract, incomingStakeholderForDB.id);
         }
 
         console.log("✅ | Stakeholder created offchain:", stakeholder);
