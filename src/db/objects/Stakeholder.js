@@ -20,6 +20,7 @@ const StakeholderSchema = new mongoose.Schema(
         addresses: [{}],
         tax_ids: [{}],
         tx_hash: { type: String, default: null },
+        party_id: { type: String, default: null },
     },
     { timestamps: true }
 );

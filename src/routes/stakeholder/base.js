@@ -112,15 +112,16 @@ router.post("/create", async (req, res) => {
 
         // Save onchain
         let tx_hash;
+        let partyId;
         if (!isCantonChainId(issuer.chain_id)) {
             ({ hash: tx_hash } = await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id));
             await Stakeholder.findByIdAndUpdate(stakeholder._id, { tx_hash });
         } else {
-            tx_hash = await convertAndReflectStakeholderOnchainCanton(contract, incomingStakeholderForDB.id);
+            ({ updateId: tx_hash, partyId } = await convertAndReflectStakeholderOnchainCanton(incomingStakeholderForDB.id));
         }
 
         // Save offchain
-        const stakeholder = await createStakeholder(incomingStakeholderForDB);
+        const stakeholder = await createStakeholder({ ...incomingStakeholderForDB, party_id: partyId });
 
         console.log("✅ | Stakeholder created offchain:", stakeholder);
 

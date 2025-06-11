@@ -1,5 +1,11 @@
+import { client } from "./clientConfig";
+
 // eslint-disable-next-line no-unused-vars
-export const convertAndReflectStakeholderOnchainCanton = async (contract, stakeholderId) => {
+export const convertAndReflectStakeholderOnchainCanton = async (stakeholderId) => {
     console.log("🗽 | Converting and reflecting stakeholder onchain Canton...");
-    // TODO
+
+    // Create new party for stakeholder [Once per stakeholder]
+    const { partyId } = await client.createParty(stakeholderId);
+
+    return { partyId };
 };
