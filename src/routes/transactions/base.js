@@ -94,7 +94,13 @@ transactions.post("/issuance/stock", async (req, res) => {
 
         const stockIssuance = await createStockIssuance({ ...incomingStockIssuance, issuer: issuerId });
         const stockClass = await readStockClassById(incomingStockIssuance.stock_class_id);
+        if (!stockClass) {
+            return res.status(404).send({ message: "Stock class not found" });
+        }
         const stakeholder = await readStakeholderById(incomingStockIssuance.stakeholder_id);
+        if (!stakeholder) {
+            return res.status(404).send({ message: "Stakeholder not found" });
+        }
 
         const {
             hash: tx_hash,
