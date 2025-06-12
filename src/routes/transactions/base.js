@@ -117,14 +117,13 @@ transactions.post("/issuance/stock", async (req, res) => {
         });
 
         // Update the stock issuance with tx_hash
-        await StockIssuance.findByIdAndUpdate(stockIssuance._id, { tx_hash });
+        await StockIssuance.findByIdAndUpdate(stockIssuance._id, { tx_hash: tx_hash ?? null });
 
-        // TODO save stakeholderStockPositionContractId
+        // Canton only updates:
         if (stakeholderStockPositionContractId) {
             await Stakeholder.findByIdAndUpdate(stakeholder._id, { stock_position_contract_id: stakeholderStockPositionContractId });
             console.log("✅ | Stakeholder updated offchain with new Stock Position Contract ID", stakeholderStockPositionContractId);
         }
-
         if (updatedStockClassContractId) {
             await StockClass.findByIdAndUpdate(stockClass._id, { contract_id: updatedStockClassContractId });
             console.log("✅ | Stock Class updated offchain with new Contract ID", updatedStockClassContractId);
