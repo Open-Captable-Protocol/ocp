@@ -141,6 +141,8 @@ jobs:
                       if [ \$? -eq 0 ]; then
                           handle_container_switch "\$CONTAINER_NAME" "${DEPLOY_TIME}" "dev"
                       else
+                          echo "Container failed health check. Printing logs:"
+                          docker logs \$CONTAINER_NAME || true
                           handle_failed_deployment "\$CONTAINER_NAME" "${DEPLOY_TIME}" "dev"
                       fi
                   "
