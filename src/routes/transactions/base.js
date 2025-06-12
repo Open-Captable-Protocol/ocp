@@ -94,11 +94,11 @@ transactions.post("/issuance/stock", async (req, res) => {
 
         const stockIssuance = await createStockIssuance({ ...incomingStockIssuance, issuer: issuerId });
         const stockClass = await readStockClassById(incomingStockIssuance.stock_class_id);
-        if (!stockClass) {
+        if (!stockClass?._id) {
             return res.status(404).send({ message: "Stock class not found" });
         }
         const stakeholder = await readStakeholderById(incomingStockIssuance.stakeholder_id);
-        if (!stakeholder) {
+        if (!stakeholder?._id) {
             return res.status(404).send({ message: "Stakeholder not found" });
         }
 
@@ -135,7 +135,7 @@ transactions.post("/issuance/stock", async (req, res) => {
             console.log("✅ | Stock Class updated offchain with new Contract ID", updatedStockClassContractId);
         }
 
-        res.status(200).send({ stockIssuance: { ...stockIssuance.toObject(), tx_hash } });
+        res.status(200).send({ stockIssuance: { ...stockIssuance.toObject(), tx_hash: tx_hash ?? null } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
