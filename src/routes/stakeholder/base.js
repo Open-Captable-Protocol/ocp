@@ -110,6 +110,10 @@ router.post("/create", async (req, res) => {
             });
         }
 
+        // Save offchain
+        const stakeholder = await createStakeholder({ ...incomingStakeholderForDB });
+        console.log("✅ | Stakeholder created offchain:", stakeholder);
+
         // Save onchain
         let tx_hash;
         let partyId = null;
@@ -120,12 +124,12 @@ router.post("/create", async (req, res) => {
             ({ updateId: tx_hash, partyId } = await convertAndReflectStakeholderOnchainCanton(incomingStakeholderForDB.id));
         }
 
-        // Save offchain
-        const stakeholder = await createStakeholder({ ...incomingStakeholderForDB, party_id: partyId });
+        if (partyId) {
+            await Stakeholder.findByIdAndUpdate(stakeholder._id, { party_id: partyId });
+            console.log("✅ | Stakeholder updated offchain with new partyId:", partyId);
+        }
 
-        console.log("✅ | Stakeholder created offchain:", stakeholder);
-
-        res.status(200).send({ stakeholder: { ...stakeholder.toObject(), tx_hash } });
+        res.status(200).send({ stakeholder: { ...stakeholder.toObject(), tx_hash, partyId } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);
