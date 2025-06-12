@@ -137,7 +137,10 @@ jobs:
                       ocp-dev:${DEPLOY_TIME} && \
 
                       # Wait for container to be healthy
-                      wait_for_health "\$CONTAINER_NAME" && \
+                      echo "Printing logs before health check:"
+                      docker logs \$CONTAINER_NAME || true
+
+                      wait_for_health "\$CONTAINER_NAME"
                       if [ \$? -eq 0 ]; then
                           handle_container_switch "\$CONTAINER_NAME" "${DEPLOY_TIME}" "dev"
                       else
