@@ -143,7 +143,13 @@ transactions.post("/transfer/stock", async (req, res) => {
     try {
         const issuer = await readIssuerById(issuerId);
         const transferor = await readStakeholderById(data.transferorId);
+        if (!transferor) {
+            return res.status(404).send({ message: "Transferor not found" });
+        }
         const transferee = await readStakeholderById(data.transfereeId);
+        if (!transferee) {
+            return res.status(404).send({ message: "Transferee not found" });
+        }
 
         // @dev: Transfer Validation is not possible through schema because it validates that the transfer has occurred,at this stage it has not yet.
         const { transferorUpdatedStockPositionContractId, transfereeStockPositionContractId } = await convertAndCreateTransferStockOnchain(contract, {
@@ -154,11 +160,11 @@ transactions.post("/transfer/stock", async (req, res) => {
             transfereePartyId: transferee.party_id,
         });
 
+        // Canton only updates:
         if (transferorUpdatedStockPositionContractId) {
             await Stakeholder.findByIdAndUpdate(transferor._id, { stock_position_contract_id: transferorUpdatedStockPositionContractId });
             console.log("✅ | Transferor updated offchain with new Stock Position Contract ID", transferorUpdatedStockPositionContractId);
         }
-
         if (transfereeStockPositionContractId) {
             await Stakeholder.findByIdAndUpdate(transferee._id, { stock_position_contract_id: transfereeStockPositionContractId });
             console.log("✅ | Transferee updated offchain with new Stock Position Contract ID", transfereeStockPositionContractId);
