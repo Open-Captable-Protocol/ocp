@@ -1,8 +1,14 @@
 import { convertUUIDToBytes16 } from "../../utils/convertUUID.js";
 import { toScaledBigNumber } from "../../utils/convertToFixedPointDecimals.js";
 import { decodeError } from "../../utils/errorDecoder.js";
+import { isCantonChainId } from "../../chain-operations/canton/constants.js";
+import { convertAndCreateTransferStockOnchainCanton } from "../../chain-operations/canton/transferControllerCanton.js";
 
 export const convertAndCreateTransferStockOnchain = async (contract, transfer) => {
+    if (isCantonChainId(transfer.chain_id)) {
+        return convertAndCreateTransferStockOnchainCanton(contract, transfer);
+    }
+
     try {
         const { quantity, transferorId, transfereeId, stockClassId, sharePrice } = transfer;
 

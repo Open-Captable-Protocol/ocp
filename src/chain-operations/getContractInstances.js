@@ -11,10 +11,16 @@ import WARRANT_FACET from "../../chain/out/WarrantFacet.sol/WarrantFacet.json";
 import EQUITY_COMPENSATION_FACET from "../../chain/out/EquityCompensationFacet.sol/EquityCompensationFacet.json";
 import STOCK_PLAN_FACET from "../../chain/out/StockPlanFacet.sol/StockPlanFacet.json";
 import STAKEHOLDER_NFT_FACET from "../../chain/out/StakeholderNFTFacet.sol/StakeholderNFTFacet.json";
+import { isCantonChainId } from "./canton/constants.js";
 
 setupEnv();
 
 export const getContractInstance = (address, chainId) => {
+    if (isCantonChainId(chainId)) {
+        console.log(`Canton chain ${chainId} contract instance is not supported yet`);
+        return null;
+    }
+
     const WALLET_PRIVATE_KEY = process.env.PRIVATE_KEY;
     // Create a combined ABI from all facets
     const combinedABI = [

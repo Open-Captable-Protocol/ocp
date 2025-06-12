@@ -7,6 +7,7 @@ import { handleStockPlan, txMapper, txTypes } from "../chain-operations/transact
 import { handleStakeholder, handleStockClass } from "../chain-operations/transactionHandlers";
 import Issuer from "../db/objects/Issuer";
 import { TxCreated, StakeholderCreated, StockClassCreated, StockPlanCreated } from "../chain-operations/topics";
+import { isCantonChainId } from "../chain-operations/canton/constants";
 
 const TOPICS = { TxCreated, StakeholderCreated, StockClassCreated, StockPlanCreated };
 
@@ -27,6 +28,11 @@ const getChainProvider = (chainId: string): ethers.Provider => {
 
 // Function to add new addresses to watch for a specific chain
 export const addAddressesToWatch = async (chainId: string, addresses: string | string[]) => {
+    if (isCantonChainId(chainId)) {
+        console.log(`Canton chain ${chainId} address watching is not supported yet`);
+        return;
+    }
+
     const addressArray = Array.isArray(addresses) ? addresses : [addresses];
 
     if (!watchedAddressesByChain.has(chainId)) {
@@ -42,6 +48,10 @@ export const addAddressesToWatch = async (chainId: string, addresses: string | s
 
 // Function to setup a single chain listener
 const setupChainListener = async (chainId: string, addresses: string[]) => {
+    if (isCantonChainId(chainId)) {
+        console.log(`Canton chain ${chainId} chain listener is not supported yet`);
+        return;
+    }
     const provider = getChainProvider(chainId);
 
     if (addresses.length > 0) {

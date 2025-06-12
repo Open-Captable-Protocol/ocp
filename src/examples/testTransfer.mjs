@@ -2,6 +2,7 @@ import { issuer, stakeholder1, stakeholder2, stockClass, stockIssuance, stockTra
 import axios from "axios";
 import sleep from "../utils/sleep.js";
 import { v4 as uuid } from "uuid";
+import { CANTON_DEVNET_CHAIN_ID } from "../chain-operations/canton/constants.js";
 
 const main = async () => {
     try {
@@ -14,7 +15,7 @@ const main = async () => {
         // 1. Create issuer
         console.log("⏳ Creating issuer...");
         issuer.id = issuerId;
-        issuer.chain_id = 31337;
+        issuer.chain_id = CANTON_DEVNET_CHAIN_ID;
         const issuerResponse = await axios.post("http://localhost:8080/issuer/create", issuer);
         console.log("✅ Issuer created:", issuerResponse.data);
 

@@ -6,6 +6,7 @@ import { createStockClass } from "../db/operations/create.js";
 import { readIssuerById, readStockClassById } from "../db/operations/read.js";
 import validateInputAgainstOCF from "../utils/validateInputAgainstSchema.js";
 import Stockclass from "../db/objects/StockClass";
+import Issuer from "../db/objects/Issuer";
 
 const stockClass = Router();
 
@@ -45,6 +46,9 @@ stockClass.post("/create", async (req, res) => {
 
     try {
         const issuer = await readIssuerById(issuerId);
+        if (!issuer) {
+            return res.status(404).send({ message: "Issuer not found" });
+        }
 
         // OCF doesn't allow extra fields in their validation
         const incomingStockClassToValidate = {
@@ -68,12 +72,20 @@ stockClass.post("/create", async (req, res) => {
         const stockClass = await createStockClass(incomingStockClassForDB);
 
         // Save Onchain
-        const receipt = await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB);
-        await Stockclass.findByIdAndUpdate(stockClass._id, { tx_hash: receipt.hash });
-
+        const {
+            hash: tx_hash,
+            stockClassContractId,
+            updatedIssuerContractId,
+        } = await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB, issuer);
+        await Stockclass.findByIdAndUpdate(stockClass._id, { tx_hash, contract_id: stockClassContractId ?? null });
         console.log("✅ | Stock Class created offchain:", stockClass);
 
-        res.status(200).send({ stockClass: { ...stockClass.toObject(), tx_hash: receipt.hash } });
+        if (updatedIssuerContractId) {
+            await Issuer.findByIdAndUpdate(issuerId, { deployed_to: updatedIssuerContractId });
+            console.log("✅ | Issuer updated offchain:", issuer);
+        }
+
+        res.status(200).send({ stockClass: { ...stockClass.toObject(), tx_hash: tx_hash ?? null } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);

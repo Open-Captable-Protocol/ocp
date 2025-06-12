@@ -13,3 +13,6 @@
 [submodule "chain/lib/diamond-3-hardhat"]
 	path = chain/lib/diamond-3-hardhat
 	url = https://github.com/mudgen/diamond-3-hardhat
+[submodule "fairmint-canton"]
+	path = src/chain-operations/canton/lib/fairmint-canton
+	url = https://github.com/Fairmint/canton

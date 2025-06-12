@@ -23,6 +23,7 @@ const IssuerSchema = new mongoose.Schema(
         chain_id: { type: Number, required: true },
         tx_hash: { type: String, default: null },
         factory: { ref: "Factory", type: String },
+        party_id: { type: String, default: null },
     },
     { timestamps: true }
 );

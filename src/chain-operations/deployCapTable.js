@@ -7,6 +7,8 @@ import getProvider from "./getProvider.js";
 import Factory, { FACTORY_VERSION } from "../db/objects/Factory.js";
 import assert from "node:assert";
 import { decodeError } from "../utils/errorDecoder";
+import { isCantonChainId } from "./canton/constants.js";
+import { deployCapTableCanton } from "./canton/deployCapTableCanton.js";
 
 setupEnv();
 
@@ -20,7 +22,11 @@ export const getWallet = async (chainId) => {
     return new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
 };
 
-async function deployCapTable(issuerId, initial_shares_authorized, chainId) {
+async function deployCapTable(issuerId, initial_shares_authorized, chainId, issuer) {
+    if (isCantonChainId(chainId)) {
+        return deployCapTableCanton(issuerId, initial_shares_authorized, chainId, issuer);
+    }
+
     // Get provider for specified chain
     const wallet = await getWallet(chainId);
     console.log("🗽 | Wallet address: ", wallet.address);
