@@ -7,5 +7,5 @@ export const convertAndReflectStakeholderOnchainCanton = async (stakeholderId) =
     // Create new party for stakeholder [Once per stakeholder]
     const { partyId } = await client.createParty(stakeholderId);
 
-    return { partyId };
+    return { partyId, updateId: null /* TODO */ };
 };

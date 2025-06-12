@@ -46,6 +46,9 @@ stockClass.post("/create", async (req, res) => {
 
     try {
         const issuer = await readIssuerById(issuerId);
+        if (!issuer) {
+            return res.status(404).send({ message: "Issuer not found" });
+        }
 
         // OCF doesn't allow extra fields in their validation
         const incomingStockClassToValidate = {
@@ -74,7 +77,7 @@ stockClass.post("/create", async (req, res) => {
             stockClassContractId,
             updatedIssuerContractId,
         } = await convertAndReflectStockClassOnchain(contract, incomingStockClassForDB, issuer);
-        await Stockclass.findByIdAndUpdate(stockClass._id, { tx_hash, contract_id: stockClassContractId });
+        await Stockclass.findByIdAndUpdate(stockClass._id, { tx_hash, contract_id: stockClassContractId ?? null });
         console.log("✅ | Stock Class created offchain:", stockClass);
 
         if (updatedIssuerContractId) {
@@ -82,7 +85,7 @@ stockClass.post("/create", async (req, res) => {
             console.log("✅ | Issuer updated offchain:", issuer);
         }
 
-        res.status(200).send({ stockClass: { ...stockClass.toObject(), tx_hash } });
+        res.status(200).send({ stockClass: { ...stockClass.toObject(), tx_hash: tx_hash ?? null } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);

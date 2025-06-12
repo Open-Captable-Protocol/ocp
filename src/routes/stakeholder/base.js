@@ -112,7 +112,7 @@ router.post("/create", async (req, res) => {
 
         // Save onchain
         let tx_hash;
-        let partyId;
+        let partyId = null;
         if (!isCantonChainId(issuer.chain_id)) {
             ({ hash: tx_hash } = await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id));
             await Stakeholder.findByIdAndUpdate(stakeholder._id, { tx_hash });
