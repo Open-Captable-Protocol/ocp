@@ -1,4 +1,4 @@
-import { CANTON_DEVNET_CHAIN_ID } from "../chain-operations/canton/constants.js";
+import { CANTON_DEVNET_CHAIN_ID, CANTON_MAINNET_CHAIN_ID } from "../chain-operations/canton/constants.js";
 
 // Chain configuration for supported networks
 export const SUPPORTED_CHAINS = {
@@ -23,6 +23,10 @@ export const SUPPORTED_CHAINS = {
     [CANTON_DEVNET_CHAIN_ID]: {
         // Canton
         name: "Canton",
+    },
+    [CANTON_MAINNET_CHAIN_ID]: {
+        // Canton
+        name: "Canton Mainnet",
     },
 };
 

@@ -228,14 +228,25 @@ export class TransferAgentClient {
                 userId: this.config.fairmintUserId,
                 rights: [
                     {
-                        type: "CanActAs",
-                        party: partyId
+                        kind: {
+                            "CanActAs": {
+                                value: {
+                                    party: partyId
+                                }
+                            }
+                        },
                     },
                     {
-                        type: "CanReadAs",
-                        party: partyId
+                        kind: {
+                            "CanReadAs": {
+                                value: {
+                                    party: partyId
+                                }
+                            }
+                        },
                     }
-                ]
+                ],
+                identityProviderId: ""
             },
             headers
         );
