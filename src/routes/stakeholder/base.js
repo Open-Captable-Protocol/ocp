@@ -12,8 +12,6 @@ import { createStakeholder } from "../../db/operations/create.js";
 import { readIssuerById, readStakeholderById, getAllStakeholdersByIssuerId } from "../../db/operations/read.js";
 import validateInputAgainstOCF from "../../utils/validateInputAgainstSchema.js";
 import Stakeholder from "../../db/objects/Stakeholder.js";
-import { isCantonChainId } from "../../chain-operations/canton/constants.js";
-import { convertAndReflectStakeholderOnchainCanton } from "../../chain-operations/canton/stakeholderControllerCanton.js";
 
 const router = Router();
 
@@ -111,25 +109,15 @@ router.post("/create", async (req, res) => {
         }
 
         // Save offchain
-        const stakeholder = await createStakeholder({ ...incomingStakeholderForDB });
-        console.log("✅ | Stakeholder created offchain:", stakeholder);
+        const stakeholder = await createStakeholder(incomingStakeholderForDB);
 
         // Save onchain
-        let tx_hash;
-        let partyId = null;
-        if (!isCantonChainId(issuer.chain_id)) {
-            ({ hash: tx_hash } = await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id));
-            await Stakeholder.findByIdAndUpdate(stakeholder._id, { tx_hash });
-        } else {
-            ({ updateId: tx_hash, partyId } = await convertAndReflectStakeholderOnchainCanton(incomingStakeholderForDB.id));
-        }
+        const receipt = await convertAndReflectStakeholderOnchain(contract, incomingStakeholderForDB.id);
+        await Stakeholder.findByIdAndUpdate(stakeholder._id, { tx_hash: receipt.hash });
 
-        if (partyId) {
-            await Stakeholder.findByIdAndUpdate(stakeholder._id, { party_id: partyId });
-            console.log("✅ | Stakeholder updated offchain with new partyId:", partyId);
-        }
+        console.log("✅ | Stakeholder created offchain:", stakeholder);
 
-        res.status(200).send({ stakeholder: { ...stakeholder.toObject(), tx_hash, partyId } });
+        res.status(200).send({ stakeholder: { ...stakeholder.toObject(), tx_hash: receipt.hash } });
     } catch (error) {
         console.error(error);
         res.status(500).send(`${error}`);

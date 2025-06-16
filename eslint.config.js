@@ -7,7 +7,7 @@ import importPlugin from "eslint-plugin-import";
 export default [
     {
         files: ["**/*.{js,ts,mjs,mts}"],
-        ignores: ["node_modules/**", "eslint.config.js", "src/chain-operations/canton/lib/**"],
+        ignores: ["node_modules/**", "eslint.config.js"],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: "module",
@@ -39,7 +39,7 @@ export default [
     },
     {
         files: ["**/*.ts"],
-        ignores: ["node_modules/**", "src/chain-operations/canton/lib/**"],
+        ignores: ["node_modules/**"],
         languageOptions: {
             parser: tsparser,
             parserOptions: {

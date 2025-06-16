@@ -1,30 +1,12 @@
 import { convertUUIDToBytes16 } from "../../utils/convertUUID.js";
 import { toScaledBigNumber } from "../../utils/convertToFixedPointDecimals.js";
 import { decodeError } from "../../utils/errorDecoder.js";
-import { isCantonChainId } from "../../chain-operations/canton/constants.js";
-import { convertAndCreateIssuanceStockOnchainCanton } from "../../chain-operations/issuanceControllerCanton.js";
 
 // Stock Issuance
 export const convertAndCreateIssuanceStockOnchain = async (
     contract,
-    {
-        id,
-        chain_id,
-        security_id,
-        stock_class_id,
-        stakeholder_id,
-        quantity,
-        share_price,
-        custom_id = "",
-        stockClassContractId,
-        stakeholderPartyId,
-        issuerPartyId,
-    }
+    { id, security_id, stock_class_id, stakeholder_id, quantity, share_price, custom_id = "" }
 ) => {
-    if (isCantonChainId(chain_id)) {
-        return convertAndCreateIssuanceStockOnchainCanton({ stockClassContractId, stakeholderPartyId, quantity, issuerPartyId });
-    }
-
     try {
         const tx = await contract.issueStock({
             id: convertUUIDToBytes16(id),

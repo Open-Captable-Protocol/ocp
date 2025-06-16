@@ -55,12 +55,6 @@ jobs:
                   SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
                   DATABASE_URL: ${{ secrets.DATABASE_URL }}
                   RPC_URL: ${{ secrets.RPC_URL }}
-                  FAIRMINT_MAINNET_USER_ID: ${{ secrets.FAIRMINT_MAINNET_USER_ID }}
-                  FAIRMINT_MAINNET_PARTY_ID: ${{ secrets.FAIRMINT_MAINNET_PARTY_ID }}
-                  TRANSFER_AGENT_MAINNET_CLIENT_SECRET: ${{ secrets.TRANSFER_AGENT_MAINNET_CLIENT_SECRET }}
-                  FAIRMINT_DEVNET_USER_ID: ${{ secrets.FAIRMINT_DEVNET_USER_ID }}
-                  FAIRMINT_DEVNET_PARTY_ID: ${{ secrets.FAIRMINT_DEVNET_PARTY_ID }}
-                  TRANSFER_AGENT_DEVNET_CLIENT_SECRET: ${{ secrets.TRANSFER_AGENT_DEVNET_CLIENT_SECRET }}
 
               run: |
                   # Generate timestamp for deployment
@@ -126,12 +120,6 @@ jobs:
                       -e PORT=8080 \
                       -e PRIVATE_KEY='${PRIVATE_KEY}' \
                       -e ETHERSCAN_L2_API_KEY='${ETHERSCAN_L2_API_KEY}' \
-                      -e FAIRMINT_MAINNET_USER_ID='${FAIRMINT_MAINNET_USER_ID}' \
-                      -e FAIRMINT_MAINNET_PARTY_ID='${FAIRMINT_MAINNET_PARTY_ID}' \
-                      -e TRANSFER_AGENT_MAINNET_CLIENT_SECRET='${TRANSFER_AGENT_MAINNET_CLIENT_SECRET}' \
-                      -e FAIRMINT_DEVNET_USER_ID='${FAIRMINT_DEVNET_USER_ID}' \
-                      -e FAIRMINT_DEVNET_PARTY_ID='${FAIRMINT_DEVNET_PARTY_ID}' \
-                      -e TRANSFER_AGENT_DEVNET_CLIENT_SECRET='${TRANSFER_AGENT_DEVNET_CLIENT_SECRET}' \
                       -v '/home/ubuntu/global-bundle.pem:/global-bundle.pem' \
                       ocp-prod:${DEPLOY_TIME} && \
 

@@ -1,12 +1,7 @@
 import { ethers } from "ethers";
 import { getChainConfig } from "../utils/chains.js";
-import { isCantonChainId } from "./canton/constants.js";
 
 function getProvider(chainId) {
-    if (isCantonChainId(chainId)) {
-        throw new Error("Canton is not supported yet");
-    }
-
     const chainConfig = getChainConfig(chainId);
     if (!chainConfig) {
         throw new Error(`Unsupported chain ID: ${chainId}`);

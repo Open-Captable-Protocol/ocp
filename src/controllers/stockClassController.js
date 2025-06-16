@@ -1,15 +1,9 @@
 import { toScaledBigNumber } from "../utils/convertToFixedPointDecimals.js";
 import { convertUUIDToBytes16 } from "../utils/convertUUID.js";
 import { decodeError } from "../utils/errorDecoder.js";
-import { isCantonChainId } from "../chain-operations/canton/constants.js";
-import { convertAndReflectStockClassOnchainCanton } from "../chain-operations/canton/stockClassControllerCanton.js";
 
 /// @dev: controller handles conversion from OCF type to Onchain types and creates the stock class.
-export const convertAndReflectStockClassOnchain = async (contract, stockClass, issuer) => {
-    if (isCantonChainId(issuer.chain_id)) {
-        return convertAndReflectStockClassOnchainCanton(stockClass, issuer);
-    }
-
+export const convertAndReflectStockClassOnchain = async (contract, stockClass) => {
     try {
         const stockClassIdBytes16 = convertUUIDToBytes16(stockClass.id);
         const scaledSharePrice = toScaledBigNumber(stockClass.price_per_share.amount);

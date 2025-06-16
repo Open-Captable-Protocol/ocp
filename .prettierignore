@@ -2,7 +2,6 @@
 /node_modules
 /chain/out
 .history
-src/chain-operations/canton/lib
 
 # Build output
 /dist
@@ -15,4 +14,4 @@ src/chain-operations/canton/lib
 .env*
 
 # Logs
-*.log
+*.log 
