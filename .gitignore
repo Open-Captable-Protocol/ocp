@@ -47,3 +47,4 @@ chain/lib/*
 solana/*
 *.ignore.js
 migration*
+site/

@@ -1,0 +1,34 @@
+site_name: OCP Docs
+site_description: Open Captable Protocol documentation
+site_url: https://docs.opencaptableprotocol.com
+repo_url: https://github.com/open-captable-protocol/ocp
+repo_name: open-captable-protocol/ocp
+edit_uri: edit/main/docs/
+strict: true
+theme:
+    name: material
+    features:
+        - navigation.sections
+        - navigation.instant
+        - navigation.instant.progress
+        - navigation.tabs
+        - navigation.top
+        - content.code.copy
+        - search.suggest
+        - search.highlight
+nav:
+    - Home: index.md
+    - Quickstart: quickstart.md
+    - Concepts: concepts.md
+    - Architecture: architecture.md
+    - Data Model: data-model.md
+    - Encoding: encoding.md
+    - Ethereum: ethereum.md
+    - Solana (coming soon): solana.md
+    - API Reference:
+          - Solidity: api/solidity.md
+          - TypeScript: api/typescript.md
+plugins:
+    - search
+extra_javascript:
+    - assets/umami.js
