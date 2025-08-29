@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 180 70" shape-rendering="crispEdges">
+  <g id="logo">
+    <!-- O -->
+    <polygon points="0,0 10,0 10,50 0,50" />
+    <polygon points="10,0 40,0 40,10 10,10" />
+    <polygon points="40,10 50,10 50,50 40,50" />
+    <polygon points="10,40 40,40 40,50 10,50" />
+    <!-- C -->
+    <polygon points="60,0 70,0 70,50 60,50" />
+    <polygon points="70,0 100,0 100,10 70,10" />
+    <polygon points="70,40 100,40 100,50 70,50" />
+    <!-- P (shifted right for spacing) -->
+    <polygon points="125,0 135,0 135,50 125,50" />
+    <polygon points="135,0 165,0 165,10 135,10" />
+    <polygon points="155,10 165,10 165,30 155,30" />
+    <polygon points="135,20 155,20 155,30 135,30" />
+  </g>
+  <style>
+  @media (prefers-color-scheme: dark) {
+    #logo {
+      fill: #fff;
+    }
+  }
+  @media (prefers-color-scheme: light) {
+    #logo {
+      fill: #000;
+    }
+  }
+  </style>
+</svg>

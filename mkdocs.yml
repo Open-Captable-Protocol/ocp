@@ -1,4 +1,4 @@
-site_name: OCP Docs
+site_name: ocp docs
 site_description: Open Captable Protocol documentation
 site_url: https://docs.opencaptableprotocol.com
 repo_url: https://github.com/open-captable-protocol/ocp
@@ -23,6 +23,8 @@ validation:
         anchors: warn
 theme:
     name: material
+    logo: assets/logo_ocp_dark.svg
+    favicon: assets/favicon.svg
     features:
         - announce.dismiss
         - content.action.edit
@@ -33,10 +35,9 @@ theme:
         - navigation.footer
         - navigation.indexes
         - navigation.sections
-        - navigation.expand
         - navigation.instant
+        - navigation.expand
         - navigation.instant.progress
-        - navigation.tabs
         - navigation.top
         - navigation.path
         - search.highlight
@@ -66,6 +67,7 @@ theme:
               name: Switch to system preference
 plugins:
     - search
+    - markdown-exec
 markdown_extensions:
     - attr_list
     - admonition
@@ -93,6 +95,5 @@ markdown_extensions:
     - pymdownx.tilde
     - toc:
           permalink: "¤"
-    - markdown-exec
 extra_javascript:
     - assets/umami.js

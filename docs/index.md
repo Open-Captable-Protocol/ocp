@@ -1,4 +1,4 @@
-## Open Captable Protocol (OCP)
+# OCP Documentation
 
 OCP is an open protocol for cap table primitives and workflows. This site helps developers and stakeholders understand the protocol and build on it.
 
