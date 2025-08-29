@@ -67,7 +67,6 @@ theme:
               name: Switch to system preference
 plugins:
     - search
-    - markdown-exec
 markdown_extensions:
     - attr_list
     - admonition
