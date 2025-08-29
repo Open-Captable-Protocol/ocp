@@ -3,32 +3,96 @@ site_description: Open Captable Protocol documentation
 site_url: https://docs.opencaptableprotocol.com
 repo_url: https://github.com/open-captable-protocol/ocp
 repo_name: open-captable-protocol/ocp
-edit_uri: edit/main/docs/
+# edit_uri: edit/main/docs/
 strict: true
+nav:
+    - Home:
+          - index.md
+          - Quickstart: quickstart.md
+          - Concepts: concepts.md
+          - Architecture: architecture.md
+          - Data Model: data-model.md
+          - Encoding: encoding.md
+          - Ethereum: ethereum.md
+          - Solana (coming soon): solana.md
+          - API Reference:
+                - Solidity: api/solidity.md
+                - TypeScript: api/typescript.md
+validation:
+    links:
+        anchors: warn
 theme:
     name: material
     features:
+        - announce.dismiss
+        - content.action.edit
+        - content.action.view
+        - content.code.annotate
+        - content.code.copy
+        - content.tooltips
+        - navigation.footer
+        - navigation.indexes
         - navigation.sections
+        - navigation.expand
         - navigation.instant
         - navigation.instant.progress
         - navigation.tabs
         - navigation.top
-        - content.code.copy
-        - search.suggest
+        - navigation.path
         - search.highlight
-nav:
-    - Home: index.md
-    - Quickstart: quickstart.md
-    - Concepts: concepts.md
-    - Architecture: architecture.md
-    - Data Model: data-model.md
-    - Encoding: encoding.md
-    - Ethereum: ethereum.md
-    - Solana (coming soon): solana.md
-    - API Reference:
-          - Solidity: api/solidity.md
-          - TypeScript: api/typescript.md
+        - search.suggest
+        - toc.follow
+        - toc.integrate
+    palette:
+        - media: "(prefers-color-scheme)"
+          primary: black
+          accent: lime
+          toggle:
+              icon: material/brightness-auto
+              name: Switch to light mode
+        - media: "(prefers-color-scheme: light)"
+          scheme: default
+          primary: black
+          accent: lime
+          toggle:
+              icon: material/brightness-7
+              name: Switch to dark mode
+        - media: "(prefers-color-scheme: dark)"
+          scheme: slate
+          primary: black
+          accent: lime
+          toggle:
+              icon: material/brightness-4
+              name: Switch to system preference
 plugins:
     - search
+markdown_extensions:
+    - attr_list
+    - admonition
+    - footnotes
+    - pymdownx.details
+    - pymdownx.emoji:
+          emoji_index: !!python/name:material.extensions.emoji.twemoji
+          emoji_generator: !!python/name:material.extensions.emoji.to_svg
+    - pymdownx.highlight:
+          pygments_lang_class: true
+    - pymdownx.inlinehilite:
+          style_plain_text: python
+    - pymdownx.magiclink
+    - pymdownx.snippets:
+          base_path: [!relative $config_dir]
+          check_paths: true
+    - pymdownx.superfences
+    - pymdownx.tabbed:
+          alternate_style: true
+          slugify: !!python/object/apply:pymdownx.slugs.slugify
+              kwds:
+                  case: lower
+    - pymdownx.tasklist:
+          custom_checkbox: true
+    - pymdownx.tilde
+    - toc:
+          permalink: "¤"
+    - markdown-exec
 extra_javascript:
     - assets/umami.js
